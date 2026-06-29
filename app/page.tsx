@@ -117,7 +117,7 @@ export default function HomePage() {
                   boxShadow: "0 8px 32px rgba(196, 120, 138, 0.35)",
                 }}
               >
-                <span>無料で診断する（詳細版）</span>
+                <span>無料で診断する</span>
                 <ArrowRight size={18} strokeWidth={2} />
               </motion.button>
             </Link>
