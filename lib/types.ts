@@ -8,6 +8,7 @@ export interface Question {
   hint?: string;
   options?: string[];
   optionDescriptions?: string[];
+  scores?: number[];
 }
 
 export interface Category {

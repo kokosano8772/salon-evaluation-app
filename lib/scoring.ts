@@ -90,14 +90,15 @@ export const CATEGORIES: Category[] = [
         categoryId: "customer",
         label: "新規比率",
         maxScore: 4,
-        hint: "1ヶ月の来店者のうち、初めて来るお客様の割合。多すぎても少なすぎてもNG",
-        options: ["60%以上", "40〜60%", "20〜40%（ちょうど良い）", "10〜20%", "10%未満"],
+        hint: "1ヶ月の来店者のうち、初めて来るお客様の割合",
+        options: ["ほぼ新規ばかり", "新規が多め（40%超）", "バランスが取れている（20〜40%）", "リピーター中心（10〜20%）", "ほぼ常連のみ（10%未満）"],
+        scores: [0, 2, 4, 3, 1],
         optionDescriptions: [
-          "来るお客様のほとんどが初めての方。リピーターが少ない状態",
-          "新規が多めで、まだリピーター基盤が弱い",
-          "新規とリピーターのバランスが良い理想的な状態",
-          "リピーターが中心だが、新規の取り込みが少ない",
-          "ほぼ常連さんだけで、新しいお客様がほとんど来ない",
+          "リピーターがほとんどいない。集客はできているが定着していない状態",
+          "まだ常連が育っていない段階。新規への依存度が高い",
+          "新規もリピーターも両方いる。バランスの取れた状態",
+          "常連が多く安定している。信頼されているサロンの証",
+          "ほぼ全員が常連。新規がほとんど入っていない状態",
         ],
       },
       {
@@ -536,10 +537,11 @@ export function calculateCategoryScore(
   category: Category,
   answers: DiagnosisAnswers
 ): CategoryScore {
-  const score = category.questions.reduce(
-    (sum, q) => sum + (answers[q.id] ?? 0),
-    0
-  );
+  const score = category.questions.reduce((sum, q) => {
+    const answerIndex = answers[q.id] ?? 0;
+    const questionScore = q.scores ? (q.scores[answerIndex] ?? 0) : answerIndex;
+    return sum + questionScore;
+  }, 0);
   return {
     categoryId: category.id,
     name: category.name,
