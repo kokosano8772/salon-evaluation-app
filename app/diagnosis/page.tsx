@@ -131,6 +131,7 @@ export default function DiagnosisPage() {
     reset,
   } = useDiagnosisStore();
 
+  const [showIntro, setShowIntro] = useState(false);
   const [showCategoryIntro, setShowCategoryIntro] = useState(false);
   const [introCategory, setIntroCategory] = useState(CATEGORIES[0]);
   const [direction, setDirection] = useState<"next" | "prev">("next");
@@ -149,7 +150,6 @@ export default function DiagnosisPage() {
 
   useEffect(() => {
     if (!question || !category) return;
-
     const isFirstInCategory = question.id === category.questions[0].id;
     if (isFirstInCategory && currentQuestionIndex > 0 && direction === "next") {
       setIntroCategory(category);
@@ -161,6 +161,127 @@ export default function DiagnosisPage() {
 
   if (isAuthorized === null) return null;
   if (!isAuthorized) return <AccessGate onUnlock={() => setIsAuthorized(true)} />;
+
+  if (showIntro || (currentQuestionIndex === 0 && Object.keys(answers).length === 0 && !isAnalyzing)) {
+    return (
+      <div className="min-h-[100dvh] bg-charcoal-950 flex flex-col relative overflow-hidden">
+        {/* Background glows */}
+        <div className="absolute inset-0 pointer-events-none">
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.12, 0.22, 0.12] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full"
+            style={{ background: "radial-gradient(circle, #C4788A 0%, transparent 70%)" }}
+          />
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.18, 0.1] }}
+            transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full"
+            style={{ background: "radial-gradient(circle, #C4788A 0%, transparent 70%)" }}
+          />
+        </div>
+
+        {/* Header */}
+        <header className="relative z-10 px-6 pt-10 pb-4 flex items-center justify-between">
+          <button onClick={() => router.push("/")} className="flex items-center gap-1 text-gray-500">
+            <ChevronLeft size={16} strokeWidth={1.8} />
+            <span className="text-xs text-gray-400">ホーム</span>
+          </button>
+          <span className="text-[#C4788A] text-xs font-medium tracking-[0.3em] uppercase">
+            詳細診断
+          </span>
+          <div className="w-12" />
+        </header>
+
+        {/* Content */}
+        <div className="relative z-10 flex-1 flex flex-col justify-center px-6 pb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+          >
+            <p className="text-[#C4788A] text-sm font-medium tracking-[0.2em] mb-4 uppercase">
+              Salon Value Score — Pro
+            </p>
+            <h1 className="text-white text-4xl font-bold leading-tight mb-4">
+              サロンの力を
+              <br />
+              <span
+                style={{
+                  background: "linear-gradient(135deg, #C4788A 0%, #DA9EAD 50%, #C4788A 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  display: "inline-block",
+                }}
+              >
+                深く診断する。
+              </span>
+            </h1>
+            <p className="text-gray-400 text-sm leading-relaxed mb-8">
+              6つの軸・30問で、サロンの強みと課題を
+              <br />
+              徹底的にスコアリングします。
+            </p>
+
+            {/* Stats */}
+            <div className="flex gap-4 mb-10">
+              {[
+                { value: "30", label: "問" },
+                { value: "6", label: "カテゴリ" },
+                { value: "5〜8", label: "分" },
+              ].map((stat) => (
+                <div key={stat.label} className="flex-1 bg-white/5 rounded-2xl px-3 py-4 text-center border border-white/10">
+                  <p className="text-white text-2xl font-bold">{stat.value}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Categories */}
+            <div className="grid grid-cols-3 gap-2 mb-10">
+              {CATEGORIES.map((cat) => (
+                <div
+                  key={cat.id}
+                  className="flex flex-col items-center gap-1.5 bg-white/5 rounded-xl py-3 px-2 border border-white/8"
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${cat.color}22` }}
+                  >
+                    <CategoryIcon icon={cat.icon} size={16} color={cat.color} strokeWidth={1.8} />
+                  </div>
+                  <span className="text-white text-[10px] font-medium text-center leading-tight">
+                    {cat.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setShowIntro(false)}
+              className="w-full py-5 rounded-2xl text-white font-semibold text-base tracking-wide flex items-center justify-center gap-2"
+              style={{
+                background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)",
+                boxShadow: "0 8px 32px rgba(196,120,138,0.35)",
+              }}
+            >
+              <span>診断を始める</span>
+              <ArrowRight size={18} strokeWidth={2} />
+            </motion.button>
+
+            {currentQuestionIndex > 0 && (
+              <p className="text-gray-500 text-xs text-center mt-3">
+                前回の途中から再開します
+              </p>
+            )}
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   if (!question || !category) return null;
 
   const handleAnswer = (value: number) => setAnswer(question.id, value);
