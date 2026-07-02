@@ -131,7 +131,7 @@ export default function DiagnosisPage() {
     reset,
   } = useDiagnosisStore();
 
-  const [showIntro, setShowIntro] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
   const [showCategoryIntro, setShowCategoryIntro] = useState(false);
   const [introCategory, setIntroCategory] = useState(CATEGORIES[0]);
   const [direction, setDirection] = useState<"next" | "prev">("next");
@@ -162,7 +162,7 @@ export default function DiagnosisPage() {
   if (isAuthorized === null) return null;
   if (!isAuthorized) return <AccessGate onUnlock={() => setIsAuthorized(true)} />;
 
-  if (showIntro || (currentQuestionIndex === 0 && Object.keys(answers).length === 0 && !isAnalyzing)) {
+  if (showIntro) {
     return (
       <div className="min-h-[100dvh] bg-charcoal-950 flex flex-col relative overflow-hidden">
         {/* Background glows */}
