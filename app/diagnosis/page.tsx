@@ -3,14 +3,119 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ChevronLeft, RotateCcw } from "lucide-react";
+import { ArrowRight, ChevronLeft, RotateCcw, Lock, Eye, EyeOff } from "lucide-react";
 import { useDiagnosisStore } from "@/store/diagnosisStore";
 import { CATEGORIES } from "@/lib/scoring";
 import QuestionCard from "@/components/diagnosis/QuestionCard";
 import ProgressHeader from "@/components/diagnosis/ProgressHeader";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 
+const ACCESS_CODE = "KOKO2025";
+const AUTH_KEY = "svs-pro-auth";
+
+function AccessGate({ onUnlock }: { onUnlock: () => void }) {
+  const [input, setInput] = useState("");
+  const [error, setError] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim().toUpperCase() === ACCESS_CODE) {
+      sessionStorage.setItem(AUTH_KEY, "1");
+      onUnlock();
+    } else {
+      setError(true);
+      setInput("");
+      setTimeout(() => setError(false), 2000);
+    }
+  };
+
+  return (
+    <div className="min-h-[100dvh] bg-[#FAF8F3] flex flex-col items-center justify-center px-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-sm"
+      >
+        <div className="flex flex-col items-center mb-8">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+          >
+            <Lock size={28} strokeWidth={1.8} color="white" />
+          </div>
+          <p className="text-[#C4788A] text-xs font-medium tracking-[0.3em] uppercase mb-2">
+            Salon Value Score
+          </p>
+          <h1 className="text-charcoal-900 text-2xl font-bold text-center leading-snug">
+            詳細診断
+          </h1>
+          <p className="text-gray-500 text-sm text-center mt-2 leading-relaxed">
+            この診断はスタッフ向けです。<br />アクセスコードを入力してください。
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <input
+              type={showCode ? "text" : "password"}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="アクセスコードを入力"
+              autoComplete="off"
+              className="w-full px-5 py-4 rounded-2xl border-2 text-center text-lg font-bold tracking-widest outline-none transition-all duration-200"
+              style={{
+                borderColor: error ? "#ef4444" : input ? "#C4788A" : "#e5e7eb",
+                backgroundColor: error ? "#fef2f2" : "white",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowCode(!showCode)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+            >
+              {showCode ? <EyeOff size={18} strokeWidth={1.8} /> : <Eye size={18} strokeWidth={1.8} />}
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {error && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-red-500 text-sm text-center"
+              >
+                アクセスコードが違います
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            type="submit"
+            disabled={!input}
+            className="w-full py-4 rounded-2xl text-white font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+          >
+            <span>入る</span>
+            <ArrowRight size={18} strokeWidth={2} />
+          </motion.button>
+        </form>
+
+        <p className="text-gray-400 text-xs text-center mt-6">
+          一般の方は
+          <a href="/quick" className="text-[#C4788A] underline ml-1">簡易診断</a>
+          をご利用ください
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function DiagnosisPage() {
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const router = useRouter();
   const {
     currentQuestionIndex,
@@ -31,6 +136,10 @@ export default function DiagnosisPage() {
   const [direction, setDirection] = useState<"next" | "prev">("next");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  useEffect(() => {
+    setIsAuthorized(!!sessionStorage.getItem(AUTH_KEY));
+  }, []);
+
   const question = getCurrentQuestion();
   const category = getCurrentCategory();
   const totalQuestions = getTotalQuestions();
@@ -50,6 +159,8 @@ export default function DiagnosisPage() {
     }
   }, [currentQuestionIndex, question, category, direction]);
 
+  if (isAuthorized === null) return null;
+  if (!isAuthorized) return <AccessGate onUnlock={() => setIsAuthorized(true)} />;
   if (!question || !category) return null;
 
   const handleAnswer = (value: number) => setAnswer(question.id, value);

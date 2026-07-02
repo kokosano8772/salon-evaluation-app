@@ -108,7 +108,7 @@ export default function HomePage() {
               あなたのサロンの本当の価値を診断します。
             </p>
 
-            <Link href="/diagnosis">
+            <Link href="/quick">
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 className="w-full py-5 rounded-2xl text-white font-semibold text-base tracking-wide relative overflow-hidden flex items-center justify-center gap-2"
@@ -117,28 +117,13 @@ export default function HomePage() {
                   boxShadow: "0 8px 32px rgba(196, 120, 138, 0.35)",
                 }}
               >
+                <Zap size={18} strokeWidth={2} />
                 <span>無料で診断する</span>
-                <ArrowRight size={18} strokeWidth={2} />
-              </motion.button>
-            </Link>
-
-            <Link href="/quick">
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                className="w-full py-4 rounded-2xl font-semibold text-sm tracking-wide flex items-center justify-center gap-2 border-2 mt-3"
-                style={{
-                  borderColor: "rgba(196,120,138,0.4)",
-                  color: "#C4788A",
-                  backgroundColor: "rgba(196,120,138,0.06)",
-                }}
-              >
-                <Zap size={16} strokeWidth={2} />
-                <span>まず1分で試す（簡易版・6問）</span>
               </motion.button>
             </Link>
 
             <p className="text-gray-500 text-xs text-center mt-3">
-              詳細版：約5〜8分 ／ 簡易版：約1分 ／ 無料・登録不要
+              所要時間：約1分 ／ 無料 ／ 登録不要
             </p>
           </motion.div>
         </div>
@@ -302,7 +287,7 @@ export default function HomePage() {
             何点ですか？
           </p>
           <p className="text-gray-400 text-sm mb-8">今すぐ無料で診断してみましょう</p>
-          <Link href="/diagnosis">
+          <Link href="/quick">
             <motion.button
               whileTap={{ scale: 0.97 }}
               className="w-full py-5 rounded-2xl text-white font-semibold text-base tracking-wide flex items-center justify-center gap-2"
@@ -311,8 +296,8 @@ export default function HomePage() {
                 boxShadow: "0 8px 32px rgba(196, 120, 138, 0.35)",
               }}
             >
+              <Zap size={18} strokeWidth={2} />
               <span>診断を始める</span>
-              <ArrowRight size={18} strokeWidth={2} />
             </motion.button>
           </Link>
         </motion.div>
