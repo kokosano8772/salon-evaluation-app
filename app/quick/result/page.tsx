@@ -159,16 +159,15 @@ export default function QuickResultPage() {
                 30問の詳細診断で、具体的な改善ポイントが明確になります
               </p>
             </div>
-            <Link href="/diagnosis">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                className="flex-shrink-0 px-4 py-2 rounded-xl text-white text-xs font-semibold flex items-center gap-1"
-                style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
-              >
-                詳細診断
-                <ArrowRight size={12} strokeWidth={2} />
-              </motion.button>
-            </Link>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleLineShare}
+              className="flex-shrink-0 px-4 py-2 rounded-xl text-white text-xs font-semibold flex items-center gap-1"
+              style={{ backgroundColor: "#06C755" }}
+            >
+              LINEで相談
+              <ArrowRight size={12} strokeWidth={2} />
+            </motion.button>
           </motion.div>
         </section>
 
@@ -397,15 +396,14 @@ export default function QuickResultPage() {
           LINEで相談・共有
         </button>
         <div className="flex gap-2">
-          <Link href="/diagnosis" className="flex-1">
-            <button
-              className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5"
-              style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)", color: "white" }}
-            >
-              <Zap size={14} strokeWidth={2} />
-              詳細診断を受ける
-            </button>
-          </Link>
+          <button
+            onClick={handleLineShare}
+            className="flex-1 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5"
+            style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)", color: "white" }}
+          >
+            <Zap size={14} strokeWidth={2} />
+            詳細診断を申し込む
+          </button>
           <button
             onClick={handleShare}
             className="px-4 py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 flex items-center justify-center gap-1.5"
