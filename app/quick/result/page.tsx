@@ -13,6 +13,7 @@ import {
   Share2,
   ArrowRight,
   Zap,
+  Lock,
 } from "lucide-react";
 import { useQuickStore } from "@/store/quickStore";
 import { RANK_INFO } from "@/lib/scoring";
@@ -315,29 +316,53 @@ export default function QuickResultPage() {
               className="space-y-3"
             >
               <p className="text-gray-500 text-xs leading-relaxed mb-4">
-                スコアに基づいた改善提案です。詳細な分析は30問の詳細診断でご確認いただけます。
+                改善提案は{improvements.length}件あります。詳細を確認するには詳細診断をご利用ください。
               </p>
-              {improvements.map((imp, i) => (
-                <ImprovementCard key={i} improvement={imp} index={i} />
-              ))}
 
-              <div className="bg-[#1a1a1a] rounded-3xl p-6 mt-8">
-                <p className="text-white text-lg font-bold mb-2 leading-snug">
-                  プロと一緒に
-                  <br />
-                  改善を加速させませんか？
-                </p>
-                <p className="text-gray-400 text-xs mb-5 leading-relaxed">
-                  診断結果をもとに、経営コンサルタントが具体的なアクションプランをご提案します。無料相談は30分から。
-                </p>
-                <button
-                  className="w-full py-4 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
-                  onClick={() => window.open("https://koko-design.com/contact/", "_blank")}
-                >
-                  無料相談を申し込む
-                  <ArrowRight size={16} strokeWidth={2} />
-                </button>
+              {/* Blurred improvement cards */}
+              <div className="relative">
+                <div className="space-y-3 pointer-events-none select-none" style={{ filter: "blur(6px)" }}>
+                  {improvements.map((imp, i) => (
+                    <ImprovementCard key={i} improvement={imp} index={i} />
+                  ))}
+                </div>
+
+                {/* Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: "linear-gradient(to bottom, rgba(250,248,243,0) 0%, rgba(250,248,243,0.7) 25%, rgba(250,248,243,0.95) 50%)" }}>
+                  <div className="mt-auto pb-4 w-full px-2">
+                    <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 flex flex-col items-center text-center">
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
+                        style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+                      >
+                        <Lock size={22} strokeWidth={1.8} color="white" />
+                      </div>
+                      <p className="text-charcoal-900 font-bold text-base mb-1">
+                        改善提案を確認するには
+                      </p>
+                      <p className="text-gray-500 text-xs leading-relaxed mb-5">
+                        詳細診断（30問）を受けると、具体的な改善アクションが<br />すべて表示されます。
+                      </p>
+                      <button
+                        onClick={() => window.open("https://page.line.me/470bhtcb?oat_content=url&openQrModal=true", "_blank")}
+                        className="w-full py-3.5 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 mb-2"
+                        style={{ backgroundColor: "#06C755" }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M22 10.5C22 6.36 17.52 3 12 3S2 6.36 2 10.5c0 3.64 3.23 6.7 7.59 7.28.3.07.7.2.8.47.09.24.06.61.03.85l-.13.77c-.04.24-.18.93.82.51 1-.42 5.38-3.17 7.35-5.43 1.35-1.49 2.54-3.28 2.54-6.45z" fill="white" />
+                        </svg>
+                        LINEで詳細診断を申し込む
+                      </button>
+                      <button
+                        onClick={() => window.open("https://koko-design.com/contact/", "_blank")}
+                        className="w-full py-3 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 flex items-center justify-center gap-1.5"
+                      >
+                        無料相談を申し込む
+                        <ArrowRight size={13} strokeWidth={2} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
