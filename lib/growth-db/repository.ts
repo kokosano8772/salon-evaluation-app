@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { calculateGrowthScore } from "./scoring";
 import { GrowthScore, LinkedDiagnosisResult, MonthlyMetrics, Store } from "./types";
 import { Database } from "@/lib/supabase/database.types";
+import { averageGrowthScores, findPeerGroup, findRegionalGroup } from "./comparison";
 
 type StoreRow = Database["public"]["Tables"]["stores"]["Row"];
 type MonthlyMetricsRow = Database["public"]["Tables"]["monthly_metrics"]["Row"];
@@ -29,6 +30,8 @@ function mapStoreRow(row: StoreRow): Store {
     staffCount: row.staff_count,
     targetCustomer: row.target_customer,
     averageUnitPrice: row.average_unit_price,
+    tradeArea: row.trade_area,
+    storeFormat: row.store_format,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -47,6 +50,8 @@ function storeToRow(store: Partial<Store>): Partial<StoreRow> {
   if (store.staffCount !== undefined) row.staff_count = store.staffCount;
   if (store.targetCustomer !== undefined) row.target_customer = store.targetCustomer;
   if (store.averageUnitPrice !== undefined) row.average_unit_price = store.averageUnitPrice;
+  if (store.tradeArea !== undefined) row.trade_area = store.tradeArea;
+  if (store.storeFormat !== undefined) row.store_format = store.storeFormat;
   return row;
 }
 
@@ -262,6 +267,47 @@ export async function getLatestGrowthScore(storeId: string): Promise<GrowthScore
   const history = await listMonthlyData(storeId);
   if (history.length === 0) return null;
   return getGrowthScore(storeId, history[history.length - 1].yearMonth);
+}
+
+export interface ComparisonResult {
+  own: GrowthScore | null;
+  peerGroup: { stores: Store[]; averageScore: GrowthScore | null };
+  regionalGroup: { stores: Store[]; level: "municipality" | "prefecture"; label: string; averageScore: GrowthScore | null };
+}
+
+// 同規模店舗・地域平均との比較データ。独自診断スコア(GrowthScore)を都度計算して平均するだけの
+// 参照専用データで、DBには保存しない。
+export async function getComparisonData(storeId: string): Promise<ComparisonResult | null> {
+  const target = await getStore(storeId);
+  if (!target) return null;
+
+  const supabase = createClient();
+  const { data: allRows, error } = await supabase.from("stores").select("*");
+  if (error) throw error;
+  const allStores = (allRows ?? []).map(mapStoreRow);
+
+  const own = await getLatestGrowthScore(storeId);
+
+  const peerStores = findPeerGroup(target, allStores);
+  const peerScores = (await Promise.all(peerStores.map((s) => getLatestGrowthScore(s.id)))).filter(
+    (s): s is GrowthScore => s !== null
+  );
+
+  const regional = findRegionalGroup(target, allStores);
+  const regionalScores = (await Promise.all(regional.stores.map((s) => getLatestGrowthScore(s.id)))).filter(
+    (s): s is GrowthScore => s !== null
+  );
+
+  return {
+    own,
+    peerGroup: { stores: peerStores, averageScore: averageGrowthScores(peerScores) },
+    regionalGroup: {
+      stores: regional.stores,
+      level: regional.level,
+      label: regional.label,
+      averageScore: averageGrowthScores(regionalScores),
+    },
+  };
 }
 
 // 詳細診断(/diagnosis)から連携された結果一覧。独自診断スコアの計算には使わない参照専用データ。

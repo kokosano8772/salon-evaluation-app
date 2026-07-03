@@ -42,6 +42,11 @@ export const TARGET_CUSTOMER_OPTIONS = [
   "シニア層",
 ] as const;
 
+// 同規模比較の分類軸（優先順位: スタッフ人数 > 客単価 > 商圏 > 店舗形態 > 席数）
+export const TRADE_AREA_OPTIONS = ["都市部", "地方都市", "郊外"] as const;
+
+export const STORE_FORMAT_OPTIONS = ["単店舗", "多店舗", "マンツーマン"] as const;
+
 export const GROWTH_CATEGORY_META: Record<
   GrowthCategoryId,
   { name: string; nameEn: string; icon: string; color: string; description: string }

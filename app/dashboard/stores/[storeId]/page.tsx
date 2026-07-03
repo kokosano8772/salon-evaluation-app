@@ -10,6 +10,7 @@ import YoyComparisonCard from "@/components/growth-db/store-detail/YoyComparison
 import CategoryRankingList from "@/components/growth-db/store-detail/CategoryRankingList";
 import ImprovementPointsList from "@/components/growth-db/store-detail/ImprovementPointsList";
 import LinkedDiagnosisCard from "@/components/growth-db/store-detail/LinkedDiagnosisCard";
+import PeerComparisonSection from "@/components/growth-db/store-detail/PeerComparisonSection";
 import GrowthRadarChart from "@/components/growth-db/charts/GrowthRadarChart";
 import CategoryScoreBars from "@/components/growth-db/charts/CategoryScoreBars";
 import MonthlyTrendChart, { TrendPoint } from "@/components/growth-db/charts/MonthlyTrendChart";
@@ -158,6 +159,8 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
             <p className="text-xs font-medium text-gray-400 tracking-wide mb-2">月別推移</p>
             <MonthlyTrendChart data={trendData} />
           </div>
+
+          <PeerComparisonSection storeId={store.id} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <YoyComparisonCard

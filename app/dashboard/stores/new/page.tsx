@@ -19,6 +19,8 @@ const INITIAL_VALUE: BasicInfoValue = {
   staffCount: 5,
   targetCustomer: TARGET_CUSTOMER_OPTIONS[0],
   averageUnitPrice: 8000,
+  tradeArea: "",
+  storeFormat: "",
 };
 
 export default function NewStorePage() {

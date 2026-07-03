@@ -104,6 +104,30 @@ export function useLatestGrowthScore(storeId: string | undefined) {
   return { score, loading, refresh };
 }
 
+export function useComparisonData(storeId: string | undefined) {
+  const [data, setData] = useState<repo.ComparisonResult | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(() => {
+    if (!storeId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    repo.getComparisonData(storeId).then((result) => {
+      setData(result);
+      setLoading(false);
+    });
+  }, [storeId]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return { data, loading, refresh };
+}
+
 export function useDiagnosisResults(storeId: string | undefined) {
   const [items, setItems] = useState<LinkedDiagnosisResult[]>([]);
   const [loading, setLoading] = useState(true);

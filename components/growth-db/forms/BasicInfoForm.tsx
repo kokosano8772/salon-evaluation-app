@@ -2,7 +2,7 @@ import FormSection from "./FormSection";
 import TextField from "./TextField";
 import NumberField from "./NumberField";
 import SelectField from "./SelectField";
-import { AREAS, TARGET_CUSTOMER_OPTIONS } from "@/lib/growth-db/constants";
+import { AREAS, TARGET_CUSTOMER_OPTIONS, TRADE_AREA_OPTIONS, STORE_FORMAT_OPTIONS } from "@/lib/growth-db/constants";
 import { Store } from "@/lib/growth-db/types";
 
 export type BasicInfoValue = Omit<Store, "id" | "createdAt" | "updatedAt">;
@@ -38,6 +38,20 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
         value={value.averageUnitPrice}
         onChange={(v) => set("averageUnitPrice", v)}
         suffix="円"
+      />
+      <SelectField
+        label="商圏"
+        value={value.tradeArea}
+        onChange={(v) => set("tradeArea", v)}
+        options={TRADE_AREA_OPTIONS}
+        placeholder="未設定"
+      />
+      <SelectField
+        label="店舗形態"
+        value={value.storeFormat}
+        onChange={(v) => set("storeFormat", v)}
+        options={STORE_FORMAT_OPTIONS}
+        placeholder="未設定"
       />
     </FormSection>
   );

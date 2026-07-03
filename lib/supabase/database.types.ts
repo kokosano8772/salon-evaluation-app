@@ -21,6 +21,8 @@ export interface Database {
           staff_count: number;
           target_customer: string;
           average_unit_price: number;
+          trade_area: string;
+          store_format: string;
           latest_score: number | null;
           latest_score_year_month: string | null;
           created_at: string;

@@ -188,6 +188,9 @@ export interface Store {
   staffCount: number;
   targetCustomer: string;
   averageUnitPrice: number;
+  // 同規模・地域平均比較で使う分類軸。既存店舗では未設定（空文字）の場合がある。
+  tradeArea: string;
+  storeFormat: string;
   createdAt: string;
   updatedAt: string;
 }
