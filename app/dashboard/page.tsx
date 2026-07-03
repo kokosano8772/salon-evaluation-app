@@ -5,8 +5,6 @@ import {
   ClipboardCheck,
   Database,
   LineChart as LineChartIcon,
-  Sparkles,
-  GitCompare,
   FileText,
   Store as StoreIcon,
   TrendingUp,
@@ -79,8 +77,6 @@ export default function DashboardHubPage() {
 
       <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">近日公開</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <ComingSoonTile title="AI分析" description="AIによる自動診断・改善提案を予定しています。" icon={Sparkles} />
-        <ComingSoonTile title="比較分析" description="同規模店舗・地域平均との比較を予定しています。" icon={GitCompare} />
         <ComingSoonTile title="レポート" description="PDF・CSV形式でのレポート出力を予定しています。" icon={FileText} />
       </div>
     </div>
