@@ -1,0 +1,79 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import MonthlyDataForm from "@/components/growth-db/forms/MonthlyDataForm";
+import { useStore, useMonthlyMetrics } from "@/lib/growth-db/hooks";
+import { currentYearMonth, formatMonthLabel, shiftYearMonth } from "@/lib/growth-db/format";
+
+export default function StoreDataPage({ params }: { params: Promise<{ storeId: string }> }) {
+  const { storeId } = use(params);
+  const { store, loading: storeLoading } = useStore(storeId);
+  const { data: history, loading: historyLoading, refresh } = useMonthlyMetrics(storeId);
+
+  const [selectedMonth, setSelectedMonth] = useState<string | undefined>(undefined);
+
+  const months = history.map((m) => m.yearMonth);
+
+  useEffect(() => {
+    if (!selectedMonth && !historyLoading) {
+      setSelectedMonth(months.length > 0 ? months[months.length - 1] : currentYearMonth());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyLoading, months.length]);
+
+  if (storeLoading || historyLoading || !store || !selectedMonth) {
+    return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
+  }
+
+  const suggestedNextMonth = shiftYearMonth(months[months.length - 1] ?? currentYearMonth(), 1);
+
+  return (
+    <div>
+      <DashboardHeader
+        title={`${store.name} - 月次データ管理`}
+        breadcrumbs={[
+          { label: "ダッシュボード", href: "/dashboard" },
+          { label: "成長データベース", href: "/dashboard/stores" },
+          { label: store.name, href: `/dashboard/stores/${store.id}` },
+          { label: "データ管理" },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
+            >
+              {months.map((ym) => (
+                <option key={ym} value={ym}>
+                  {formatMonthLabel(ym)}
+                </option>
+              ))}
+              {!months.includes(selectedMonth) && (
+                <option value={selectedMonth}>{formatMonthLabel(selectedMonth)}（新規）</option>
+              )}
+            </select>
+            <button
+              onClick={() => setSelectedMonth(suggestedNextMonth)}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
+            >
+              <Plus size={15} strokeWidth={2} />
+              {formatMonthLabel(suggestedNextMonth)}を追加
+            </button>
+            <Link
+              href={`/dashboard/stores/${store.id}`}
+              className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
+            >
+              詳細に戻る
+            </Link>
+          </div>
+        }
+      />
+
+      <MonthlyDataForm key={selectedMonth} storeId={store.id} yearMonth={selectedMonth} onSaved={refresh} />
+    </div>
+  );
+}

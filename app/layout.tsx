@@ -55,9 +55,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-[#E2DDD8]">
-        <div className="min-h-screen max-w-[480px] mx-auto bg-[#FAF8F3] relative shadow-[0_0_60px_rgba(0,0,0,0.12)]">
-          {children}
-        </div>
+        {children}
 
         {/* Desktop floating CTAs — only shown when sidebar space exists (≥640px) */}
         <div className="hidden sm:flex fixed right-6 top-1/2 -translate-y-1/2 flex-col gap-3 z-50">

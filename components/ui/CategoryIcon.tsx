@@ -7,6 +7,11 @@ import {
   Users,
   Building2,
   TrendingUp,
+  Megaphone,
+  Repeat2,
+  Sparkles,
+  UserPlus,
+  Network,
   LucideProps,
 } from "lucide-react";
 
@@ -17,6 +22,11 @@ const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
   Users,
   Building2,
   TrendingUp,
+  Megaphone,
+  Repeat2,
+  Sparkles,
+  UserPlus,
+  Network,
 };
 
 interface CategoryIconProps extends LucideProps {
