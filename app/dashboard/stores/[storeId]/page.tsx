@@ -9,6 +9,7 @@ import StoreScoreSummary from "@/components/growth-db/store-detail/StoreScoreSum
 import YoyComparisonCard from "@/components/growth-db/store-detail/YoyComparisonCard";
 import CategoryRankingList from "@/components/growth-db/store-detail/CategoryRankingList";
 import ImprovementPointsList from "@/components/growth-db/store-detail/ImprovementPointsList";
+import AIImprovementSuggestions from "@/components/growth-db/store-detail/AIImprovementSuggestions";
 import LinkedDiagnosisCard from "@/components/growth-db/store-detail/LinkedDiagnosisCard";
 import PeerComparisonSection from "@/components/growth-db/store-detail/PeerComparisonSection";
 import GrowthRadarChart from "@/components/growth-db/charts/GrowthRadarChart";
@@ -173,6 +174,8 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
           </div>
 
           <ImprovementPointsList categoryScores={currentScore.categoryScores} />
+
+          <AIImprovementSuggestions storeId={store.id} yearMonth={selectedMonth} />
         </div>
       </div>
     </div>

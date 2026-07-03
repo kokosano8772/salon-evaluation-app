@@ -16,7 +16,7 @@ type StoreRow = Database["public"]["Tables"]["stores"]["Row"];
 type MonthlyMetricsRow = Database["public"]["Tables"]["monthly_metrics"]["Row"];
 type DiagnosisResultRow = Database["public"]["Tables"]["diagnosis_results"]["Row"];
 
-function mapStoreRow(row: StoreRow): Store {
+export function mapStoreRow(row: StoreRow): Store {
   return {
     id: row.id,
     name: row.name,
@@ -55,7 +55,7 @@ function storeToRow(store: Partial<Store>): Partial<StoreRow> {
   return row;
 }
 
-function mapMonthlyMetricsRow(row: MonthlyMetricsRow): MonthlyMetrics {
+export function mapMonthlyMetricsRow(row: MonthlyMetricsRow): MonthlyMetrics {
   return {
     storeId: row.store_id,
     yearMonth: row.year_month,
