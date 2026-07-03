@@ -9,6 +9,7 @@ import * as repo from "@/lib/growth-db/repository";
 
 const INITIAL_VALUE: BasicInfoValue = {
   name: "",
+  phone: "",
   area: AREAS[0],
   openedYear: new Date().getFullYear(),
   storeCount: 1,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ClipboardCheck,
@@ -11,7 +11,11 @@ import {
   GitCompare,
   FileText,
   Lock,
+  LogOut,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+
+const LOGIN_PATH = "/dashboard/login";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "ダッシュボード", icon: LayoutDashboard, exact: true },
@@ -28,6 +32,16 @@ const COMING_SOON_ITEMS = [
 
 export default function DashboardNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  if (pathname === LOGIN_PATH) return null;
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push(LOGIN_PATH);
+    router.refresh();
+  };
 
   return (
     <aside className="hidden md:flex md:flex-col w-64 flex-shrink-0 border-r border-gray-100 bg-white min-h-screen sticky top-0">
@@ -80,7 +94,7 @@ export default function DashboardNav() {
         </div>
       </nav>
 
-      <div className="px-6 py-6">
+      <div className="px-6 py-6 space-y-3">
         <a
           href="https://koko-design.com/contact/"
           target="_blank"
@@ -90,6 +104,13 @@ export default function DashboardNav() {
         >
           サポートに相談する
         </a>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 py-1"
+        >
+          <LogOut size={13} strokeWidth={2} />
+          ログアウト
+        </button>
       </div>
     </aside>
   );
@@ -98,6 +119,8 @@ export default function DashboardNav() {
 // md未満の画面幅向け：横スクロールできる簡易ナビ
 export function DashboardMobileNav() {
   const pathname = usePathname();
+
+  if (pathname === LOGIN_PATH) return null;
 
   return (
     <nav className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-100 overflow-x-auto">

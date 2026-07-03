@@ -40,7 +40,7 @@ const LineIcon = () => (
 
 export default function ResultPage() {
   const router = useRouter();
-  const { result, reset } = useDiagnosisStore();
+  const { result, reset, salonName, salonPhone, linkedDiagnosisId, setLinkedDiagnosisId } = useDiagnosisStore();
   const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action">("overview");
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -48,6 +48,30 @@ export default function ResultPage() {
   useEffect(() => {
     if (!result) router.replace("/diagnosis");
   }, [result, router]);
+
+  // 成長データベースへの連携（サロン名・電話番号で店舗と照合）。
+  // 一度連携済み(linkedDiagnosisId)なら再送しない。失敗しても診断結果の閲覧は継続する。
+  useEffect(() => {
+    if (!result || linkedDiagnosisId || !salonName || !salonPhone) return;
+    fetch("/api/diagnosis/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        salonName,
+        salonPhone,
+        totalScore: result.totalScore,
+        rank: result.rank,
+        categoryScores: result.categoryScores,
+        answers: result.answers,
+        completedAt: result.completedAt,
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.diagnosisResultId) setLinkedDiagnosisId(data.diagnosisResultId);
+      })
+      .catch(() => {});
+  }, [result, linkedDiagnosisId, salonName, salonPhone, setLinkedDiagnosisId]);
 
   if (!result) return null;
 

@@ -9,6 +9,7 @@ import StoreScoreSummary from "@/components/growth-db/store-detail/StoreScoreSum
 import YoyComparisonCard from "@/components/growth-db/store-detail/YoyComparisonCard";
 import CategoryRankingList from "@/components/growth-db/store-detail/CategoryRankingList";
 import ImprovementPointsList from "@/components/growth-db/store-detail/ImprovementPointsList";
+import LinkedDiagnosisCard from "@/components/growth-db/store-detail/LinkedDiagnosisCard";
 import GrowthRadarChart from "@/components/growth-db/charts/GrowthRadarChart";
 import CategoryScoreBars from "@/components/growth-db/charts/CategoryScoreBars";
 import MonthlyTrendChart, { TrendPoint } from "@/components/growth-db/charts/MonthlyTrendChart";
@@ -61,7 +62,10 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
           ]}
         />
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
-          <StoreInfoPanel store={store} />
+          <div className="space-y-6">
+            <StoreInfoPanel store={store} />
+            <LinkedDiagnosisCard storeId={store.id} />
+          </div>
           <div className="card-luxury p-12 text-center text-gray-400 text-sm">
             まだ月次データがありません。
             <div className="mt-4">
@@ -122,7 +126,10 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
-        <StoreInfoPanel store={store} />
+        <div className="space-y-6">
+          <StoreInfoPanel store={store} />
+          <LinkedDiagnosisCard storeId={store.id} />
+        </div>
 
         <div className="space-y-6 min-w-0">
           <StoreScoreSummary totalScore={currentScore.totalScore} growthRate={growthRate} />

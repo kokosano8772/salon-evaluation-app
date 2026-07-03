@@ -178,6 +178,7 @@ export type MonthlyMetricsDomainKey =
 export interface Store {
   id: string;
   name: string;
+  phone: string;
   area: string;
   openedYear: number;
   storeCount: number;
@@ -206,6 +207,29 @@ export interface GrowthCategoryScore {
   maxScore: number;
   percentage: number;
   color: string;
+}
+
+// 詳細診断(/diagnosis)から連携された結果の参照用スナップショット。
+// あくまで店舗情報の連携であり、GrowthScoreの計算には一切使用しない。
+export interface LinkedDiagnosisResult {
+  id: string;
+  storeId: string | null;
+  salonName: string;
+  salonPhone: string;
+  totalScore: number;
+  rank: string;
+  categoryScores: {
+    categoryId: string;
+    name: string;
+    nameEn: string;
+    score: number;
+    maxScore: number;
+    percentage: number;
+    color: string;
+  }[];
+  completedAt: string;
+  status: "pending" | "reviewed";
+  createdAt: string;
 }
 
 // Store(1) — MonthlyMetrics(多) の実データから都度計算される純粋な派生値。

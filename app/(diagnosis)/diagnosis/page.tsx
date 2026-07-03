@@ -116,6 +116,73 @@ function AccessGate({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
+function SalonInfoStep({ onSubmit }: { onSubmit: (name: string, phone: string) => void }) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !phone.trim()) return;
+    onSubmit(name.trim(), phone.trim());
+  };
+
+  return (
+    <div className="min-h-[100dvh] bg-[#FAF8F3] flex flex-col items-center justify-center px-6">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <p className="text-[#C4788A] text-xs font-medium tracking-[0.3em] uppercase mb-2">
+            Salon Value Score — Pro
+          </p>
+          <h1 className="text-charcoal-900 text-2xl font-bold text-center leading-snug">
+            サロン情報の入力
+          </h1>
+          <p className="text-gray-500 text-sm text-center mt-2 leading-relaxed">
+            診断結果を成長データベースに連携するため、
+            <br />
+            サロン名・電話番号を入力してください。
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <label className="block">
+            <span className="block text-xs text-gray-500 mb-1.5">サロン名</span>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="例）hair salon Rume"
+              className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-xs text-gray-500 mb-1.5">電話番号</span>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              placeholder="09012345678"
+              className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
+            />
+          </label>
+
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            type="submit"
+            disabled={!name.trim() || !phone.trim()}
+            className="w-full py-4 rounded-2xl text-white font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+          >
+            <span>診断を始める</span>
+            <ArrowRight size={18} strokeWidth={2} />
+          </motion.button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function DiagnosisPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -123,6 +190,9 @@ export default function DiagnosisPage() {
   const {
     currentQuestionIndex,
     answers,
+    salonName,
+    salonPhone,
+    setSalonInfo,
     setAnswer,
     nextQuestion,
     previousQuestion,
@@ -419,6 +489,10 @@ export default function DiagnosisPage() {
         </AnimatePresence>
       </main>
     );
+  }
+
+  if (!salonName || !salonPhone) {
+    return <SalonInfoStep onSubmit={setSalonInfo} />;
   }
 
   if (!question || !category) return null;

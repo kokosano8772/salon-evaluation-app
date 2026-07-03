@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import * as repo from "./repository";
-import { GrowthScore, MonthlyMetrics, Store } from "./types";
+import { GrowthScore, LinkedDiagnosisResult, MonthlyMetrics, Store } from "./types";
 
 // コンポーネントから repository.ts を扱いやすくする薄いフック群。
 // useGrowthDbStore を直接importしないための唯一の窓口。
@@ -102,6 +102,30 @@ export function useLatestGrowthScore(storeId: string | undefined) {
   }, [refresh]);
 
   return { score, loading, refresh };
+}
+
+export function useDiagnosisResults(storeId: string | undefined) {
+  const [items, setItems] = useState<LinkedDiagnosisResult[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(() => {
+    if (!storeId) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    repo.getDiagnosisResultsForStore(storeId).then((list) => {
+      setItems(list);
+      setLoading(false);
+    });
+  }, [storeId]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return { items, loading, refresh };
 }
 
 export function useGrowthScore(storeId: string | undefined, yearMonth: string | undefined) {

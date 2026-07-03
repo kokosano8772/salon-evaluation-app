@@ -1,26 +1,88 @@
 // 成長データベースの非同期CRUD窓口。
 //
-// 今日の実装は store/growthDbStore.ts（Zustand + localStorage）への薄いラッパーに過ぎないが、
-// すべての関数を async にしておくことで、将来 Supabase 等の実バックエンドに差し替える際も
-// 呼び出し側（コンポーネント）を一切変更せずに済む。コンポーネントは必ずこのファイル経由で
-// データを読み書きし、useGrowthDbStore を直接importしないこと。
+// 実装はSupabase（Postgres, RLSでauthenticatedロールのみ読み書き可）への薄いラッパー。
+// すべての関数は async のまま — このシグネチャは変更しない設計にしてあるため、
+// ローカルダミーデータ時代から呼び出し側（コンポーネント）は無修正で動く。
+// コンポーネントは必ずこのファイル経由でデータを読み書きし、Supabaseクライアントを
+// 直接importしないこと。
 
-import { useGrowthDbStore } from "@/store/growthDbStore";
+import { createClient } from "@/lib/supabase/client";
 import { calculateGrowthScore } from "./scoring";
-import { GrowthScore, MonthlyMetrics, Store } from "./types";
+import { GrowthScore, LinkedDiagnosisResult, MonthlyMetrics, Store } from "./types";
+import { Database } from "@/lib/supabase/database.types";
 
-function ensureInitialized() {
-  const state = useGrowthDbStore.getState();
-  if (!state.initialized) {
-    state.init();
-  }
+type StoreRow = Database["public"]["Tables"]["stores"]["Row"];
+type MonthlyMetricsRow = Database["public"]["Tables"]["monthly_metrics"]["Row"];
+type DiagnosisResultRow = Database["public"]["Tables"]["diagnosis_results"]["Row"];
+
+function mapStoreRow(row: StoreRow): Store {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    area: row.area,
+    openedYear: row.opened_year,
+    storeCount: row.store_count,
+    seatCount: row.seat_count,
+    businessHours: row.business_hours,
+    businessDays: row.business_days,
+    staffCount: row.staff_count,
+    targetCustomer: row.target_customer,
+    averageUnitPrice: row.average_unit_price,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
-function generateId(prefix: string): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `${prefix}-${crypto.randomUUID()}`;
-  }
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+function storeToRow(store: Partial<Store>): Partial<StoreRow> {
+  const row: Partial<StoreRow> = {};
+  if (store.name !== undefined) row.name = store.name;
+  if (store.phone !== undefined) row.phone = store.phone;
+  if (store.area !== undefined) row.area = store.area;
+  if (store.openedYear !== undefined) row.opened_year = store.openedYear;
+  if (store.storeCount !== undefined) row.store_count = store.storeCount;
+  if (store.seatCount !== undefined) row.seat_count = store.seatCount;
+  if (store.businessHours !== undefined) row.business_hours = store.businessHours;
+  if (store.businessDays !== undefined) row.business_days = store.businessDays;
+  if (store.staffCount !== undefined) row.staff_count = store.staffCount;
+  if (store.targetCustomer !== undefined) row.target_customer = store.targetCustomer;
+  if (store.averageUnitPrice !== undefined) row.average_unit_price = store.averageUnitPrice;
+  return row;
+}
+
+function mapMonthlyMetricsRow(row: MonthlyMetricsRow): MonthlyMetrics {
+  return {
+    storeId: row.store_id,
+    yearMonth: row.year_month,
+    revenue: (row.revenue ?? undefined) as MonthlyMetrics["revenue"],
+    acquisition: (row.acquisition ?? undefined) as MonthlyMetrics["acquisition"],
+    repeat: (row.repeat_metrics ?? undefined) as MonthlyMetrics["repeat"],
+    googleBusiness: (row.google_business ?? undefined) as MonthlyMetrics["googleBusiness"],
+    website: (row.website ?? undefined) as MonthlyMetrics["website"],
+    sns: (row.sns ?? undefined) as MonthlyMetrics["sns"],
+    recruiting: (row.recruiting ?? undefined) as MonthlyMetrics["recruiting"],
+    retention: (row.retention ?? undefined) as MonthlyMetrics["retention"],
+    productivity: (row.productivity ?? undefined) as MonthlyMetrics["productivity"],
+    brand: (row.brand ?? undefined) as MonthlyMetrics["brand"],
+    management: (row.management ?? undefined) as MonthlyMetrics["management"],
+    basicSnapshot: (row.basic_snapshot ?? undefined) as MonthlyMetrics["basicSnapshot"],
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapDiagnosisResultRow(row: DiagnosisResultRow): LinkedDiagnosisResult {
+  return {
+    id: row.id,
+    storeId: row.store_id,
+    salonName: row.salon_name,
+    salonPhone: row.salon_phone,
+    totalScore: row.total_score,
+    rank: row.rank,
+    categoryScores: row.category_scores as LinkedDiagnosisResult["categoryScores"],
+    completedAt: row.completed_at,
+    status: row.status,
+    createdAt: row.created_at,
+  };
 }
 
 export interface GetStoresParams {
@@ -37,79 +99,83 @@ export interface GetStoresResult {
   total: number;
 }
 
-async function latestScoreFor(store: Store): Promise<number> {
-  const history = useGrowthDbStore.getState().monthlyMetrics[store.id] ?? [];
-  if (history.length === 0) return 0;
-  const latest = history[history.length - 1];
-  return calculateGrowthScore(store.id, latest.yearMonth, history, store.staffCount).totalScore;
-}
+const SORT_COLUMN: Record<NonNullable<GetStoresParams["sortBy"]>, string> = {
+  name: "name",
+  area: "area",
+  score: "latest_score",
+  updatedAt: "updated_at",
+};
 
 export async function getStores(params: GetStoresParams = {}): Promise<GetStoresResult> {
-  ensureInitialized();
   const { search, area, sortBy = "updatedAt", sortDir = "desc", page = 1, pageSize = 12 } = params;
-  const state = useGrowthDbStore.getState();
-  let items = Object.values(state.stores);
+  const supabase = createClient();
+
+  let query = supabase.from("stores").select("*", { count: "exact" });
 
   if (search && search.trim()) {
-    const q = search.trim().toLowerCase();
-    items = items.filter((s) => s.name.toLowerCase().includes(q));
+    query = query.ilike("name", `%${search.trim()}%`);
   }
   if (area) {
-    items = items.filter((s) => s.area === area);
+    query = query.eq("area", area);
   }
 
-  if (sortBy === "score") {
-    const scored = await Promise.all(items.map(async (s) => ({ store: s, score: await latestScoreFor(s) })));
-    scored.sort((a, b) => (sortDir === "asc" ? a.score - b.score : b.score - a.score));
-    items = scored.map((s) => s.store);
-  } else {
-    const dir = sortDir === "asc" ? 1 : -1;
-    items = [...items].sort((a, b) => {
-      if (sortBy === "name") return a.name.localeCompare(b.name, "ja") * dir;
-      if (sortBy === "area") return a.area.localeCompare(b.area, "ja") * dir;
-      return (a.updatedAt < b.updatedAt ? -1 : a.updatedAt > b.updatedAt ? 1 : 0) * dir;
-    });
-  }
-
-  const total = items.length;
   const start = (page - 1) * pageSize;
-  const pageItems = items.slice(start, start + pageSize);
+  query = query
+    .order(SORT_COLUMN[sortBy], { ascending: sortDir === "asc", nullsFirst: false })
+    .range(start, start + pageSize - 1);
 
-  return { items: pageItems, total };
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  return { items: (data ?? []).map(mapStoreRow), total: count ?? 0 };
 }
 
 export async function getStore(storeId: string): Promise<Store | null> {
-  ensureInitialized();
-  return useGrowthDbStore.getState().stores[storeId] ?? null;
+  const supabase = createClient();
+  const { data, error } = await supabase.from("stores").select("*").eq("id", storeId).maybeSingle();
+  if (error) throw error;
+  return data ? mapStoreRow(data) : null;
 }
 
 export async function createStore(input: Omit<Store, "id" | "createdAt" | "updatedAt">): Promise<Store> {
-  ensureInitialized();
-  const now = new Date().toISOString();
-  const store: Store = { ...input, id: generateId("store"), createdAt: now, updatedAt: now };
-  useGrowthDbStore.getState().setStore(store);
-  useGrowthDbStore.getState().setMonthlyMetrics(store.id, []);
-  return store;
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("stores")
+    .insert(storeToRow(input) as Database["public"]["Tables"]["stores"]["Insert"])
+    .select()
+    .single();
+  if (error) throw error;
+  return mapStoreRow(data);
 }
 
 export async function updateStore(storeId: string, patch: Partial<Store>): Promise<Store> {
-  ensureInitialized();
-  const current = useGrowthDbStore.getState().stores[storeId];
-  if (!current) throw new Error(`Store not found: ${storeId}`);
-  const updated: Store = { ...current, ...patch, id: current.id, updatedAt: new Date().toISOString() };
-  useGrowthDbStore.getState().setStore(updated);
-  return updated;
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("stores")
+    .update({ ...storeToRow(patch), updated_at: new Date().toISOString() })
+    .eq("id", storeId)
+    .select()
+    .single();
+  if (error) throw error;
+  return mapStoreRow(data);
 }
 
 export async function deleteStore(storeId: string): Promise<void> {
-  ensureInitialized();
-  useGrowthDbStore.getState().removeStore(storeId);
+  const supabase = createClient();
+  const { error } = await supabase.from("stores").delete().eq("id", storeId);
+  if (error) throw error;
 }
 
 export async function getMonthlyData(storeId: string, yearMonth: string): Promise<MonthlyMetrics | null> {
-  ensureInitialized();
-  const list = useGrowthDbStore.getState().monthlyMetrics[storeId] ?? [];
-  return list.find((m) => m.yearMonth === yearMonth) ?? null;
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("monthly_metrics")
+    .select("*")
+    .eq("store_id", storeId)
+    .eq("year_month", yearMonth)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapMonthlyMetricsRow(data) : null;
 }
 
 export interface MonthlyRange {
@@ -118,12 +184,15 @@ export interface MonthlyRange {
 }
 
 export async function listMonthlyData(storeId: string, range?: MonthlyRange): Promise<MonthlyMetrics[]> {
-  ensureInitialized();
-  let list = [...(useGrowthDbStore.getState().monthlyMetrics[storeId] ?? [])];
-  list.sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
-  if (range?.from) list = list.filter((m) => m.yearMonth >= range.from!);
-  if (range?.to) list = list.filter((m) => m.yearMonth <= range.to!);
-  return list;
+  const supabase = createClient();
+  let query = supabase.from("monthly_metrics").select("*").eq("store_id", storeId);
+  if (range?.from) query = query.gte("year_month", range.from);
+  if (range?.to) query = query.lte("year_month", range.to);
+  query = query.order("year_month", { ascending: true });
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).map(mapMonthlyMetricsRow);
 }
 
 export async function upsertMonthlyData(
@@ -131,27 +200,57 @@ export async function upsertMonthlyData(
   yearMonth: string,
   patch: Partial<Omit<MonthlyMetrics, "storeId" | "yearMonth">>
 ): Promise<MonthlyMetrics> {
-  ensureInitialized();
-  const state = useGrowthDbStore.getState();
-  const list = [...(state.monthlyMetrics[storeId] ?? [])];
-  const index = list.findIndex((m) => m.yearMonth === yearMonth);
-  const now = new Date().toISOString();
+  const supabase = createClient();
 
-  let updated: MonthlyMetrics;
-  if (index === -1) {
-    updated = { storeId, yearMonth, ...patch, updatedAt: now };
-    list.push(updated);
-  } else {
-    updated = { ...list[index], ...patch, storeId, yearMonth, updatedAt: now };
-    list[index] = updated;
-  }
-  list.sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
-  state.setMonthlyMetrics(storeId, list);
-  return updated;
+  const row: Database["public"]["Tables"]["monthly_metrics"]["Insert"] = {
+    store_id: storeId,
+    year_month: yearMonth,
+  };
+  if (patch.revenue !== undefined) row.revenue = patch.revenue;
+  if (patch.acquisition !== undefined) row.acquisition = patch.acquisition;
+  if (patch.repeat !== undefined) row.repeat_metrics = patch.repeat;
+  if (patch.googleBusiness !== undefined) row.google_business = patch.googleBusiness;
+  if (patch.website !== undefined) row.website = patch.website;
+  if (patch.sns !== undefined) row.sns = patch.sns;
+  if (patch.recruiting !== undefined) row.recruiting = patch.recruiting;
+  if (patch.retention !== undefined) row.retention = patch.retention;
+  if (patch.productivity !== undefined) row.productivity = patch.productivity;
+  if (patch.brand !== undefined) row.brand = patch.brand;
+  if (patch.management !== undefined) row.management = patch.management;
+  if (patch.basicSnapshot !== undefined) row.basic_snapshot = patch.basicSnapshot;
+
+  const { data, error } = await supabase
+    .from("monthly_metrics")
+    .upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "store_id,year_month" })
+    .select()
+    .single();
+  if (error) throw error;
+
+  await refreshLatestScore(storeId);
+
+  return mapMonthlyMetricsRow(data);
+}
+
+// stores.latest_score / latest_score_year_month は一覧の並び替えを高速化するための
+// 非正規化カラム。スコアリングの複雑なロジック(scoring.ts)をDB側に複製しないため、
+// 月次データ更新の都度アプリ側で計算し直して書き込む。
+async function refreshLatestScore(storeId: string): Promise<void> {
+  const store = await getStore(storeId);
+  if (!store) return;
+  const history = await listMonthlyData(storeId);
+  if (history.length === 0) return;
+
+  const latestYearMonth = history[history.length - 1].yearMonth;
+  const score = calculateGrowthScore(storeId, latestYearMonth, history, store.staffCount);
+
+  const supabase = createClient();
+  await supabase
+    .from("stores")
+    .update({ latest_score: score.totalScore, latest_score_year_month: latestYearMonth })
+    .eq("id", storeId);
 }
 
 export async function getGrowthScore(storeId: string, yearMonth: string): Promise<GrowthScore | null> {
-  ensureInitialized();
   const store = await getStore(storeId);
   if (!store) return null;
   const history = await listMonthlyData(storeId);
@@ -163,4 +262,25 @@ export async function getLatestGrowthScore(storeId: string): Promise<GrowthScore
   const history = await listMonthlyData(storeId);
   if (history.length === 0) return null;
   return getGrowthScore(storeId, history[history.length - 1].yearMonth);
+}
+
+// 詳細診断(/diagnosis)から連携された結果一覧。独自診断スコアの計算には使わない参照専用データ。
+export async function getDiagnosisResultsForStore(storeId: string): Promise<LinkedDiagnosisResult[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("diagnosis_results")
+    .select("*")
+    .eq("store_id", storeId)
+    .order("completed_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(mapDiagnosisResultRow);
+}
+
+export async function markDiagnosisResultReviewed(diagnosisResultId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("diagnosis_results")
+    .update({ status: "reviewed" })
+    .eq("id", diagnosisResultId);
+  if (error) throw error;
 }

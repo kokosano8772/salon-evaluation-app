@@ -19,6 +19,7 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
   return (
     <FormSection title="基本情報" description="店舗の基本プロフィール">
       <TextField label="店舗名" value={value.name} onChange={(v) => set("name", v)} />
+      <TextField label="電話番号" value={value.phone} onChange={(v) => set("phone", v)} placeholder="09012345678" />
       <SelectField label="エリア" value={value.area} onChange={(v) => set("area", v)} options={AREAS} />
       <NumberField label="開業年" value={value.openedYear} onChange={(v) => set("openedYear", v)} suffix="年" />
       <NumberField label="店舗数" value={value.storeCount} onChange={(v) => set("storeCount", v)} suffix="店舗" />

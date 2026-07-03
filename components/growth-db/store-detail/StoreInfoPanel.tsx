@@ -30,6 +30,7 @@ export default function StoreInfoPanel({ store }: { store: Store }) {
       </p>
 
       <div>
+        <InfoRow label="電話番号" value={store.phone || "未登録"} />
         <InfoRow label="開業年" value={`${store.openedYear}年`} />
         <InfoRow label="店舗数" value={`${store.storeCount}店舗`} />
         <InfoRow label="席数" value={`${store.seatCount}席`} />

@@ -8,12 +8,18 @@ interface DiagnosisState {
   answers: DiagnosisAnswers;
   result: DiagnosisResult | null;
   isComplete: boolean;
+  // 成長データベースとの連携用（詳細診断のみ）。salonName/salonPhoneで店舗を照合する。
+  salonName: string;
+  salonPhone: string;
+  linkedDiagnosisId: string | null;
 
   setAnswer: (questionId: string, value: number) => void;
   nextQuestion: () => void;
   previousQuestion: () => void;
   goToQuestion: (index: number) => void;
   completeAndCalculate: () => DiagnosisResult;
+  setSalonInfo: (name: string, phone: string) => void;
+  setLinkedDiagnosisId: (id: string) => void;
   reset: () => void;
 
   getCurrentQuestion: () => ReturnType<typeof getAllQuestions>[number] | null;
@@ -28,6 +34,9 @@ const initialState = {
   answers: {} as DiagnosisAnswers,
   result: null,
   isComplete: false,
+  salonName: "",
+  salonPhone: "",
+  linkedDiagnosisId: null as string | null,
 };
 
 export const useDiagnosisStore = create<DiagnosisState>()(
@@ -64,6 +73,14 @@ export const useDiagnosisStore = create<DiagnosisState>()(
         const result = calculateResult(answers);
         set({ result, isComplete: true });
         return result;
+      },
+
+      setSalonInfo: (name, phone) => {
+        set({ salonName: name, salonPhone: phone });
+      },
+
+      setLinkedDiagnosisId: (id) => {
+        set({ linkedDiagnosisId: id });
       },
 
       reset: () => {
@@ -104,6 +121,9 @@ export const useDiagnosisStore = create<DiagnosisState>()(
         answers: state.answers,
         result: state.result,
         isComplete: state.isComplete,
+        salonName: state.salonName,
+        salonPhone: state.salonPhone,
+        linkedDiagnosisId: state.linkedDiagnosisId,
       }),
     }
   )
