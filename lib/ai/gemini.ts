@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // （lib/ai/generateGrowthSuggestions.ts が呼ぶこの関数の中身）だけを変更すればよい。
 const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-export function getGeminiModel() {
+export function getGeminiModel(options?: { plainText?: boolean; systemInstruction?: string }) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set");
@@ -12,6 +12,7 @@ export function getGeminiModel() {
   const genAI = new GoogleGenerativeAI(apiKey);
   return genAI.getGenerativeModel({
     model: MODEL_NAME,
-    generationConfig: { responseMimeType: "application/json" },
+    systemInstruction: options?.systemInstruction,
+    generationConfig: options?.plainText ? undefined : { responseMimeType: "application/json" },
   });
 }

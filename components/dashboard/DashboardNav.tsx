@@ -7,8 +7,6 @@ import {
   ClipboardCheck,
   Database,
   LineChart,
-  Sparkles,
-  GitCompare,
   FileText,
   Lock,
   LogOut,
@@ -25,8 +23,6 @@ const NAV_ITEMS = [
 ];
 
 const COMING_SOON_ITEMS = [
-  { label: "AI分析", icon: Sparkles },
-  { label: "比較分析", icon: GitCompare },
   { label: "レポート", icon: FileText },
 ];
 

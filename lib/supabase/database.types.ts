@@ -78,6 +78,27 @@ export interface Database {
         Update: Partial<Pick<Database["public"]["Tables"]["diagnosis_results"]["Row"], "status">>;
         Relationships: [];
       };
+      competitor_research_sessions: {
+        Row: {
+          id: string;
+          store_id: string;
+          region: string;
+          mode: "attraction" | "recruitment" | "both";
+          competitor_count: number;
+          salons: unknown;
+          cell_data: unknown;
+          ai_result: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["competitor_research_sessions"]["Row"], "id" | "created_at" | "updated_at">> & {
+          store_id: string;
+          region: string;
+          mode: "attraction" | "recruitment" | "both";
+        };
+        Update: Partial<Database["public"]["Tables"]["competitor_research_sessions"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
