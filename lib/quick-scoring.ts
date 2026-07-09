@@ -58,7 +58,7 @@ export const QUICK_CATEGORIES: QuickCategory[] = [
     questions: [
       {
         id: "quick_customer_return",
-        label: "新規客リピート・顧客への定着",
+        label: "新規客のリピート・定着",
         hint: "6か月での新規のお客様のリピート率から総合的に見てください",
         options: ["ご新規客リピート率 0〜20%", "ご新規客リピート率 21〜35%", "ご新規客リピート率 36〜50%", "ご新規客リピート率 51〜60%", "ご新規客リピート率 61%以上"],
         scores: [0, 3, 5, 8, 10],
