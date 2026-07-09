@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, CheckCircle2, Info, Zap } from "lucide-react";
 import { useQuickStore } from "@/store/quickStore";
-import { QUICK_CATEGORIES } from "@/lib/quick-scoring";
+import { QUICK_STEPS } from "@/lib/quick-scoring";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 
-const TOTAL = QUICK_CATEGORIES.length;
+const TOTAL = QUICK_STEPS.length;
 
 export default function QuickDiagnosisPage() {
   const router = useRouter();
@@ -20,8 +20,9 @@ export default function QuickDiagnosisPage() {
     if (isComplete) router.replace("/quick/result");
   }, [isComplete, router]);
 
-  const category = QUICK_CATEGORIES[currentIndex];
-  const question = category?.question;
+  const step = QUICK_STEPS[currentIndex];
+  const category = step?.category;
+  const question = step?.question;
   const currentAnswer = getCurrentAnswer();
   const isLast = currentIndex === TOTAL - 1;
 
@@ -70,7 +71,7 @@ export default function QuickDiagnosisPage() {
       {/* Progress bar */}
       <div className="bg-white px-5 pb-4 pt-2">
         <div className="flex gap-1.5">
-          {QUICK_CATEGORIES.map((_, i) => (
+          {QUICK_STEPS.map((_, i) => (
             <div
               key={i}
               className="flex-1 h-1.5 rounded-full transition-all duration-300"
@@ -128,7 +129,7 @@ export default function QuickDiagnosisPage() {
                 style={{ color: category.color }}
               >
                 <Info size={12} strokeWidth={2} />
-                <span>{category.maxScore}点満点</span>
+                <span>{Math.max(...question.scores)}点満点</span>
               </div>
             </div>
 

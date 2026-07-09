@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { DiagnosisAnswers, DiagnosisResult } from "@/lib/types";
-import { calculateQuickResult, QUICK_CATEGORIES } from "@/lib/quick-scoring";
+import { calculateQuickResult, QUICK_STEPS } from "@/lib/quick-scoring";
 
 interface QuickState {
   currentIndex: number;
@@ -50,7 +50,7 @@ export const useQuickStore = create<QuickState>()(
 
       getCurrentAnswer: () => {
         const { currentIndex, answers } = get();
-        const question = QUICK_CATEGORIES[currentIndex]?.question;
+        const question = QUICK_STEPS[currentIndex]?.question;
         if (!question) return undefined;
         return answers[question.id];
       },
