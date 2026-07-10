@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Plus } from "lucide-react";
+import { ChevronDown, Search, Plus } from "lucide-react";
 import { AREAS } from "@/lib/growth-db/constants";
 import { GetStoresParams } from "@/lib/growth-db/repository";
 
@@ -43,33 +43,39 @@ export default function StoreListToolbar({
         />
       </div>
 
-      <select
-        value={area}
-        onChange={(e) => onAreaChange(e.target.value)}
-        className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
-      >
-        <option value="">すべてのエリア</option>
-        {AREAS.map((a) => (
-          <option key={a} value={a}>
-            {a}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          value={area}
+          onChange={(e) => onAreaChange(e.target.value)}
+          className="appearance-none pl-4 pr-9 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
+        >
+          <option value="">すべてのエリア</option>
+          {AREAS.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={15} strokeWidth={2} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+      </div>
 
-      <select
-        value={sortValue}
-        onChange={(e) => {
-          const opt = SORT_OPTIONS.find((o) => o.value === e.target.value);
-          if (opt) onSortChange(opt.sortBy, opt.sortDir);
-        }}
-        className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
-      >
-        {SORT_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          value={sortValue}
+          onChange={(e) => {
+            const opt = SORT_OPTIONS.find((o) => o.value === e.target.value);
+            if (opt) onSortChange(opt.sortBy, opt.sortDir);
+          }}
+          className="appearance-none pl-4 pr-9 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={15} strokeWidth={2} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+      </div>
 
       <Link
         href="/dashboard/stores/new"

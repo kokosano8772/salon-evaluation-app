@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import MonthlyDataForm from "@/components/growth-db/forms/MonthlyDataForm";
 import { useStore, useMonthlyMetrics } from "@/lib/growth-db/hooks";
@@ -42,20 +42,27 @@ export default function StoreDataPage({ params }: { params: Promise<{ storeId: s
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
-            >
-              {months.map((ym) => (
-                <option key={ym} value={ym}>
-                  {formatMonthLabel(ym)}
-                </option>
-              ))}
-              {!months.includes(selectedMonth) && (
-                <option value={selectedMonth}>{formatMonthLabel(selectedMonth)}（新規）</option>
-              )}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="appearance-none pl-4 pr-9 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
+              >
+                {months.map((ym) => (
+                  <option key={ym} value={ym}>
+                    {formatMonthLabel(ym)}
+                  </option>
+                ))}
+                {!months.includes(selectedMonth) && (
+                  <option value={selectedMonth}>{formatMonthLabel(selectedMonth)}（新規）</option>
+                )}
+              </select>
+              <ChevronDown
+                size={15}
+                strokeWidth={2}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+            </div>
             <button
               onClick={() => setSelectedMonth(suggestedNextMonth)}
               className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"

@@ -2,6 +2,7 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import StatCard from "@/components/dashboard/StatCard";
 import StoreInfoPanel from "@/components/growth-db/store-detail/StoreInfoPanel";
@@ -114,17 +115,24 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
           { label: store.name },
         ]}
         actions={
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
-          >
-            {months.map((ym) => (
-              <option key={ym} value={ym}>
-                {formatMonthLabel(ym)}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="appearance-none pl-4 pr-9 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
+            >
+              {months.map((ym) => (
+                <option key={ym} value={ym}>
+                  {formatMonthLabel(ym)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={15}
+              strokeWidth={2}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+            />
+          </div>
         }
       />
 
