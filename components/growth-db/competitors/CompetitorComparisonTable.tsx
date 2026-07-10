@@ -12,6 +12,7 @@ import {
   ComparisonField,
   SalonData,
 } from "@/lib/competitor-research/types";
+import { getFieldDisplayValue } from "@/lib/competitor-research/field-value";
 
 export interface CompetitorComparisonTableProps {
   salons: SalonData[];
@@ -31,17 +32,6 @@ const ratingMap = Object.fromEntries(RATINGS.map((r) => [r.value, r]));
 
 function cellRatingBg(rating: CellRating): string {
   return ratingMap[rating]?.row ?? "";
-}
-
-function getInitialValue(salon: SalonData, field: ComparisonField): string {
-  const src = field.category === "attraction" ? salon.attraction : salon.recruitment;
-  if (!src) return "";
-  const raw = (src as Record<string, unknown>)[field.key];
-  if (raw === undefined || raw === null) return "";
-  if (Array.isArray(raw)) return raw.join("、");
-  if (typeof raw === "boolean") return raw ? "あり" : "なし";
-  if (typeof raw === "number") return raw === 0 ? "" : String(raw);
-  return String(raw);
 }
 
 function CellEditor({
@@ -296,7 +286,7 @@ function TableSection({
             </td>
             {salons.map((salon) => {
               const stored = data[salon.id]?.[field.key];
-              const cell: CellData = stored ?? { value: getInitialValue(salon, field), rating: "neutral" };
+              const cell: CellData = stored ?? { value: getFieldDisplayValue(salon, field), rating: "neutral" };
               return (
                 <TableCell
                   key={salon.id}

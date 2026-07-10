@@ -13,10 +13,13 @@ import { useStore, useMonthlyMetrics } from "@/lib/growth-db/hooks";
 import { useCompetitorSessions } from "@/lib/growth-db/competitor-hooks";
 import * as competitorRepo from "@/lib/growth-db/competitor-repository";
 import { buildOwnSalonFromStore } from "@/lib/competitor-research/own-salon";
+import { computeAutoCellData } from "@/lib/competitor-research/auto-rating";
 import {
   AnalysisMode,
+  AttractionData,
   CellData,
   ComparisonData,
+  RecruitmentData,
   SalonBasic,
   SalonData,
   SalonGenre,
@@ -44,6 +47,7 @@ export default function CompetitorResearchPage({ params }: { params: Promise<{ s
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searching, setSearching] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [preparingCompare, setPreparingCompare] = useState(false);
 
   // 比較ステップ
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -98,19 +102,59 @@ export default function CompetitorResearchPage({ params }: { params: Promise<{ s
     });
   }
 
-  function startCompare() {
+  async function startCompare() {
     const ownSalon = buildOwnSalonFromStore(store!, latestMonthly);
-    const competitorSalons: SalonData[] = allResults
-      .filter((s) => selectedIds.has(s.id))
-      .map((s) => ({ ...s }));
+    const selectedBasics = allResults.filter((s) => selectedIds.has(s.id));
 
-    setSalons([ownSalon, ...competitorSalons]);
-    setCellData({});
-    setAiResult(null);
-    setCurrentSessionId(null);
-    setCompareTab("table");
-    setSaveStatus("idle");
-    setStep("compare");
+    setPreparingCompare(true);
+    try {
+      const competitorSalons: SalonData[] = await Promise.all(
+        selectedBasics.map(async (s) => {
+          // Google Placesから取得できていれば営業時間・定休日はここで先に埋めておく
+          const baseAttraction: AttractionData = {
+            businessHours: s.businessHours,
+            closedDays: s.closedDays,
+          };
+          const baseRecruitment: RecruitmentData = {
+            businessHours: s.businessHours,
+          };
+
+          if (!s.website) {
+            return { ...s, attraction: baseAttraction, recruitment: baseRecruitment };
+          }
+
+          // ウェブサイトがあれば、Geminiに読ませて他の項目も推定で仮入力する
+          try {
+            const res = await fetch("/api/growth-db/competitor-extract", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: s.name, url: s.website }),
+            });
+            if (!res.ok) return { ...s, attraction: baseAttraction, recruitment: baseRecruitment };
+            const extracted = await res.json();
+            return {
+              ...s,
+              attraction: { ...baseAttraction, ...extracted.attraction },
+              recruitment: { ...baseRecruitment, ...extracted.recruitment },
+            };
+          } catch {
+            return { ...s, attraction: baseAttraction, recruitment: baseRecruitment };
+          }
+        })
+      );
+
+      const newSalons = [ownSalon, ...competitorSalons];
+      setSalons(newSalons);
+      // 数値・はい/いいえ項目は自社と自動比較して評価を仮入力しておく（手動で上書き可能）
+      setCellData(computeAutoCellData(newSalons, mode));
+      setAiResult(null);
+      setCurrentSessionId(null);
+      setCompareTab("table");
+      setSaveStatus("idle");
+      setStep("compare");
+    } finally {
+      setPreparingCompare(false);
+    }
   }
 
   async function openSession(sessionId: string) {
@@ -222,6 +266,7 @@ export default function CompetitorResearchPage({ params }: { params: Promise<{ s
               onLoadMore={() => runSearch((searchResult.page ?? 1) + 1, true)}
               onStartCompare={startCompare}
               loadingMore={loadingMore}
+              preparing={preparingCompare}
             />
           )}
         </div>

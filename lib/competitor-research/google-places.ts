@@ -46,11 +46,46 @@ function inferGenre(displayName: string): SalonGenre {
   return "hair";
 }
 
+// Google Placesの weekdayDescriptions（例:「月曜日: 10:00～19:00」「火曜日: 定休日」）から
+// 営業時間・定休日の目安テキストを組み立てる。曜日ごとに時間が違う場合は最頻値を営業時間として採用する。
+function parseOpeningHours(weekdayDescriptions?: string[]): { businessHours?: string; closedDays?: string } {
+  if (!weekdayDescriptions || weekdayDescriptions.length === 0) return {};
+
+  const closedDayNames: string[] = [];
+  const hoursCount = new Map<string, number>();
+
+  for (const line of weekdayDescriptions) {
+    const [dayPart, ...rest] = line.split(":");
+    const timePart = rest.join(":").trim();
+    if (!timePart) continue;
+    if (timePart.includes("定休日") || timePart.includes("休業")) {
+      closedDayNames.push(dayPart.trim());
+    } else {
+      hoursCount.set(timePart, (hoursCount.get(timePart) ?? 0) + 1);
+    }
+  }
+
+  let businessHours: string | undefined;
+  let maxCount = 0;
+  for (const [hours, count] of hoursCount) {
+    if (count > maxCount) {
+      maxCount = count;
+      businessHours = hours;
+    }
+  }
+
+  return {
+    businessHours,
+    closedDays: closedDayNames.length > 0 ? closedDayNames.join("・") : undefined,
+  };
+}
+
 function mapPlace(place: GooglePlace, apiKey: string): SalonBasic {
   const photoRef = place.photos?.[0]?.name;
   const imageUrl = photoRef
     ? `https://places.googleapis.com/v1/${photoRef}/media?maxWidthPx=400&key=${apiKey}`
     : undefined;
+  const { businessHours, closedDays } = parseOpeningHours(place.regularOpeningHours?.weekdayDescriptions);
 
   return {
     id: `gp_${place.id}`,
@@ -61,6 +96,8 @@ function mapPlace(place: GooglePlace, apiKey: string): SalonBasic {
     reviewCount: place.userRatingCount ?? 0,
     address: place.formattedAddress,
     phone: place.nationalPhoneNumber,
+    businessHours,
+    closedDays,
     website: place.websiteUri,
     imageUrl,
   };

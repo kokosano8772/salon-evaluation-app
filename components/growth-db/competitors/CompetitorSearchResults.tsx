@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronRight, Star } from "lucide-react";
+import { Check, ChevronRight, Globe, Loader2, Star } from "lucide-react";
 import { SalonBasic } from "@/lib/competitor-research/types";
 
 interface CompetitorSearchResultsProps {
@@ -13,6 +13,7 @@ interface CompetitorSearchResultsProps {
   onLoadMore: () => void;
   onStartCompare: () => void;
   loadingMore?: boolean;
+  preparing?: boolean;
 }
 
 const SOURCE_LABEL: Record<CompetitorSearchResultsProps["source"], string> = {
@@ -31,6 +32,7 @@ export default function CompetitorSearchResults({
   onLoadMore,
   onStartCompare,
   loadingMore,
+  preparing,
 }: CompetitorSearchResultsProps) {
   if (salons.length === 0) {
     return (
@@ -69,9 +71,20 @@ export default function CompetitorSearchResults({
               </div>
               <p className="text-xs text-gray-400 mb-2">{salon.area}</p>
               {salon.rating > 0 && (
-                <p className="text-xs text-amber-500 flex items-center gap-1">
+                <p className="text-xs text-amber-500 flex items-center gap-1 mb-1.5">
                   <Star size={11} fill="currentColor" strokeWidth={0} />
                   {salon.rating.toFixed(1)}（{salon.reviewCount}件）
+                </p>
+              )}
+              {salon.website ? (
+                <p className="text-[11px] text-emerald-600 flex items-center gap-1">
+                  <Globe size={10} strokeWidth={2} />
+                  サイトあり（詳細項目を自動推定できます）
+                </p>
+              ) : (
+                <p className="text-[11px] text-gray-400 flex items-center gap-1">
+                  <Globe size={10} strokeWidth={2} />
+                  サイトなし（手動入力のみ）
                 </p>
               )}
             </button>
@@ -96,15 +109,18 @@ export default function CompetitorSearchResults({
           <div className="card-luxury px-5 py-4 flex items-center gap-4 shadow-xl">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-charcoal-900">{selectedIds.size}社を選択中</p>
-              <p className="text-xs text-gray-400">比較を開始します</p>
+              <p className="text-xs text-gray-400">
+                {preparing ? "ウェブサイトから情報を推定中..." : "比較を開始します"}
+              </p>
             </div>
             <button
               onClick={onStartCompare}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white flex-shrink-0"
+              disabled={preparing}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white flex-shrink-0 disabled:opacity-60"
               style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
             >
-              比較開始
-              <ChevronRight size={16} />
+              {preparing ? <Loader2 size={16} className="animate-spin" /> : <ChevronRight size={16} />}
+              {preparing ? "準備中..." : "比較開始"}
             </button>
           </div>
         </div>

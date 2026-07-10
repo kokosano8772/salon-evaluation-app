@@ -18,6 +18,9 @@ export interface SalonBasic {
   website?: string;
   hotpepperUrl?: string;
   googleMapUrl?: string;
+  // 検索時点でGoogle Placesから取得できる場合のみ入る（比較開始時にattractionへ変換する）
+  businessHours?: string;
+  closedDays?: string;
 }
 
 export interface AttractionData {
