@@ -119,16 +119,13 @@ export default function CompetitorResearchPage({ params }: { params: Promise<{ s
             businessHours: s.businessHours,
           };
 
-          if (!s.website) {
-            return { ...s, attraction: baseAttraction, recruitment: baseRecruitment };
-          }
-
-          // ウェブサイトがあれば、Geminiに読ませて他の項目も推定で仮入力する
+          // Gemini + Google検索で、公式サイト・求人媒体・予約サイトなどから
+          // 他の項目も横断的に推定して仮入力する（ウェブサイトURLが無くても検索できる）
           try {
             const res = await fetch("/api/growth-db/competitor-extract", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name: s.name, url: s.website }),
+              body: JSON.stringify({ name: s.name, area: s.area, website: s.website }),
             });
             if (!res.ok) return { ...s, attraction: baseAttraction, recruitment: baseRecruitment };
             const extracted = await res.json();

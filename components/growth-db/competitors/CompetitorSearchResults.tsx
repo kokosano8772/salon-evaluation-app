@@ -79,12 +79,12 @@ export default function CompetitorSearchResults({
               {salon.website ? (
                 <p className="text-[11px] text-emerald-600 flex items-center gap-1">
                   <Globe size={10} strokeWidth={2} />
-                  サイトあり（詳細項目を自動推定できます）
+                  公式サイト確認済み（推定精度アップ）
                 </p>
               ) : (
                 <p className="text-[11px] text-gray-400 flex items-center gap-1">
                   <Globe size={10} strokeWidth={2} />
-                  サイトなし（手動入力のみ）
+                  公式サイト不明（AI検索で推定を試みます）
                 </p>
               )}
             </button>
@@ -110,7 +110,7 @@ export default function CompetitorSearchResults({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-charcoal-900">{selectedIds.size}社を選択中</p>
               <p className="text-xs text-gray-400">
-                {preparing ? "ウェブサイトから情報を推定中..." : "比較を開始します"}
+                {preparing ? "AI検索で情報を推定中..." : "比較を開始します"}
               </p>
             </div>
             <button
