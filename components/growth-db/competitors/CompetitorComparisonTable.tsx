@@ -326,9 +326,9 @@ export default function CompetitorComparisonTable({ salons, mode, cellData, onCe
     <div className="card-luxury overflow-hidden">
       <div className="overflow-x-auto">
         <table className="border-collapse w-max min-w-full">
-          <thead className="sticky top-0 z-30">
+          <thead>
             <tr>
-              <th className="sticky left-0 z-40 bg-gray-50 border-r border-b border-gray-100 px-4 py-3 text-left min-w-[140px]">
+              <th className="sticky left-0 z-10 bg-gray-50 border-r border-b border-gray-100 px-4 py-3 text-left min-w-[140px]">
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">項目</span>
               </th>
               {salons.map((salon) => (
