@@ -12,9 +12,9 @@ interface ReportStatCardProps {
 export default function ReportStatCard({ title, subtitle, unit, value, children }: ReportStatCardProps) {
   return (
     <div className="bg-white rounded-2xl p-8 h-full">
-      <p className="text-2xl font-bold text-charcoal-900 text-center">{title}</p>
+      <p className="text-3xl font-bold text-charcoal-900 text-center">{title}</p>
       <p className="text-base text-gray-400 mt-1 text-center">{subtitle}</p>
-      <div className="text-center mt-8 mb-6">
+      <div className="text-center mt-14 mb-6">
         <span className="text-6xl font-extrabold" style={{ color: AD_REPORT_ACCENT_COLOR }}>
           {value}
         </span>
