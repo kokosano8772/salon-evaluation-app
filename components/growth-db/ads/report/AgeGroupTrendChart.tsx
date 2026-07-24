@@ -60,6 +60,7 @@ export default function AgeGroupTrendChart({ data }: { data: AgeGroupTrendPoint[
             strokeWidth={1}
             radius={i === AGE_GROUPS.length - 1 ? [4, 4, 0, 0] : undefined}
             maxBarSize={48}
+            isAnimationActive={false}
           />
         ))}
       </BarChart>

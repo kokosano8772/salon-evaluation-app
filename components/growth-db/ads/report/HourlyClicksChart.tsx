@@ -17,6 +17,28 @@ function stoppedRanges(slots: HourlyClicks[]): { from: string; to: string }[] {
   return ranges;
 }
 
+// ReferenceAreaのlabel省略記法は内部でdy付きtextを使いhtml2canvasで消えるため、
+// 自前のcontentレンダラーに差し替える。
+interface StoppedLabelProps {
+  viewBox?: { x?: number; y?: number; width?: number };
+}
+
+function renderStoppedLabel({ viewBox }: StoppedLabelProps) {
+  if (!viewBox || viewBox.x === undefined || viewBox.y === undefined || viewBox.width === undefined) return null;
+  return (
+    <text
+      x={viewBox.x + viewBox.width / 2}
+      y={viewBox.y + 14}
+      textAnchor="middle"
+      fontSize={10}
+      fontFamily="'Noto Sans JP', sans-serif"
+      fill="#fff"
+    >
+      配信停止
+    </text>
+  );
+}
+
 interface TooltipPayload {
   payload: HourlyClicks;
 }
@@ -66,7 +88,7 @@ export default function HourlyClicksChart({ data }: { data: HourlyClicks[] }) {
             x2={r.to}
             fill="#8a8a8a"
             fillOpacity={0.35}
-            label={{ value: "配信停止", position: "insideTop", fontSize: 10, fill: "#fff" }}
+            label={renderStoppedLabel}
           />
         ))}
         <Line
@@ -76,6 +98,7 @@ export default function HourlyClicksChart({ data }: { data: HourlyClicks[] }) {
           strokeWidth={2}
           dot={{ r: 3, fill: AD_REPORT_ACCENT_COLOR, strokeWidth: 0 }}
           activeDot={{ r: 5 }}
+          isAnimationActive={false}
         />
       </LineChart>
     </ResponsiveContainer>

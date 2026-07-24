@@ -88,6 +88,7 @@ export default function GenderDonutChart({ value }: { value: GenderBreakdownValu
           strokeWidth={0}
           label={renderOuterLabel}
           labelLine={{ stroke: "#d4d4d4" }}
+          isAnimationActive={false}
         >
           {data.map((d) => (
             <Cell key={d.key} fill={GENDER_CHART_COLOR[d.key]} />

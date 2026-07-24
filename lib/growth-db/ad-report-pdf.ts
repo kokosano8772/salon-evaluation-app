@@ -11,6 +11,10 @@ export async function exportAdReportToPdf(container: HTMLElement, fileName: stri
   const pages = Array.from(container.querySelectorAll<HTMLElement>(".ad-report-page"));
   if (pages.length === 0) return;
 
+  // グラフのラベル等、描画が確定するまで最低限のペイントを待つ（onclone直前の
+  // 二重rAFで、直前のReact再描画がブラウザに反映されるのを保証する）。
+  await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
   let pdf: InstanceType<typeof jsPDF> | null = null;
 
   for (const page of pages) {

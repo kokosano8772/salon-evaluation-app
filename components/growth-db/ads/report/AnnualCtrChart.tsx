@@ -51,6 +51,7 @@ export default function AnnualCtrChart({ data }: { data: CtrTrendPoint[] }) {
           strokeWidth={2}
           dot={{ r: 3, fill: AD_REPORT_ACCENT_COLOR, strokeWidth: 0 }}
           activeDot={{ r: 5 }}
+          isAnimationActive={false}
         />
       </LineChart>
     </ResponsiveContainer>
