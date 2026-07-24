@@ -62,7 +62,7 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-8 flex-1 content-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-8 flex-1 content-center items-center">
           <ReportStatCard title="何回表示されたか" subtitle="（インプレッション数）" unit="回" value={formatNumber(report.impressions)}>
             <GenderDonutChart value={gender.impressions} />
           </ReportStatCard>
@@ -72,7 +72,7 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
           <ReportStatCard title="クリックされた数" subtitle="（クリック数）" unit="回" value={formatNumber(report.clicks)}>
             <GenderDonutChart value={gender.clicks} />
           </ReportStatCard>
-          <div className="bg-white rounded-2xl p-8 h-full flex flex-col justify-center">
+          <div className="bg-white rounded-2xl p-8">
             <p className="text-2xl font-bold text-charcoal-900 text-center">
               どれくらいの確率で
               <br />
