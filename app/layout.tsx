@@ -58,7 +58,7 @@ export default function RootLayout({
         {children}
 
         {/* Desktop floating CTAs — only shown when sidebar space exists (≥640px) */}
-        <div className="hidden sm:flex fixed right-6 top-1/2 -translate-y-1/2 flex-col gap-3 z-50">
+        <div className="hidden sm:flex print:hidden fixed right-6 top-1/2 -translate-y-1/2 flex-col gap-3 z-50">
           {/* LINE */}
           <a
             href="https://page.line.me/470bhtcb?oat_content=url&openQrModal=true"
