@@ -82,8 +82,8 @@ export default function GenderDonutChart({ value }: { value: GenderBreakdownValu
           cy="50%"
           startAngle={90}
           endAngle={-270}
-          innerRadius={40}
-          outerRadius={98}
+          innerRadius={56}
+          outerRadius={94}
           paddingAngle={1}
           strokeWidth={0}
           label={renderOuterLabel}
