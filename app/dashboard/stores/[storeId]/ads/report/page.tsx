@@ -1,13 +1,14 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Printer } from "lucide-react";
+import { ChevronDown, Download, Loader2, Printer } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AdReportDocument from "@/components/growth-db/ads/report/AdReportDocument";
 import { useStore } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
 import { buildAgeGroupTrend, buildCtrTrend } from "@/lib/growth-db/ad-report-trend";
+import { exportAdReportToPdf } from "@/lib/growth-db/ad-report-pdf";
 import { currentYearMonth, formatMonthLabel } from "@/lib/growth-db/format";
 import { AD_PLATFORM_LABEL, AdPlatform } from "@/lib/growth-db/ad-report-types";
 
@@ -28,6 +29,8 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   const [platform, setPlatform] = useState<AdPlatform>(
     initial.platform === "google" || initial.platform === "meta" ? initial.platform : "meta"
   );
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const documentRef = useRef<HTMLDivElement>(null);
 
   const platformReports = useMemo(
     () => adReports.filter((r) => r.platform === platform).sort((a, b) => (a.yearMonth < b.yearMonth ? -1 : 1)),
@@ -48,6 +51,16 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   const report = platformReports.find((r) => r.yearMonth === selectedMonth) ?? null;
   const ctrTrend = report ? buildCtrTrend(adReports, platform, selectedMonth) : [];
   const ageGroupTrend = report ? buildAgeGroupTrend(adReports, platform, selectedMonth) : [];
+
+  const handleDownloadPdf = async () => {
+    if (!documentRef.current || pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      await exportAdReportToPdf(documentRef.current, `${store.name}_${AD_PLATFORM_LABEL[platform]}_${selectedMonth}.pdf`);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -89,7 +102,15 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
                 className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
               >
                 <Printer size={15} strokeWidth={2} />
-                印刷 / PDF保存
+                印刷
+              </button>
+              <button
+                onClick={handleDownloadPdf}
+                disabled={pdfLoading || !report}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {pdfLoading ? <Loader2 size={15} strokeWidth={2} className="animate-spin" /> : <Download size={15} strokeWidth={2} />}
+                PDFで保存
               </button>
               <Link
                 href={`/dashboard/stores/${store.id}/ads`}
@@ -120,7 +141,9 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
       </div>
 
       {report ? (
-        <AdReportDocument storeName={store.name} report={report} ctrTrend={ctrTrend} ageGroupTrend={ageGroupTrend} />
+        <div ref={documentRef}>
+          <AdReportDocument storeName={store.name} report={report} ctrTrend={ctrTrend} ageGroupTrend={ageGroupTrend} />
+        </div>
       ) : (
         <div className="card-luxury p-12 text-center text-sm text-gray-400">
           {formatMonthLabel(selectedMonth)}の{AD_PLATFORM_LABEL[platform]}データがまだ保存されていません。
