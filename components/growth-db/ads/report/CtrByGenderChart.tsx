@@ -38,7 +38,7 @@ export default function CtrByGenderChart({ value }: { value: GenderBreakdownValu
   const max = Math.max(...data.map((d) => d.ctr), 0.1);
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={300}>
       <BarChart data={data} margin={{ top: 24, right: 8, left: 0, bottom: 0 }}>
         <XAxis
           dataKey="name"
