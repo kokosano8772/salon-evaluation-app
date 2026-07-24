@@ -3,7 +3,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Database } from "@/lib/supabase/database.types";
-import { AdCampaignMetrics, AdPlatform, AdReport } from "./ad-report-types";
+import { AdCampaignMetrics, AdPlatform, AdReport, AgeGroupClicks, GenderBreakdown, HourlyClicks } from "./ad-report-types";
 
 type AdReportRow = Database["public"]["Tables"]["ad_reports"]["Row"];
 
@@ -25,6 +25,10 @@ export function mapAdReportRow(row: AdReportRow): AdReport {
     reach: row.reach ?? undefined,
     frequency: row.frequency ?? undefined,
     campaigns: (row.campaigns as AdCampaignMetrics[]) ?? [],
+    genderBreakdown: (row.gender_breakdown as GenderBreakdown | null) ?? undefined,
+    hourlyClicks: (row.hourly_clicks as HourlyClicks[] | null) ?? undefined,
+    ageGroupClicks: (row.age_group_clicks as AgeGroupClicks[] | null) ?? undefined,
+    targetAgeRange: row.target_age_range,
     aiResult: row.ai_result,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -88,6 +92,10 @@ export async function upsertAdReport(
   if (patch.reach !== undefined) row.reach = patch.reach ?? null;
   if (patch.frequency !== undefined) row.frequency = patch.frequency ?? null;
   if (patch.campaigns !== undefined) row.campaigns = patch.campaigns;
+  if (patch.genderBreakdown !== undefined) row.gender_breakdown = patch.genderBreakdown;
+  if (patch.hourlyClicks !== undefined) row.hourly_clicks = patch.hourlyClicks;
+  if (patch.ageGroupClicks !== undefined) row.age_group_clicks = patch.ageGroupClicks;
+  if (patch.targetAgeRange !== undefined) row.target_age_range = patch.targetAgeRange;
   if (patch.aiResult !== undefined) row.ai_result = patch.aiResult;
 
   const { data, error } = await supabase

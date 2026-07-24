@@ -18,6 +18,37 @@ export interface AdCampaignMetrics {
   cvr: number; // %
 }
 
+// 性別ごとの内訳。レポートの円グラフ・棒グラフに使う（男性/女性/その他）。
+export interface GenderBreakdownValue {
+  male: number;
+  female: number;
+  other: number;
+}
+
+export interface GenderBreakdown {
+  impressions: GenderBreakdownValue;
+  reach: GenderBreakdownValue;
+  clicks: GenderBreakdownValue;
+  ctr: GenderBreakdownValue; // %
+}
+
+export const AGE_GROUPS = ["20-24", "25-34", "35-44", "45-54", "55-64", "65+"] as const;
+export type AgeGroup = (typeof AGE_GROUPS)[number];
+
+export interface AgeGroupClicks {
+  ageGroup: AgeGroup;
+  clicks: number;
+}
+
+// 24時間分の時間帯別クリック数（"0-1"〜"23-24"）
+export const HOURLY_SLOTS = Array.from({ length: 24 }, (_, h) => `${h}-${h + 1}`);
+
+export interface HourlyClicks {
+  hour: string; // "0-1" 〜 "23-24"
+  clicks: number;
+  stopped?: boolean; // 配信停止していた時間帯
+}
+
 export interface AdReport {
   id: string;
   storeId: string;
@@ -35,6 +66,10 @@ export interface AdReport {
   reach?: number; // Metaのみ
   frequency?: number; // Metaのみ
   campaigns: AdCampaignMetrics[];
+  genderBreakdown?: GenderBreakdown;
+  hourlyClicks?: HourlyClicks[];
+  ageGroupClicks?: AgeGroupClicks[];
+  targetAgeRange: string; // 例: "20-39歳"
   aiResult: string | null;
   createdAt: string;
   updatedAt: string;

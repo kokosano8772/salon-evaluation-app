@@ -117,6 +117,10 @@ export interface Database {
           reach: number | null;
           frequency: number | null;
           campaigns: unknown;
+          gender_breakdown: unknown | null;
+          hourly_clicks: unknown | null;
+          age_group_clicks: unknown | null;
+          target_age_range: string;
           ai_result: string | null;
           created_at: string;
           updated_at: string;

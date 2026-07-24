@@ -25,3 +25,6 @@ yarn-error.log*
 
 # typescript
 tsconfig.tsbuildinfo
+
+# reference materials (not for repo)
+report/

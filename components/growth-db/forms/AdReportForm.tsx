@@ -3,7 +3,18 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2, Plus, Trash2 } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
-import { AD_PLATFORM_LABEL, AdCampaignMetrics, AdPlatform, AdReport } from "@/lib/growth-db/ad-report-types";
+import {
+  AD_PLATFORM_LABEL,
+  AGE_GROUPS,
+  AdCampaignMetrics,
+  AdPlatform,
+  AdReport,
+  AgeGroupClicks,
+  GenderBreakdown,
+  GenderBreakdownValue,
+  HOURLY_SLOTS,
+  HourlyClicks,
+} from "@/lib/growth-db/ad-report-types";
 import FormSection from "./FormSection";
 import TextField from "./TextField";
 import NumberField from "./NumberField";
@@ -18,7 +29,52 @@ interface AdReportFormProps {
 
 type SaveState = "idle" | "saving" | "saved";
 
-function emptyDraft(): Omit<AdReport, "id" | "storeId" | "yearMonth" | "platform" | "createdAt" | "updatedAt" | "aiResult"> {
+type AdReportDraft = Omit<
+  AdReport,
+  | "id"
+  | "storeId"
+  | "yearMonth"
+  | "platform"
+  | "createdAt"
+  | "updatedAt"
+  | "aiResult"
+  | "genderBreakdown"
+  | "hourlyClicks"
+  | "ageGroupClicks"
+> & {
+  genderBreakdown: GenderBreakdown;
+  hourlyClicks: HourlyClicks[];
+  ageGroupClicks: AgeGroupClicks[];
+};
+
+const GENDER_LABEL: Record<keyof GenderBreakdownValue, string> = {
+  male: "男性",
+  female: "女性",
+  other: "その他",
+};
+
+function emptyGenderValue(): GenderBreakdownValue {
+  return { male: 0, female: 0, other: 0 };
+}
+
+function emptyGenderBreakdown(): GenderBreakdown {
+  return {
+    impressions: emptyGenderValue(),
+    reach: emptyGenderValue(),
+    clicks: emptyGenderValue(),
+    ctr: emptyGenderValue(),
+  };
+}
+
+function emptyHourlyClicks(): HourlyClicks[] {
+  return HOURLY_SLOTS.map((hour) => ({ hour, clicks: 0, stopped: false }));
+}
+
+function emptyAgeGroupClicks(): AgeGroupClicks[] {
+  return AGE_GROUPS.map((ageGroup) => ({ ageGroup, clicks: 0 }));
+}
+
+function emptyDraft(): AdReportDraft {
   return {
     accountId: "",
     spend: 0,
@@ -32,6 +88,10 @@ function emptyDraft(): Omit<AdReport, "id" | "storeId" | "yearMonth" | "platform
     reach: undefined,
     frequency: undefined,
     campaigns: [],
+    genderBreakdown: emptyGenderBreakdown(),
+    hourlyClicks: emptyHourlyClicks(),
+    ageGroupClicks: emptyAgeGroupClicks(),
+    targetAgeRange: "",
   };
 }
 
@@ -51,7 +111,7 @@ function emptyCampaign(): AdCampaignMetrics {
 }
 
 export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: AdReportFormProps) {
-  const [draft, setDraft] = useState<ReturnType<typeof emptyDraft> | null>(null);
+  const [draft, setDraft] = useState<AdReportDraft | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
   useEffect(() => {
@@ -60,8 +120,42 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
     repo.getAdReport(storeId, yearMonth, platform).then((existing) => {
       if (cancelled) return;
       if (existing) {
-        const { accountId, spend, impressions, clicks, ctr, cpc, conversions, cpa, cvr, reach, frequency, campaigns } = existing;
-        setDraft({ accountId, spend, impressions, clicks, ctr, cpc, conversions, cpa, cvr, reach, frequency, campaigns });
+        const {
+          accountId,
+          spend,
+          impressions,
+          clicks,
+          ctr,
+          cpc,
+          conversions,
+          cpa,
+          cvr,
+          reach,
+          frequency,
+          campaigns,
+          genderBreakdown,
+          hourlyClicks,
+          ageGroupClicks,
+          targetAgeRange,
+        } = existing;
+        setDraft({
+          accountId,
+          spend,
+          impressions,
+          clicks,
+          ctr,
+          cpc,
+          conversions,
+          cpa,
+          cvr,
+          reach,
+          frequency,
+          campaigns,
+          genderBreakdown: genderBreakdown ?? emptyGenderBreakdown(),
+          hourlyClicks: hourlyClicks && hourlyClicks.length === HOURLY_SLOTS.length ? hourlyClicks : emptyHourlyClicks(),
+          ageGroupClicks: ageGroupClicks && ageGroupClicks.length === AGE_GROUPS.length ? ageGroupClicks : emptyAgeGroupClicks(),
+          targetAgeRange: targetAgeRange ?? "",
+        });
       } else {
         setDraft(emptyDraft());
       }
@@ -75,7 +169,7 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
     return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
   }
 
-  const patch = <K extends keyof typeof draft>(key: K, value: (typeof draft)[K]) =>
+  const patch = <K extends keyof AdReportDraft>(key: K, value: AdReportDraft[K]) =>
     setDraft((prev) => (prev ? { ...prev, [key]: value } : prev));
 
   const patchCampaign = (id: string, key: keyof AdCampaignMetrics, value: string | number) => {
@@ -89,6 +183,40 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
   const addCampaign = () => patch("campaigns", [...draft.campaigns, emptyCampaign()]);
   const removeCampaign = (id: string) => patch("campaigns", draft.campaigns.filter((c) => c.id !== id));
 
+  const patchGender = (
+    metric: keyof GenderBreakdown,
+    gender: keyof GenderBreakdownValue,
+    value: number
+  ) => {
+    setDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            genderBreakdown: {
+              ...prev.genderBreakdown,
+              [metric]: { ...prev.genderBreakdown[metric], [gender]: value },
+            },
+          }
+        : prev
+    );
+  };
+
+  const patchHourly = (index: number, key: keyof HourlyClicks, value: number | boolean) => {
+    setDraft((prev) =>
+      prev
+        ? { ...prev, hourlyClicks: prev.hourlyClicks.map((h, i) => (i === index ? { ...h, [key]: value } : h)) }
+        : prev
+    );
+  };
+
+  const patchAgeGroup = (index: number, value: number) => {
+    setDraft((prev) =>
+      prev
+        ? { ...prev, ageGroupClicks: prev.ageGroupClicks.map((a, i) => (i === index ? { ...a, clicks: value } : a)) }
+        : prev
+    );
+  };
+
   const handleSave = async () => {
     setSaveState("saving");
     await repo.upsertAdReport(storeId, yearMonth, platform, draft);
@@ -101,6 +229,7 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
     <div className="space-y-6 pb-24">
       <FormSection title={`${AD_PLATFORM_LABEL[platform]} - アカウント全体`} description="対象期間の合計値を入力してください">
         <TextField label="アカウントID" value={draft.accountId} onChange={(v) => patch("accountId", v)} placeholder="例: 123-456-7890" />
+        <TextField label="ターゲット年齢層" value={draft.targetAgeRange} onChange={(v) => patch("targetAgeRange", v)} placeholder="例: 20-39歳" />
         <NumberField label="広告費" value={draft.spend} onChange={(v) => patch("spend", v)} suffix="円" />
         <NumberField label="インプレッション数" value={draft.impressions} onChange={(v) => patch("impressions", v)} />
         <NumberField label="クリック数" value={draft.clicks} onChange={(v) => patch("clicks", v)} />
@@ -163,6 +292,78 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
             ))}
           </div>
         )}
+      </div>
+
+      <div className="card-luxury p-6">
+        <p className="text-sm font-semibold text-charcoal-900 mb-1">性別別の内訳</p>
+        <p className="text-xs text-gray-400 mb-4">男性・女性・その他ごとの実績を入力してください</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {(Object.keys(GENDER_LABEL) as (keyof GenderBreakdownValue)[]).map((gender) => (
+            <div key={gender}>
+              <p className="text-xs font-semibold text-gray-400 tracking-wide mb-3">{GENDER_LABEL[gender]}</p>
+              <div className="space-y-4">
+                <NumberField
+                  label="インプレッション数"
+                  value={draft.genderBreakdown.impressions[gender]}
+                  onChange={(v) => patchGender("impressions", gender, v)}
+                />
+                {platform === "meta" && (
+                  <NumberField
+                    label="リーチ"
+                    value={draft.genderBreakdown.reach[gender]}
+                    onChange={(v) => patchGender("reach", gender, v)}
+                  />
+                )}
+                <NumberField
+                  label="クリック数"
+                  value={draft.genderBreakdown.clicks[gender]}
+                  onChange={(v) => patchGender("clicks", gender, v)}
+                />
+                <PercentField
+                  label="CTR"
+                  value={draft.genderBreakdown.ctr[gender]}
+                  onChange={(v) => patchGender("ctr", gender, v)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card-luxury p-6">
+        <p className="text-sm font-semibold text-charcoal-900 mb-1">時間帯別クリック数</p>
+        <p className="text-xs text-gray-400 mb-4">0時〜24時の時間帯ごとのクリック数と配信停止の有無を入力してください</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {draft.hourlyClicks.map((slot, i) => (
+            <div key={slot.hour} className="rounded-xl border border-gray-100 p-3">
+              <p className="text-xs font-semibold text-gray-400 mb-2">{slot.hour}時</p>
+              <NumberField label="クリック数" value={slot.clicks} onChange={(v) => patchHourly(i, "clicks", v)} />
+              <label className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
+                <input
+                  type="checkbox"
+                  checked={slot.stopped ?? false}
+                  onChange={(e) => patchHourly(i, "stopped", e.target.checked)}
+                />
+                配信停止
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card-luxury p-6">
+        <p className="text-sm font-semibold text-charcoal-900 mb-1">年齢層別クリック数</p>
+        <p className="text-xs text-gray-400 mb-4">年齢層ごとのクリック数を入力してください</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {draft.ageGroupClicks.map((entry, i) => (
+            <NumberField
+              key={entry.ageGroup}
+              label={`${entry.ageGroup}歳`}
+              value={entry.clicks}
+              onChange={(v) => patchAgeGroup(i, v)}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 md:left-64 z-40 bg-white/90 backdrop-blur border-t border-gray-100 px-5 md:px-10 py-4 flex justify-end">
