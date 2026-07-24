@@ -14,6 +14,7 @@ import AIImprovementSuggestions from "@/components/growth-db/store-detail/AIImpr
 import LinkedDiagnosisCard from "@/components/growth-db/store-detail/LinkedDiagnosisCard";
 import PeerComparisonSection from "@/components/growth-db/store-detail/PeerComparisonSection";
 import CompetitorResearchCard from "@/components/growth-db/store-detail/CompetitorResearchCard";
+import AdReportCard from "@/components/growth-db/store-detail/AdReportCard";
 import GrowthRadarChart from "@/components/growth-db/charts/GrowthRadarChart";
 import CategoryScoreBars from "@/components/growth-db/charts/CategoryScoreBars";
 import MonthlyTrendChart, { TrendPoint } from "@/components/growth-db/charts/MonthlyTrendChart";
@@ -173,6 +174,8 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
           <PeerComparisonSection storeId={store.id} />
 
           <CompetitorResearchCard storeId={store.id} />
+
+          <AdReportCard storeId={store.id} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <YoyComparisonCard

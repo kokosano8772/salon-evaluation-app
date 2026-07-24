@@ -99,6 +99,36 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["competitor_research_sessions"]["Row"]>;
         Relationships: [];
       };
+      ad_reports: {
+        Row: {
+          id: string;
+          store_id: string;
+          year_month: string;
+          platform: "google" | "meta";
+          account_id: string;
+          spend: number;
+          impressions: number;
+          clicks: number;
+          ctr: number;
+          cpc: number;
+          conversions: number;
+          cpa: number;
+          cvr: number;
+          reach: number | null;
+          frequency: number | null;
+          campaigns: unknown;
+          ai_result: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["ad_reports"]["Row"], "id" | "created_at" | "updated_at">> & {
+          store_id: string;
+          year_month: string;
+          platform: "google" | "meta";
+        };
+        Update: Partial<Database["public"]["Tables"]["ad_reports"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
