@@ -28,7 +28,7 @@ function SectionHeader({ children, extra }: { children: ReactNode; extra?: React
   return (
     <div className="flex items-center justify-between mb-4">
       <div
-        className="inline-block px-4 py-2 rounded-lg font-bold text-charcoal-900"
+        className="inline-flex items-center leading-none px-4 py-3 rounded-lg font-bold text-charcoal-900"
         style={{ background: AD_REPORT_SECTION_HEADER_BG }}
       >
         {children}
