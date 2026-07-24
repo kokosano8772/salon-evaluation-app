@@ -27,4 +27,4 @@ yarn-error.log*
 tsconfig.tsbuildinfo
 
 # reference materials (not for repo)
-report/
+/report/

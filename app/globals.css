@@ -98,3 +98,19 @@ input[type="number"] {
   border: 1px solid rgba(196, 120, 138, 0.3) !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
 }
+
+/* 広告レポート印刷（1ページ目・2ページ目で改ページ） */
+@media print {
+  .ad-report-print-hide,
+  aside,
+  nav {
+    display: none !important;
+  }
+  .ad-report-page {
+    border-radius: 0 !important;
+    page-break-after: always;
+  }
+  .ad-report-page:last-child {
+    page-break-after: auto;
+  }
+}

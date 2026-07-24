@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, FileText, Plus } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AdReportForm from "@/components/growth-db/forms/AdReportForm";
 import AdReportAnalysisSummary from "@/components/growth-db/ads/AdReportAnalysisSummary";
@@ -77,6 +77,14 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
               <Plus size={15} strokeWidth={2} />
               {formatMonthLabel(suggestedNextMonth)}を追加
             </button>
+            <Link
+              href={`/dashboard/stores/${store.id}/ads/report?month=${selectedMonth}&platform=${platform}`}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-white"
+              style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+            >
+              <FileText size={15} strokeWidth={2} />
+              レポートを見る
+            </Link>
             <Link
               href={`/dashboard/stores/${store.id}`}
               className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
