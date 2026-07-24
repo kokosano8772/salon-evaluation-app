@@ -157,6 +157,7 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
                   <NumberField label="CPC" value={campaign.cpc} onChange={(v) => patchCampaign(campaign.id, "cpc", v)} suffix="円" />
                   <NumberField label="コンバージョン数" value={campaign.conversions} onChange={(v) => patchCampaign(campaign.id, "conversions", v)} />
                   <NumberField label="CPA" value={campaign.cpa} onChange={(v) => patchCampaign(campaign.id, "cpa", v)} suffix="円" />
+                  <PercentField label="コンバージョン率" value={campaign.cvr} onChange={(v) => patchCampaign(campaign.id, "cvr", v)} />
                 </div>
               </div>
             ))}
