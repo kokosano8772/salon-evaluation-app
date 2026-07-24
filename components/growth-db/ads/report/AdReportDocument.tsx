@@ -49,7 +49,7 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
   return (
     <div className="space-y-8">
       {/* ページ1（横幅900pxで固定。高さはコンテンツに任せ、無理な引き伸ばしはしない） */}
-      <div className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto" style={{ background: "#F3F2EF" }}>
+      <div className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1400px] max-w-none mx-auto" style={{ background: "#F3F2EF" }}>
         <div>
           <p className="text-right text-xs font-bold tracking-widest text-gray-400 mb-3">KOKODESIGN</p>
           <h1 className="text-3xl font-extrabold text-center text-charcoal-900">Instagram広告成果報告レポート</h1>
@@ -94,7 +94,7 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
       </div>
 
       {/* ページ2（同じく横幅900pxで固定、高さはコンテンツに任せる） */}
-      <div className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto" style={{ background: "#F3F2EF" }}>
+      <div className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1400px] max-w-none mx-auto" style={{ background: "#F3F2EF" }}>
         <p className="text-xs font-bold tracking-widest text-gray-400 mb-4">KOKODESIGN</p>
 
         <div className="space-y-6">
