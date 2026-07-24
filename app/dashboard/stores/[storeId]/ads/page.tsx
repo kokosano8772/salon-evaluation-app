@@ -5,7 +5,9 @@ import Link from "next/link";
 import { ChevronDown, Plus } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AdReportForm from "@/components/growth-db/forms/AdReportForm";
+import AdReportAnalysisSummary from "@/components/growth-db/ads/AdReportAnalysisSummary";
 import { useStore, useMonthlyMetrics } from "@/lib/growth-db/hooks";
+import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
 import { currentYearMonth, formatMonthLabel, shiftYearMonth } from "@/lib/growth-db/format";
 import { AD_PLATFORM_LABEL, AdPlatform } from "@/lib/growth-db/ad-report-types";
 
@@ -15,6 +17,7 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
   const { storeId } = use(params);
   const { store, loading: storeLoading } = useStore(storeId);
   const { data: history, loading: historyLoading } = useMonthlyMetrics(storeId);
+  const { items: adReports, refresh: refreshAdReports } = useAdReports(storeId);
 
   const [selectedMonth, setSelectedMonth] = useState<string | undefined>(undefined);
   const [platform, setPlatform] = useState<AdPlatform>("google");
@@ -98,7 +101,19 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
         ))}
       </div>
 
-      <AdReportForm key={`${selectedMonth}-${platform}`} storeId={store.id} yearMonth={selectedMonth} platform={platform} />
+      {(() => {
+        const currentReport = adReports.find((r) => r.yearMonth === selectedMonth && r.platform === platform);
+        if (!currentReport) return null;
+        return <AdReportAnalysisSummary report={currentReport} history={adReports} monthlyHistory={history} />;
+      })()}
+
+      <AdReportForm
+        key={`${selectedMonth}-${platform}`}
+        storeId={store.id}
+        yearMonth={selectedMonth}
+        platform={platform}
+        onSaved={refreshAdReports}
+      />
     </div>
   );
 }
