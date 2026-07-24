@@ -48,12 +48,8 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
 
   return (
     <div className="space-y-8">
-      {/* ページ1（元テンプレートは675×900pxの縦横比0.75固定キャンバス。
-          横幅900pxに合わせ、最低高さ1200px＝同じ縦横比を確保する） */}
-      <div
-        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1200px] max-w-none mx-auto flex flex-col"
-        style={{ background: "#F3F2EF" }}
-      >
+      {/* ページ1（横幅900pxで固定。高さはコンテンツに任せ、無理な引き伸ばしはしない） */}
+      <div className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto" style={{ background: "#F3F2EF" }}>
         <div>
           <p className="text-right text-xs font-bold tracking-widest text-gray-400 mb-3">KOKODESIGN</p>
           <h1 className="text-3xl font-extrabold text-center text-charcoal-900">Instagram広告成果報告レポート</h1>
@@ -62,7 +58,7 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-8 flex-1 content-center items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-8 items-start">
           <ReportStatCard title="何回表示されたか" subtitle="（インプレッション数）" unit="回" value={formatNumber(report.impressions)}>
             <GenderDonutChart value={gender.impressions} />
           </ReportStatCard>
@@ -97,14 +93,11 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
         <p className="text-center text-xs text-gray-400 mt-8">KOKODESIGN</p>
       </div>
 
-      {/* ページ2（同じく675×900px相当、最低高さ1200pxを確保） */}
-      <div
-        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1200px] max-w-none mx-auto flex flex-col"
-        style={{ background: "#F3F2EF" }}
-      >
+      {/* ページ2（同じく横幅900pxで固定、高さはコンテンツに任せる） */}
+      <div className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto" style={{ background: "#F3F2EF" }}>
         <p className="text-xs font-bold tracking-widest text-gray-400 mb-4">KOKODESIGN</p>
 
-        <div className="flex-1 flex flex-col justify-between gap-6">
+        <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6">
             <SectionHeader>時間帯別クリック数</SectionHeader>
             {hourly.length > 0 ? <HourlyClicksChart data={hourly} /> : <EmptyChartNote />}
