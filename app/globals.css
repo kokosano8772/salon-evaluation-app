@@ -101,13 +101,37 @@ input[type="number"] {
 
 /* 広告レポート印刷（1ページ目・2ページ目で改ページ） */
 @media print {
+  @page {
+    margin: 0;
+  }
+
+  /* ブラウザは印刷時デフォルトで背景色/背景画像を省略するため、
+     背景色だけでデザインしているレポートが真っ白になってしまう。
+     強制的に印刷させる。 */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
   .ad-report-print-hide,
   aside,
   nav {
     display: none !important;
   }
+
+  /* ダッシュボード共通レイアウトの余白・幅制限を印刷時は解除する */
+  body,
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    background: #fff !important;
+  }
+
   .ad-report-page {
     border-radius: 0 !important;
+    margin: 0 !important;
     page-break-after: always;
   }
   .ad-report-page:last-child {
