@@ -29,7 +29,7 @@ function renderOuterLabel({ cx, cy, midAngle, outerRadius, percent, name }: Oute
   if (!percent || percent <= 0 || cx === undefined || cy === undefined || midAngle === undefined || outerRadius === undefined) {
     return null;
   }
-  const radius = outerRadius + 40;
+  const radius = outerRadius + 20;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
   const anchor = x > cx ? "start" : x < cx ? "end" : "middle";
@@ -72,7 +72,7 @@ export default function GenderDonutChart({ value }: { value: GenderBreakdownValu
   }
 
   return (
-    <ResponsiveContainer width="100%" height={360}>
+    <ResponsiveContainer width="100%" height={340}>
       <PieChart>
         <Pie
           data={data}
@@ -82,8 +82,8 @@ export default function GenderDonutChart({ value }: { value: GenderBreakdownValu
           cy="50%"
           startAngle={90}
           endAngle={-270}
-          innerRadius={56}
-          outerRadius={94}
+          innerRadius={50}
+          outerRadius={84}
           paddingAngle={1}
           strokeWidth={0}
           label={renderOuterLabel}
