@@ -58,7 +58,7 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-16">
           <ReportStatCard title="何回表示されたか" subtitle="（インプレッション数）" unit="回" value={formatNumber(report.impressions)}>
             <GenderDonutChart value={gender.impressions} />
           </ReportStatCard>
