@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { AdReport, GenderBreakdown } from "@/lib/growth-db/ad-report-types";
+import { AD_REPORT_ACCENT_COLOR, AD_REPORT_SECTION_HEADER_BG, AdReport, GenderBreakdown } from "@/lib/growth-db/ad-report-types";
 import { AgeGroupTrendPoint, CtrTrendPoint } from "@/lib/growth-db/ad-report-trend";
 import { formatMonthLabel, formatNumber, formatPercent } from "@/lib/growth-db/format";
 import ReportStatCard from "./ReportStatCard";
@@ -27,7 +27,10 @@ interface AdReportDocumentProps {
 function SectionHeader({ children, extra }: { children: ReactNode; extra?: ReactNode }) {
   return (
     <div className="flex items-center justify-between mb-4">
-      <div className="inline-block px-4 py-2 rounded-lg font-bold text-charcoal-900" style={{ background: "#FBDDAF" }}>
+      <div
+        className="inline-block px-4 py-2 rounded-lg font-bold text-charcoal-900"
+        style={{ background: AD_REPORT_SECTION_HEADER_BG }}
+      >
         {children}
       </div>
       {extra}
@@ -47,9 +50,9 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
     <div className="space-y-8">
       {/* ページ1 */}
       <div className="ad-report-page rounded-3xl p-8" style={{ background: "#F3F2EF" }}>
-        <p className="text-right text-xs font-bold tracking-widest text-gray-400 mb-2">KOKODESIGN</p>
-        <h1 className="text-2xl font-extrabold text-center text-charcoal-900">Instagram広告成果報告レポート</h1>
-        <p className="text-center text-sm text-gray-500 mt-1">
+        <p className="text-right text-xs font-bold tracking-widest text-gray-400 mb-3">KOKODESIGN</p>
+        <h1 className="text-3xl font-extrabold text-center text-charcoal-900">Instagram広告成果報告レポート</h1>
+        <p className="text-center text-base text-charcoal-700 mt-1.5">
           {storeName} 様 - {formatMonthLabel(report.yearMonth)}分-
         </p>
 
@@ -63,20 +66,20 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
           <ReportStatCard title="クリックされた数" subtitle="（クリック数）" unit="回" value={formatNumber(report.clicks)}>
             <GenderDonutChart value={gender.clicks} />
           </ReportStatCard>
-          <div className="bg-white rounded-2xl p-6">
-            <p className="text-base font-bold text-charcoal-900">どれくらいの確率でクリックされたか</p>
-            <p className="text-xs text-gray-400 mt-0.5">（クリックされた数 ÷ 表示された数 ＝ CTR）</p>
-            <div className="flex items-baseline gap-1 mt-3">
-              <span className="text-2xl font-extrabold" style={{ color: "#D9A05B" }}>
+          <div className="bg-white rounded-2xl p-8">
+            <p className="text-lg font-bold text-charcoal-900">どれくらいの確率でクリックされたか</p>
+            <p className="text-sm text-gray-400 mt-0.5">（クリックされた数 ÷ 表示された数 ＝ CTR）</p>
+            <div className="text-center mt-4">
+              <span className="text-3xl font-extrabold" style={{ color: AD_REPORT_ACCENT_COLOR }}>
                 {formatPercent(report.ctr, 2)}
               </span>
             </div>
             {report.platform === "meta" && (
-              <p className="text-xs font-semibold mt-1" style={{ color: "#D9A05B" }}>
+              <p className="text-xs font-semibold text-center mt-1" style={{ color: AD_REPORT_ACCENT_COLOR }}>
                 他社の平均 0.3〜0.5%
               </p>
             )}
-            <div className="mt-2">
+            <div className="mt-3">
               <CtrByGenderChart value={gender.ctr} />
             </div>
           </div>
@@ -108,7 +111,15 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
         <div className="bg-white rounded-2xl p-6">
           <SectionHeader>運用状況とご提案</SectionHeader>
           {report.aiResult ? (
-            <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">{report.aiResult}</p>
+            <div className="flex gap-4">
+              <div
+                className="shrink-0 w-16 h-16 rounded-xl flex items-center justify-center text-white text-sm font-bold"
+                style={{ background: AD_REPORT_ACCENT_COLOR }}
+              >
+                提案
+              </div>
+              <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">{report.aiResult}</p>
+            </div>
           ) : (
             <p className="text-sm text-gray-300 py-6 text-center">AI分析は準備中です（Phase 4で対応予定）</p>
           )}

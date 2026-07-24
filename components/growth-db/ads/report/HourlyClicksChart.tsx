@@ -1,7 +1,7 @@
 "use client";
 
 import { CartesianGrid, Line, LineChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { HourlyClicks } from "@/lib/growth-db/ad-report-types";
+import { AD_REPORT_ACCENT_COLOR, HourlyClicks } from "@/lib/growth-db/ad-report-types";
 
 function stoppedRanges(slots: HourlyClicks[]): { from: string; to: string }[] {
   const ranges: { from: string; to: string }[] = [];
@@ -28,7 +28,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
       <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-lg">
         <p className="font-semibold text-sm text-charcoal-900">{p.hour}時</p>
         <p className="text-gray-500 text-xs mt-0.5">
-          クリック数 <span className="font-semibold" style={{ color: "#D9A05B" }}>{p.clicks}</span> 回
+          クリック数 <span className="font-semibold" style={{ color: AD_REPORT_ACCENT_COLOR }}>{p.clicks}</span> 回
           {p.stopped ? "（配信停止）" : ""}
         </p>
       </div>
@@ -72,9 +72,9 @@ export default function HourlyClicksChart({ data }: { data: HourlyClicks[] }) {
         <Line
           type="monotone"
           dataKey="clicks"
-          stroke="#D9A05B"
+          stroke={AD_REPORT_ACCENT_COLOR}
           strokeWidth={2}
-          dot={{ r: 3, fill: "#D9A05B", strokeWidth: 0 }}
+          dot={{ r: 3, fill: AD_REPORT_ACCENT_COLOR, strokeWidth: 0 }}
           activeDot={{ r: 5 }}
         />
       </LineChart>

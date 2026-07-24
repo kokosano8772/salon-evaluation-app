@@ -1,6 +1,7 @@
 "use client";
 
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { AD_REPORT_ACCENT_COLOR } from "@/lib/growth-db/ad-report-types";
 import { CtrTrendPoint } from "@/lib/growth-db/ad-report-trend";
 import { formatMonthShortLabel } from "@/lib/growth-db/format";
 
@@ -15,7 +16,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
       <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-lg">
         <p className="font-semibold text-sm text-charcoal-900">{formatMonthShortLabel(p.yearMonth)}</p>
         <p className="text-gray-500 text-xs mt-0.5">
-          CTR <span className="font-semibold" style={{ color: "#D9A05B" }}>{p.ctr.toFixed(2)}</span> %
+          CTR <span className="font-semibold" style={{ color: AD_REPORT_ACCENT_COLOR }}>{p.ctr.toFixed(2)}</span> %
         </p>
       </div>
     );
@@ -46,9 +47,9 @@ export default function AnnualCtrChart({ data }: { data: CtrTrendPoint[] }) {
         <Line
           type="monotone"
           dataKey="ctr"
-          stroke="#D9A05B"
+          stroke={AD_REPORT_ACCENT_COLOR}
           strokeWidth={2}
-          dot={{ r: 3, fill: "#D9A05B", strokeWidth: 0 }}
+          dot={{ r: 3, fill: AD_REPORT_ACCENT_COLOR, strokeWidth: 0 }}
           activeDot={{ r: 5 }}
         />
       </LineChart>

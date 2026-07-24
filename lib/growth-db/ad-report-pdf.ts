@@ -19,6 +19,15 @@ export async function exportAdReportToPdf(container: HTMLElement, fileName: stri
       useCORS: true,
       backgroundColor: "#F3F2EF",
       logging: false,
+      // ページ要素の実サイズ（スクロール外の部分も含む）のみをキャプチャする。
+      // 省略すると現在の表示ビューポート基準になり、右側が切れたり
+      // 余分な余白まで含めてキャプチャされたりする。
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth: page.scrollWidth,
+      windowHeight: page.scrollHeight,
+      width: page.scrollWidth,
+      height: page.scrollHeight,
     });
 
     const pdfWidth = 794; // A4相当のpx幅（96dpi）
@@ -35,7 +44,7 @@ export async function exportAdReportToPdf(container: HTMLElement, fileName: stri
       pdf.addPage([pdfWidth, pdfHeight], "portrait");
     }
 
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, pdfWidth, pdfHeight);
   }
 
   pdf?.save(fileName);

@@ -82,17 +82,22 @@ export const AD_PLATFORM_LABEL: Record<AdPlatform, string> = {
 
 // レポート画面（性別ドーナツ・年齢層別スタック棒グラフ）で使う固定配色。
 // カテゴリカルな配色は毎回同じ意味（同じ性別・同じ年齢層）に固定し、循環させない。
+// 実物のInstagram広告レポートPDFに合わせた明るいパステル配色（くすんだ色は使わない）。
 export const GENDER_CHART_COLOR: Record<keyof GenderBreakdownValue, string> = {
-  male: "#7C9EB5",
-  female: "#C4788A",
-  other: "#B7B7B0",
+  male: "#A7C7F2",
+  female: "#F6A8BA",
+  other: "#D8D6D2",
 };
 
 export const AGE_GROUP_CHART_COLOR: Record<AgeGroup, string> = {
-  "20-24": "#E08B6B",
-  "25-34": "#7C9EB5",
-  "35-44": "#9BC6A8",
-  "45-54": "#E3C874",
-  "55-64": "#D9A05B",
-  "65+": "#A85E74",
+  "20-24": "#F3A97E",
+  "25-34": "#A7C7F2",
+  "35-44": "#B8E0C2",
+  "45-54": "#F0DA8C",
+  "55-64": "#F5A83C",
+  "65+": "#E8794A",
 };
+
+// レポート全体の共通アクセント（大きな数値・折れ線グラフ・見出し帯など）
+export const AD_REPORT_ACCENT_COLOR = "#F5A83C";
+export const AD_REPORT_SECTION_HEADER_BG = "#FBCE8C";

@@ -8,19 +8,51 @@ const GENDER_LABEL: Record<keyof GenderBreakdownValue, string> = {
   female: "女性",
   other: "その他",
 };
-const GENDER_ORDER: (keyof GenderBreakdownValue)[] = ["male", "female", "other"];
+// 元テンプレートと同じ並び（12時位置から時計回りに その他→男性→女性）
+const GENDER_ORDER: (keyof GenderBreakdownValue)[] = ["other", "male", "female"];
+
+const RADIAN = Math.PI / 180;
+
+interface OuterLabelProps {
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  outerRadius?: number;
+  percent?: number;
+  name?: string;
+}
+
+function renderOuterLabel({ cx, cy, midAngle, outerRadius, percent, name }: OuterLabelProps) {
+  if (!percent || percent <= 0 || cx === undefined || cy === undefined || midAngle === undefined || outerRadius === undefined) {
+    return null;
+  }
+  const radius = outerRadius + 22;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} textAnchor={x > cx ? "start" : x < cx ? "end" : "middle"} dominantBaseline="central">
+      <tspan x={x} dy="-0.3em" fontSize={11} fontFamily="'Noto Sans JP', sans-serif" fill="#6b7280">
+        {name}
+      </tspan>
+      <tspan x={x} dy="1.2em" fontSize={12} fontWeight={700} fontFamily="'Noto Sans JP', sans-serif" fill="#1a1a1a">
+        {(percent * 100).toFixed(1)}%
+      </tspan>
+    </text>
+  );
+}
 
 interface TooltipPayload {
-  payload: { name: string; value: number; percent: number };
+  name: string;
+  value: number;
 }
 
 const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) => {
   if (active && payload && payload.length) {
-    const p = payload[0].payload;
+    const p = payload[0];
     return (
       <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-lg">
         <p className="font-semibold text-sm text-charcoal-900">{p.name}</p>
-        <p className="text-gray-500 text-xs mt-0.5">{p.percent.toFixed(1)}%（{p.value.toLocaleString("ja-JP")}）</p>
+        <p className="text-gray-500 text-xs mt-0.5">{p.value.toLocaleString("ja-JP")}</p>
       </div>
     );
   }
@@ -29,38 +61,36 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
 
 export default function GenderDonutChart({ value }: { value: GenderBreakdownValue }) {
   const total = value.male + value.female + value.other;
-  const data = GENDER_ORDER.map((key) => ({
-    key,
-    name: GENDER_LABEL[key],
-    value: value[key],
-    percent: total > 0 ? (value[key] / total) * 100 : 0,
-  })).filter((d) => d.value > 0);
+  const data = GENDER_ORDER.map((key) => ({ key, name: GENDER_LABEL[key], value: value[key] })).filter((d) => d.value > 0);
 
   if (total <= 0) {
-    return <div className="h-32 flex items-center justify-center text-xs text-gray-300">データ未入力</div>;
+    return <div className="h-40 flex items-center justify-center text-xs text-gray-300">データ未入力</div>;
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <ResponsiveContainer width={130} height={130}>
-        <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" innerRadius={36} outerRadius={58} paddingAngle={1} strokeWidth={0}>
-            {data.map((d) => (
-              <Cell key={d.key} fill={GENDER_CHART_COLOR[d.key]} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-        </PieChart>
-      </ResponsiveContainer>
-      <ul className="space-y-1.5">
-        {data.map((d) => (
-          <li key={d.key} className="flex items-center gap-2 text-xs">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: GENDER_CHART_COLOR[d.key] }} />
-            <span className="text-gray-500">{d.name}</span>
-            <span className="font-semibold text-charcoal-900">{d.percent.toFixed(1)}%</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ResponsiveContainer width="100%" height={230}>
+      <PieChart>
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          startAngle={90}
+          endAngle={-270}
+          innerRadius={44}
+          outerRadius={70}
+          paddingAngle={1}
+          strokeWidth={0}
+          label={renderOuterLabel}
+          labelLine={{ stroke: "#d4d4d4" }}
+        >
+          {data.map((d) => (
+            <Cell key={d.key} fill={GENDER_CHART_COLOR[d.key]} />
+          ))}
+        </Pie>
+        <Tooltip content={<CustomTooltip />} />
+      </PieChart>
+    </ResponsiveContainer>
   );
 }
