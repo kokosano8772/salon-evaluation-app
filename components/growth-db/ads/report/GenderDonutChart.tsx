@@ -22,6 +22,9 @@ interface OuterLabelProps {
   name?: string;
 }
 
+// html2canvas はSVGの dominantBaseline / tspan(dy) の文字位置指定を正しく
+// ラスタライズできない（画面表示では見えるがPDF化すると文字が消える）ため、
+// dy・dominantBaselineを使わず、x/yを直接計算した2つの<text>で組む。
 function renderOuterLabel({ cx, cy, midAngle, outerRadius, percent, name }: OuterLabelProps) {
   if (!percent || percent <= 0 || cx === undefined || cy === undefined || midAngle === undefined || outerRadius === undefined) {
     return null;
@@ -29,15 +32,16 @@ function renderOuterLabel({ cx, cy, midAngle, outerRadius, percent, name }: Oute
   const radius = outerRadius + 22;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const anchor = x > cx ? "start" : x < cx ? "end" : "middle";
   return (
-    <text x={x} y={y} textAnchor={x > cx ? "start" : x < cx ? "end" : "middle"} dominantBaseline="central">
-      <tspan x={x} dy="-0.3em" fontSize={11} fontFamily="'Noto Sans JP', sans-serif" fill="#6b7280">
+    <g>
+      <text x={x} y={y - 5} textAnchor={anchor} fontSize={11} fontFamily="'Noto Sans JP', sans-serif" fill="#6b7280">
         {name}
-      </tspan>
-      <tspan x={x} dy="1.2em" fontSize={12} fontWeight={700} fontFamily="'Noto Sans JP', sans-serif" fill="#1a1a1a">
+      </text>
+      <text x={x} y={y + 10} textAnchor={anchor} fontSize={12} fontWeight={700} fontFamily="'Noto Sans JP', sans-serif" fill="#1a1a1a">
         {(percent * 100).toFixed(1)}%
-      </tspan>
-    </text>
+      </text>
+    </g>
   );
 }
 

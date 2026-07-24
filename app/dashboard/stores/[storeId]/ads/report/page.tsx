@@ -141,7 +141,7 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
       </div>
 
       {report ? (
-        <div ref={documentRef}>
+        <div ref={documentRef} className="overflow-x-auto">
           <AdReportDocument storeName={store.name} report={report} ctrTrend={ctrTrend} ageGroupTrend={ageGroupTrend} />
         </div>
       ) : (
