@@ -68,7 +68,7 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
           <ReportStatCard title="クリックされた数" subtitle="（クリック数）" unit="回" value={formatNumber(report.clicks)}>
             <GenderDonutChart value={gender.clicks} />
           </ReportStatCard>
-          <div className="bg-white rounded-2xl p-8 h-full flex flex-col justify-center">
+          <div className="bg-white rounded-2xl p-8 h-full">
             <p className="text-2xl font-bold text-charcoal-900 text-center">
               どれくらいの確率で
               <br />
