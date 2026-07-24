@@ -25,9 +25,9 @@ function renderBarLabel({ x, y, width, value }: BarLabelProps) {
     return null;
   }
   const cx = Number(x) + Number(width) / 2;
-  const cy = Number(y) - 6;
+  const cy = Number(y) - 8;
   return (
-    <text x={cx} y={cy} textAnchor="middle" fontSize={11} fontWeight={600} fontFamily="'Noto Sans JP', sans-serif" fill="#434343">
+    <text x={cx} y={cy} textAnchor="middle" fontSize={14} fontWeight={700} fontFamily="'Noto Sans JP', sans-serif" fill="#1a1a1a">
       {Number(value).toFixed(2)}%
     </text>
   );
@@ -38,16 +38,16 @@ export default function CtrByGenderChart({ value }: { value: GenderBreakdownValu
   const max = Math.max(...data.map((d) => d.ctr), 0.1);
 
   return (
-    <ResponsiveContainer width="100%" height={140}>
-      <BarChart data={data} margin={{ top: 18, right: 8, left: 0, bottom: 0 }}>
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={data} margin={{ top: 24, right: 8, left: 0, bottom: 0 }}>
         <XAxis
           dataKey="name"
-          tick={{ fontSize: 11, fill: "#999", fontFamily: "'Noto Sans JP', sans-serif" }}
+          tick={{ fontSize: 12, fill: "#6b7280", fontFamily: "'Noto Sans JP', sans-serif" }}
           axisLine={{ stroke: "#eee" }}
           tickLine={false}
         />
         <YAxis hide domain={[0, max * 1.3]} />
-        <Bar dataKey="ctr" radius={[4, 4, 0, 0]} maxBarSize={40} isAnimationActive={false}>
+        <Bar dataKey="ctr" radius={[6, 6, 0, 0]} maxBarSize={64} isAnimationActive={false}>
           {data.map((d) => (
             <Cell key={d.key} fill={GENDER_CHART_COLOR[d.key]} />
           ))}

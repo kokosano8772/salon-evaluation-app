@@ -29,16 +29,16 @@ function renderOuterLabel({ cx, cy, midAngle, outerRadius, percent, name }: Oute
   if (!percent || percent <= 0 || cx === undefined || cy === undefined || midAngle === undefined || outerRadius === undefined) {
     return null;
   }
-  const radius = outerRadius + 22;
+  const radius = outerRadius + 26;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
   const anchor = x > cx ? "start" : x < cx ? "end" : "middle";
   return (
     <g>
-      <text x={x} y={y - 5} textAnchor={anchor} fontSize={11} fontFamily="'Noto Sans JP', sans-serif" fill="#6b7280">
+      <text x={x} y={y - 6} textAnchor={anchor} fontSize={13} fontFamily="'Noto Sans JP', sans-serif" fill="#6b7280">
         {name}
       </text>
-      <text x={x} y={y + 10} textAnchor={anchor} fontSize={12} fontWeight={700} fontFamily="'Noto Sans JP', sans-serif" fill="#1a1a1a">
+      <text x={x} y={y + 12} textAnchor={anchor} fontSize={14} fontWeight={700} fontFamily="'Noto Sans JP', sans-serif" fill="#1a1a1a">
         {(percent * 100).toFixed(1)}%
       </text>
     </g>
@@ -68,11 +68,11 @@ export default function GenderDonutChart({ value }: { value: GenderBreakdownValu
   const data = GENDER_ORDER.map((key) => ({ key, name: GENDER_LABEL[key], value: value[key] })).filter((d) => d.value > 0);
 
   if (total <= 0) {
-    return <div className="h-40 flex items-center justify-center text-xs text-gray-300">データ未入力</div>;
+    return <div className="h-64 flex items-center justify-center text-xs text-gray-300">データ未入力</div>;
   }
 
   return (
-    <ResponsiveContainer width="100%" height={230}>
+    <ResponsiveContainer width="100%" height={300}>
       <PieChart>
         <Pie
           data={data}
@@ -82,8 +82,8 @@ export default function GenderDonutChart({ value }: { value: GenderBreakdownValu
           cy="50%"
           startAngle={90}
           endAngle={-270}
-          innerRadius={44}
-          outerRadius={70}
+          innerRadius={40}
+          outerRadius={98}
           paddingAngle={1}
           strokeWidth={0}
           label={renderOuterLabel}

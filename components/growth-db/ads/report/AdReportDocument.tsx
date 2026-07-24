@@ -48,15 +48,21 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
 
   return (
     <div className="space-y-8">
-      {/* ページ1 */}
-      <div className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto" style={{ background: "#F3F2EF" }}>
-        <p className="text-right text-xs font-bold tracking-widest text-gray-400 mb-3">KOKODESIGN</p>
-        <h1 className="text-3xl font-extrabold text-center text-charcoal-900">Instagram広告成果報告レポート</h1>
-        <p className="text-center text-base text-charcoal-700 mt-1.5">
-          {storeName} 様 - {formatMonthLabel(report.yearMonth)}分-
-        </p>
+      {/* ページ1（元テンプレートは675×900pxの縦横比0.75固定キャンバス。
+          横幅900pxに合わせ、最低高さ1200px＝同じ縦横比を確保する） */}
+      <div
+        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1200px] max-w-none mx-auto flex flex-col"
+        style={{ background: "#F3F2EF" }}
+      >
+        <div>
+          <p className="text-right text-xs font-bold tracking-widest text-gray-400 mb-3">KOKODESIGN</p>
+          <h1 className="text-3xl font-extrabold text-center text-charcoal-900">Instagram広告成果報告レポート</h1>
+          <p className="text-center text-base text-charcoal-700 mt-1.5">
+            {storeName} 様 - {formatMonthLabel(report.yearMonth)}分-
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-8 flex-1 content-center">
           <ReportStatCard title="何回表示されたか" subtitle="（インプレッション数）" unit="回" value={formatNumber(report.impressions)}>
             <GenderDonutChart value={gender.impressions} />
           </ReportStatCard>
@@ -67,19 +73,19 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
             <GenderDonutChart value={gender.clicks} />
           </ReportStatCard>
           <div className="bg-white rounded-2xl p-8">
-            <p className="text-lg font-bold text-charcoal-900">どれくらいの確率でクリックされたか</p>
-            <p className="text-sm text-gray-400 mt-0.5">（クリックされた数 ÷ 表示された数 ＝ CTR）</p>
-            <div className="text-center mt-4">
-              <span className="text-3xl font-extrabold" style={{ color: AD_REPORT_ACCENT_COLOR }}>
+            <p className="text-2xl font-bold text-charcoal-900 text-center">どれくらいの確率でクリックされたか</p>
+            <p className="text-base text-gray-400 mt-1 text-center">（クリックされた数 ÷ 表示された数 ＝ CTR）</p>
+            <div className="text-center mt-8">
+              <span className="text-5xl font-extrabold" style={{ color: AD_REPORT_ACCENT_COLOR }}>
                 {formatPercent(report.ctr, 2)}
               </span>
             </div>
             {report.platform === "meta" && (
-              <p className="text-xs font-semibold text-center mt-1" style={{ color: AD_REPORT_ACCENT_COLOR }}>
+              <p className="text-sm font-semibold text-center mt-2" style={{ color: AD_REPORT_ACCENT_COLOR }}>
                 他社の平均 0.3〜0.5%
               </p>
             )}
-            <div className="mt-3">
+            <div className="mt-2">
               <CtrByGenderChart value={gender.ctr} />
             </div>
           </div>
@@ -87,42 +93,47 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
         <p className="text-center text-xs text-gray-400 mt-8">KOKODESIGN</p>
       </div>
 
-      {/* ページ2 */}
-      <div className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto" style={{ background: "#F3F2EF" }}>
+      {/* ページ2（同じく675×900px相当、最低高さ1200pxを確保） */}
+      <div
+        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1200px] max-w-none mx-auto flex flex-col"
+        style={{ background: "#F3F2EF" }}
+      >
         <p className="text-xs font-bold tracking-widest text-gray-400 mb-4">KOKODESIGN</p>
 
-        <div className="bg-white rounded-2xl p-6 mb-6">
-          <SectionHeader>時間帯別クリック数</SectionHeader>
-          {hourly.length > 0 ? <HourlyClicksChart data={hourly} /> : <EmptyChartNote />}
-        </div>
+        <div className="flex-1 flex flex-col justify-between gap-6">
+          <div className="bg-white rounded-2xl p-6">
+            <SectionHeader>時間帯別クリック数</SectionHeader>
+            {hourly.length > 0 ? <HourlyClicksChart data={hourly} /> : <EmptyChartNote />}
+          </div>
 
-        <div className="bg-white rounded-2xl p-6 mb-6">
-          <SectionHeader>年間CTR</SectionHeader>
-          {ctrTrend.length > 0 ? <AnnualCtrChart data={ctrTrend} /> : <EmptyChartNote />}
-        </div>
+          <div className="bg-white rounded-2xl p-6">
+            <SectionHeader>年間CTR</SectionHeader>
+            {ctrTrend.length > 0 ? <AnnualCtrChart data={ctrTrend} /> : <EmptyChartNote />}
+          </div>
 
-        <div className="bg-white rounded-2xl p-6 mb-6">
-          <SectionHeader extra={<p className="text-xs text-gray-500">設定年齢 : {report.targetAgeRange || "未設定"}</p>}>
-            年齢別クリック数
-          </SectionHeader>
-          {ageGroupTrend.length > 0 ? <AgeGroupTrendChart data={ageGroupTrend} /> : <EmptyChartNote />}
-        </div>
+          <div className="bg-white rounded-2xl p-6">
+            <SectionHeader extra={<p className="text-xs text-gray-500">設定年齢 : {report.targetAgeRange || "未設定"}</p>}>
+              年齢別クリック数
+            </SectionHeader>
+            {ageGroupTrend.length > 0 ? <AgeGroupTrendChart data={ageGroupTrend} /> : <EmptyChartNote />}
+          </div>
 
-        <div className="bg-white rounded-2xl p-6">
-          <SectionHeader>運用状況とご提案</SectionHeader>
-          {report.aiResult ? (
-            <div className="flex gap-4">
-              <div
-                className="shrink-0 w-16 h-16 rounded-xl flex items-center justify-center text-white text-sm font-bold"
-                style={{ background: AD_REPORT_ACCENT_COLOR }}
-              >
-                提案
+          <div className="bg-white rounded-2xl p-6">
+            <SectionHeader>運用状況とご提案</SectionHeader>
+            {report.aiResult ? (
+              <div className="flex gap-5 items-stretch">
+                <div
+                  className="shrink-0 w-28 rounded-xl flex items-center justify-center text-white text-lg font-bold"
+                  style={{ background: AD_REPORT_ACCENT_COLOR }}
+                >
+                  提案
+                </div>
+                <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap flex-1">{report.aiResult}</p>
               </div>
-              <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">{report.aiResult}</p>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-300 py-6 text-center">AI分析は準備中です（Phase 4で対応予定）</p>
-          )}
+            ) : (
+              <p className="text-sm text-gray-300 py-6 text-center">AI分析は準備中です（Phase 4で対応予定）</p>
+            )}
+          </div>
         </div>
         <p className="text-center text-xs text-gray-400 mt-8">KOKODESIGN</p>
       </div>
