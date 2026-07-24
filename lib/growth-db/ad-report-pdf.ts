@@ -2,6 +2,23 @@
 // lib/pdf.ts（診断結果PDF）と同じjsPDF + html2canvasの方式を踏襲しつつ、
 // .ad-report-page 単位で複数ページのPDFに分割する。
 
+// html2canvasは撮影用に別領域へDOMを複製するが、その際flexbox/gridで
+// 計算された「実際の高さ」（h-full・flex-1・align-content: centerなど）を
+// 引き継げず、画面上は正しく中央寄せされていてもPDFでは崩れることがある。
+// 撮影直前に現在の実測の高さをすべて固定px値として焼き付け、撮影後に戻す。
+function freezeHeights(root: HTMLElement): () => void {
+  const elements = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
+  const originalHeights = elements.map((el) => el.style.height);
+  for (const el of elements) {
+    el.style.height = `${el.getBoundingClientRect().height}px`;
+  }
+  return () => {
+    elements.forEach((el, i) => {
+      el.style.height = originalHeights[i];
+    });
+  };
+}
+
 export async function exportAdReportToPdf(container: HTMLElement, fileName: string): Promise<void> {
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
     import("jspdf"),
@@ -18,6 +35,7 @@ export async function exportAdReportToPdf(container: HTMLElement, fileName: stri
   let pdf: InstanceType<typeof jsPDF> | null = null;
 
   for (const page of pages) {
+    const restoreHeights = freezeHeights(page);
     const canvas = await html2canvas(page, {
       scale: 2,
       useCORS: true,
@@ -33,6 +51,7 @@ export async function exportAdReportToPdf(container: HTMLElement, fileName: stri
       width: page.scrollWidth,
       height: page.scrollHeight,
     });
+    restoreHeights();
 
     const pdfWidth = 794; // A4相当のpx幅（96dpi）
     const pdfHeight = Math.round((canvas.height / canvas.width) * pdfWidth);
