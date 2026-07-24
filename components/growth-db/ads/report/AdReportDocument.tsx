@@ -80,7 +80,7 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
             </p>
             <p className="text-base text-gray-400 mt-1 text-center">（クリックされた数 ÷ 表示された数 ＝ CTR）</p>
             <div className="text-center mt-8">
-              <span className="text-5xl font-extrabold" style={{ color: AD_REPORT_ACCENT_COLOR }}>
+              <span className="text-7xl font-extrabold" style={{ color: AD_REPORT_ACCENT_COLOR }}>
                 {formatPercent(report.ctr, 2)}
               </span>
             </div>
