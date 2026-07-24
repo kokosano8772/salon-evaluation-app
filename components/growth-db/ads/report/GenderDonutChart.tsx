@@ -29,16 +29,16 @@ function renderOuterLabel({ cx, cy, midAngle, outerRadius, percent, name }: Oute
   if (!percent || percent <= 0 || cx === undefined || cy === undefined || midAngle === undefined || outerRadius === undefined) {
     return null;
   }
-  const radius = outerRadius + 26;
+  const radius = outerRadius + 40;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
   const anchor = x > cx ? "start" : x < cx ? "end" : "middle";
   return (
     <g>
-      <text x={x} y={y - 6} textAnchor={anchor} fontSize={13} fontFamily="'Noto Sans JP', sans-serif" fill="#6b7280">
+      <text x={x} y={y - 8} textAnchor={anchor} fontSize={18} fontFamily="'Noto Sans JP', sans-serif" fill="#4b5563">
         {name}
       </text>
-      <text x={x} y={y + 12} textAnchor={anchor} fontSize={14} fontWeight={700} fontFamily="'Noto Sans JP', sans-serif" fill="#1a1a1a">
+      <text x={x} y={y + 16} textAnchor={anchor} fontSize={20} fontWeight={700} fontFamily="'Noto Sans JP', sans-serif" fill="#1a1a1a">
         {(percent * 100).toFixed(1)}%
       </text>
     </g>
@@ -72,7 +72,7 @@ export default function GenderDonutChart({ value }: { value: GenderBreakdownValu
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={360}>
       <PieChart>
         <Pie
           data={data}
