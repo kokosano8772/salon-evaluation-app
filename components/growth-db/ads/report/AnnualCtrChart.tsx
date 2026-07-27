@@ -26,7 +26,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
 
 export default function AnnualCtrChart({ data }: { data: CtrTrendPoint[] }) {
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={150}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid stroke="#f0f0f0" vertical={false} />
         <XAxis

@@ -72,7 +72,7 @@ export default function HourlyClicksChart({ data }: { data: HourlyClicks[] }) {
   const ranges = stoppedRanges(data);
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={170}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid stroke="#f0f0f0" vertical={false} />
         <XAxis

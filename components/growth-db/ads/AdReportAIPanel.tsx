@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
 import { AdPlatform, AdReport } from "@/lib/growth-db/ad-report-types";
 import { analyzeCampaigns, compareAdReports, compareGrowthMetrics, findPreviousAdReport } from "@/lib/growth-db/ad-report-analysis";
@@ -17,11 +17,21 @@ interface AdReportAIPanelProps {
 }
 
 type Status = "idle" | "streaming" | "saving" | "done" | "error";
+type EditStatus = "idle" | "saving" | "saved";
 
 export default function AdReportAIPanel({ storeId, platform, report, history, monthlyHistory, onSaved }: AdReportAIPanelProps) {
   const [status, setStatus] = useState<Status>(report.aiResult ? "done" : "idle");
   const [streamText, setStreamText] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+
+  const [editedText, setEditedText] = useState(report.aiResult ?? "");
+  const [editStatus, setEditStatus] = useState<EditStatus>("idle");
+
+  // 月・プラットフォームの切り替えやAI生成完了で report.aiResult が変わったら編集欄も追従させる
+  useEffect(() => {
+    setEditedText(report.aiResult ?? "");
+    setEditStatus("idle");
+  }, [report.aiResult]);
 
   const runAnalysis = useCallback(async () => {
     setStatus("streaming");
@@ -65,7 +75,16 @@ export default function AdReportAIPanel({ storeId, platform, report, history, mo
     }
   }, [storeId, platform, report, history, monthlyHistory, onSaved]);
 
+  const saveEdit = useCallback(async () => {
+    setEditStatus("saving");
+    await repo.upsertAdReport(storeId, report.yearMonth, platform, { aiResult: editedText });
+    setEditStatus("saved");
+    onSaved(editedText);
+    setTimeout(() => setEditStatus("idle"), 2000);
+  }, [storeId, platform, report.yearMonth, editedText, onSaved]);
+
   const isBusy = status === "streaming" || status === "saving";
+  const isDirty = editedText !== (report.aiResult ?? "");
 
   return (
     <div className="card-luxury p-5 ad-report-print-hide mb-6">
@@ -93,8 +112,29 @@ export default function AdReportAIPanel({ storeId, platform, report, history, mo
         </div>
       )}
 
-      {status === "done" && !isBusy && (
-        <p className="text-xs text-gray-400 mt-3">下のレポートの「運用状況とご提案」に反映されています。</p>
+      {!isBusy && (report.aiResult || editedText) && (
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-xs text-gray-400">内容を直接編集できます（"## 提案" 以降が提案バッジ側に表示されます）</p>
+          </div>
+          <textarea
+            value={editedText}
+            onChange={(e) => setEditedText(e.target.value)}
+            rows={6}
+            className="w-full text-xs text-charcoal-700 leading-relaxed rounded-xl border border-gray-200 p-3 focus:outline-none focus:border-[#C4788A]"
+          />
+          <div className="flex justify-end mt-2">
+            <button
+              onClick={saveEdit}
+              disabled={!isDirty || editStatus === "saving"}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-charcoal-700 border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {editStatus === "saving" && <Loader2 size={13} className="animate-spin" />}
+              {editStatus === "saved" && <Check size={13} />}
+              {editStatus === "saving" ? "保存中..." : editStatus === "saved" ? "保存しました" : "編集内容を保存"}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

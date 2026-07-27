@@ -31,7 +31,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
 
 export default function AgeGroupTrendChart({ data }: { data: AgeGroupTrendPoint[] }) {
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height={190}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid stroke="#f0f0f0" vertical={false} />
         <XAxis
