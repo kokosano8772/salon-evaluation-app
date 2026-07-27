@@ -2,7 +2,7 @@ import FormSection from "./FormSection";
 import TextField from "./TextField";
 import NumberField from "./NumberField";
 import SelectField from "./SelectField";
-import { AREAS, TARGET_CUSTOMER_OPTIONS, TRADE_AREA_OPTIONS, STORE_FORMAT_OPTIONS } from "@/lib/growth-db/constants";
+import { TARGET_CUSTOMER_OPTIONS, TRADE_AREA_OPTIONS, STORE_FORMAT_OPTIONS } from "@/lib/growth-db/constants";
 import { Store } from "@/lib/growth-db/types";
 
 export type BasicInfoValue = Omit<Store, "id" | "createdAt" | "updatedAt">;
@@ -20,7 +20,7 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
     <FormSection title="基本情報" description="店舗の基本プロフィール">
       <TextField label="店舗名" value={value.name} onChange={(v) => set("name", v)} />
       <TextField label="電話番号" value={value.phone} onChange={(v) => set("phone", v)} placeholder="09012345678" />
-      <SelectField label="エリア" value={value.area} onChange={(v) => set("area", v)} options={AREAS} />
+      <TextField label="エリア" value={value.area} onChange={(v) => set("area", v)} placeholder="例: 渋谷区" />
       <NumberField label="開業年" value={value.openedYear} onChange={(v) => set("openedYear", v)} suffix="年" />
       <NumberField label="店舗数" value={value.storeCount} onChange={(v) => set("storeCount", v)} suffix="店舗" />
       <NumberField label="席数" value={value.seatCount} onChange={(v) => set("seatCount", v)} suffix="席" />

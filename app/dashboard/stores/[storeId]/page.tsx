@@ -71,17 +71,22 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
             <StoreInfoPanel store={store} />
             <LinkedDiagnosisCard storeId={store.id} />
           </div>
-          <div className="card-luxury p-12 text-center text-gray-400 text-sm">
-            まだ月次データがありません。
-            <div className="mt-4">
-              <Link
-                href={`/dashboard/stores/${store.id}/data`}
-                className="inline-block px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-                style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
-              >
-                月次データを入力する
-              </Link>
+          <div className="space-y-6 min-w-0">
+            <div className="card-luxury p-12 text-center text-gray-400 text-sm">
+              まだ月次データがありません。
+              <div className="mt-4">
+                <Link
+                  href={`/dashboard/stores/${store.id}/data`}
+                  className="inline-block px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                  style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+                >
+                  月次データを入力する
+                </Link>
+              </div>
             </div>
+
+            <CompetitorResearchCard storeId={store.id} />
+            <AdReportCard storeId={store.id} />
           </div>
         </div>
       </div>
