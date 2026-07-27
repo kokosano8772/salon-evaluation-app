@@ -34,8 +34,14 @@ interface GraphApiErrorResponse {
   error?: { message: string; type: string; code: number };
 }
 
+// "act_"接頭辞が無いと広告アカウントではなく別のオブジェクト（Facebookページ等）への
+// 問い合わせと解釈され、「Page Access Tokenが必要」等の誤ったエラーになるため補完する。
+function normalizeAccountId(accountId: string): string {
+  return accountId.startsWith("act_") ? accountId : `act_${accountId}`;
+}
+
 async function callInsights<T>(accountId: string, params: Record<string, string>): Promise<T[]> {
-  const url = new URL(`${GRAPH_API_BASE}/${accountId}/insights`);
+  const url = new URL(`${GRAPH_API_BASE}/${normalizeAccountId(accountId)}/insights`);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   url.searchParams.set("access_token", getAccessToken());
 
