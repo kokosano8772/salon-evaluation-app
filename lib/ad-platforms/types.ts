@@ -12,6 +12,9 @@ export interface AdPlatformClient {
    * 指定アカウント・指定月のレポートを取得し、共通フォーマットに変換して返す。
    * @param accountId Google Ads の顧客ID、またはMeta広告アカウントID
    * @param yearMonth "YYYY-MM"
+   * @param campaignNameFilter 1つの広告アカウントに複数店舗のキャンペーンが
+   *   混在している場合に、キャンペーン名に含まれる文字列でその店舗の分だけに
+   *   絞り込む（例: 店舗名）。省略時はアカウント内の全キャンペーンを対象にする。
    */
-  fetchMonthlyReport(accountId: string, yearMonth: string): Promise<NormalizedAdReport>;
+  fetchMonthlyReport(accountId: string, yearMonth: string, campaignNameFilter?: string): Promise<NormalizedAdReport>;
 }

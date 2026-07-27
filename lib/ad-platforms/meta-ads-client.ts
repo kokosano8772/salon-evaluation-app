@@ -108,34 +108,74 @@ interface CampaignRow {
   cpc?: string;
 }
 
+function emptyReport(): NormalizedAdReport {
+  return {
+    spend: 0,
+    impressions: 0,
+    clicks: 0,
+    ctr: 0,
+    cpc: 0,
+    campaigns: [],
+    genderBreakdown: {
+      impressions: { male: 0, female: 0, other: 0 },
+      reach: { male: 0, female: 0, other: 0 },
+      clicks: { male: 0, female: 0, other: 0 },
+      ctr: { male: 0, female: 0, other: 0 },
+    },
+    hourlyClicks: HOURLY_SLOTS.map((hour) => ({ hour, clicks: 0 })),
+    ageGroupClicks: AGE_GROUPS.map((ageGroup) => ({ ageGroup, clicks: 0 })),
+  };
+}
+
 export class MetaAdsClient implements AdPlatformClient {
-  async fetchMonthlyReport(accountId: string, yearMonth: string): Promise<NormalizedAdReport> {
+  async fetchMonthlyReport(accountId: string, yearMonth: string, campaignNameFilter?: string): Promise<NormalizedAdReport> {
     const { since, until } = monthRange(yearMonth);
     const timeRange = JSON.stringify({ since, until });
 
+    // 1つの広告アカウントに複数店舗のキャンペーンが混在しているケースがあるため、
+    // まずキャンペーン一覧を取得し、店舗名でのフィルタがあれば対象キャンペーンIDを絞り込む。
+    const allCampaignRows = await callInsights<CampaignRow>(accountId, {
+      fields: "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc",
+      level: "campaign",
+      time_range: timeRange,
+      limit: "500",
+    });
+
+    const matchedRows = campaignNameFilter
+      ? allCampaignRows.filter((row) => row.campaign_name?.includes(campaignNameFilter))
+      : allCampaignRows;
+
+    // フィルタを指定したのに該当キャンペーンが1件も無い場合、アカウント全体（＝他店舗分を
+    // 含む可能性がある）のデータを誤って返さないよう、空のレポートを返す。
+    if (campaignNameFilter && matchedRows.length === 0) {
+      return emptyReport();
+    }
+
+    const campaignIds = matchedRows.map((row) => row.campaign_id).filter((id): id is string => !!id);
+    const filterParams: Record<string, string> = campaignNameFilter
+      ? { filtering: JSON.stringify([{ field: "campaign.id", operator: "IN", value: campaignIds }]) }
+      : {};
+
     // age×genderは併用できるが、hourlyはage/genderと併用不可のため別呼び出しにする。
-    const [totalsRows, ageGenderRows, hourlyRows, campaignRows] = await Promise.all([
+    const [totalsRows, ageGenderRows, hourlyRows] = await Promise.all([
       callInsights<AccountTotalsRow>(accountId, {
         fields: "spend,impressions,clicks,ctr,cpc,reach,frequency",
         time_range: timeRange,
+        ...filterParams,
       }),
       callInsights<AgeGenderRow>(accountId, {
         fields: "impressions,reach,clicks",
         breakdowns: "age,gender",
         time_range: timeRange,
         limit: "200",
+        ...filterParams,
       }),
       callInsights<HourlyRow>(accountId, {
         fields: "clicks",
         breakdowns: "hourly_stats_aggregated_by_advertiser_time_zone",
         time_range: timeRange,
         limit: "48",
-      }),
-      callInsights<CampaignRow>(accountId, {
-        fields: "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc",
-        level: "campaign",
-        time_range: timeRange,
-        limit: "500",
+        ...filterParams,
       }),
     ]);
 
@@ -175,7 +215,7 @@ export class MetaAdsClient implements AdPlatformClient {
 
     // コンバージョン関連は取得しない（ファイル冒頭のコメント参照）。既存の手入力値を保持するため、
     // 呼び出し側（sync.ts→upsertAdReport）にはconversions/cpa/cvrを含めず渡す。
-    const campaigns: AdCampaignMetrics[] = campaignRows.map((row) => ({
+    const campaigns: AdCampaignMetrics[] = matchedRows.map((row) => ({
       id: row.campaign_id ?? crypto.randomUUID(),
       name: row.campaign_name ?? "",
       spend: Number(row.spend ?? 0),

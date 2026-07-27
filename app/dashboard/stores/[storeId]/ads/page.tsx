@@ -118,6 +118,7 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
       <AdReportForm
         key={`${selectedMonth}-${platform}`}
         storeId={store.id}
+        storeName={store.name}
         yearMonth={selectedMonth}
         platform={platform}
         onSaved={refreshAdReports}

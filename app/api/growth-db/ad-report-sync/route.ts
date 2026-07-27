@@ -10,6 +10,7 @@ interface SyncRequestBody {
   platform: AdPlatform;
   accountId: string;
   yearMonth: string;
+  campaignNameFilter?: string;
 }
 
 // /dashboard配下と同じくSupabase Authでログインしたスタッフのみ呼び出せる。
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });
   }
 
-  const { platform, accountId, yearMonth } = body;
+  const { platform, accountId, yearMonth, campaignNameFilter } = body;
   if (!platform || !accountId || !yearMonth) {
     return NextResponse.json({ error: "platform / accountId / yearMonth は必須です" }, { status: 400 });
   }
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
 
   try {
     const client = new MetaAdsClient();
-    const data = await client.fetchMonthlyReport(accountId, yearMonth);
+    const data = await client.fetchMonthlyReport(accountId, yearMonth, campaignNameFilter);
     return NextResponse.json({ data });
   } catch (error) {
     const message = error instanceof Error ? error.message : "不明なエラー";

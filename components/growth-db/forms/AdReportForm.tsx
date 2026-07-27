@@ -22,6 +22,7 @@ import PercentField from "./PercentField";
 
 interface AdReportFormProps {
   storeId: string;
+  storeName: string;
   yearMonth: string;
   platform: AdPlatform;
   onSaved?: () => void;
@@ -112,11 +113,12 @@ function emptyCampaign(): AdCampaignMetrics {
 
 type SyncState = "idle" | "syncing" | "error";
 
-export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: AdReportFormProps) {
+export default function AdReportForm({ storeId, storeName, yearMonth, platform, onSaved }: AdReportFormProps) {
   const [draft, setDraft] = useState<AdReportDraft | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [syncError, setSyncError] = useState("");
+  const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
 
   useEffect(() => {
     let cancelled = false;
@@ -241,7 +243,12 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
       const res = await fetch("/api/growth-db/ad-report-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform, accountId: draft.accountId, yearMonth }),
+        body: JSON.stringify({
+          platform,
+          accountId: draft.accountId,
+          yearMonth,
+          campaignNameFilter: campaignNameFilter.trim() || undefined,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
@@ -259,7 +266,7 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
     <div className="space-y-6 pb-24">
       {platform === "meta" && (
         <div className="card-luxury p-6">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <div>
               <p className="text-sm font-semibold text-charcoal-900">Meta Marketing APIから自動取得</p>
               <p className="text-xs text-gray-400 mt-0.5">
@@ -276,6 +283,15 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
               {syncState === "syncing" ? "取得中..." : "APIから同期"}
             </button>
           </div>
+          <TextField
+            label="キャンペーン名の絞り込みキーワード"
+            value={campaignNameFilter}
+            onChange={setCampaignNameFilter}
+            placeholder="例: 店舗名"
+          />
+          <p className="text-xs text-gray-400 mt-1.5">
+            1つの広告アカウントに複数店舗のキャンペーンが混在している場合、このキーワードを含むキャンペーンだけを対象にします。空欄にするとアカウント内の全キャンペーンが対象になるため注意してください。
+          </p>
           {syncState === "error" && <p className="text-xs text-red-500 mt-3">{syncError}</p>}
         </div>
       )}
