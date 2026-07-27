@@ -111,13 +111,14 @@ function emptyCampaign(): AdCampaignMetrics {
   };
 }
 
-type SyncState = "idle" | "syncing" | "error";
+type SyncState = "idle" | "syncing" | "synced" | "error";
 
 export default function AdReportForm({ storeId, storeName, yearMonth, platform, onSaved }: AdReportFormProps) {
   const [draft, setDraft] = useState<AdReportDraft | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [syncError, setSyncError] = useState("");
+  const [syncedCampaignCount, setSyncedCampaignCount] = useState(0);
   const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
 
   useEffect(() => {
@@ -255,7 +256,9 @@ export default function AdReportForm({ storeId, storeName, yearMonth, platform, 
 
       const data = json.data as Partial<AdReportDraft>;
       setDraft((prev) => (prev ? { ...prev, ...data } : prev));
-      setSyncState("idle");
+      setSyncedCampaignCount(data.campaigns?.length ?? 0);
+      setSyncState("synced");
+      setTimeout(() => setSyncState("idle"), 4000);
     } catch (err) {
       setSyncState("error");
       setSyncError(err instanceof Error ? err.message : "不明なエラー");
@@ -292,7 +295,12 @@ export default function AdReportForm({ storeId, storeName, yearMonth, platform, 
           <p className="text-xs text-gray-400 mt-1.5">
             1つの広告アカウントに複数店舗のキャンペーンが混在している場合、このキーワードを含むキャンペーンだけを対象にします。空欄にするとアカウント内の全キャンペーンが対象になるため注意してください。
           </p>
-          {syncState === "error" && <p className="text-xs text-red-500 mt-3">{syncError}</p>}
+          {syncState === "error" && <p className="text-xs text-red-500 mt-3 whitespace-pre-wrap">{syncError}</p>}
+          {syncState === "synced" && (
+            <p className="text-xs text-[#6BAB8A] mt-3">
+              取得しました（キャンペーン{syncedCampaignCount}件）。内容を確認して下の「この月のデータを保存する」で確定してください。
+            </p>
+          )}
         </div>
       )}
 

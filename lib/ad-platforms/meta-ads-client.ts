@@ -40,8 +40,8 @@ function normalizeAccountId(accountId: string): string {
   return accountId.startsWith("act_") ? accountId : `act_${accountId}`;
 }
 
-async function callInsights<T>(accountId: string, params: Record<string, string>): Promise<T[]> {
-  const url = new URL(`${GRAPH_API_BASE}/${normalizeAccountId(accountId)}/insights`);
+async function callGraphApi<T>(path: string, params: Record<string, string>): Promise<T[]> {
+  const url = new URL(`${GRAPH_API_BASE}/${path}`);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   url.searchParams.set("access_token", getAccessToken());
 
@@ -51,6 +51,25 @@ async function callInsights<T>(accountId: string, params: Record<string, string>
     throw new Error(`Meta Marketing APIの呼び出しに失敗しました: ${json.error?.message ?? `HTTP ${res.status}`}`);
   }
   return json.data ?? [];
+}
+
+async function callInsights<T>(accountId: string, params: Record<string, string>): Promise<T[]> {
+  return callGraphApi<T>(`${normalizeAccountId(accountId)}/insights`, params);
+}
+
+// キャンペーンの「存在確認」はinsightsではなくcampaigns一覧エンドポイントで行う。
+// insightsはその期間に実績（配信）が無いキャンペーンを行ごと返さないため、配信し始めた
+// ばかりで実績がまだ付いていないキャンペーンが「存在しない」と誤判定されてしまうため。
+interface CampaignListRow {
+  id?: string;
+  name?: string;
+}
+
+async function listCampaigns(accountId: string): Promise<CampaignListRow[]> {
+  return callGraphApi<CampaignListRow>(`${normalizeAccountId(accountId)}/campaigns`, {
+    fields: "id,name",
+    limit: "500",
+  });
 }
 
 function mapGender(raw: string | undefined): keyof GenderBreakdownValue {
@@ -108,56 +127,38 @@ interface CampaignRow {
   cpc?: string;
 }
 
-function emptyReport(): NormalizedAdReport {
-  return {
-    spend: 0,
-    impressions: 0,
-    clicks: 0,
-    ctr: 0,
-    cpc: 0,
-    campaigns: [],
-    genderBreakdown: {
-      impressions: { male: 0, female: 0, other: 0 },
-      reach: { male: 0, female: 0, other: 0 },
-      clicks: { male: 0, female: 0, other: 0 },
-      ctr: { male: 0, female: 0, other: 0 },
-    },
-    hourlyClicks: HOURLY_SLOTS.map((hour) => ({ hour, clicks: 0 })),
-    ageGroupClicks: AGE_GROUPS.map((ageGroup) => ({ ageGroup, clicks: 0 })),
-  };
-}
-
 export class MetaAdsClient implements AdPlatformClient {
   async fetchMonthlyReport(accountId: string, yearMonth: string, campaignNameFilter?: string): Promise<NormalizedAdReport> {
     const { since, until } = monthRange(yearMonth);
     const timeRange = JSON.stringify({ since, until });
 
     // 1つの広告アカウントに複数店舗のキャンペーンが混在しているケースがあるため、
-    // まずキャンペーン一覧を取得し、店舗名でのフィルタがあれば対象キャンペーンIDを絞り込む。
-    const allCampaignRows = await callInsights<CampaignRow>(accountId, {
-      fields: "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc",
-      level: "campaign",
-      time_range: timeRange,
-      limit: "500",
-    });
+    // まずキャンペーン一覧（実績とは無関係に存在する全キャンペーン）を取得し、
+    // 店舗名でのフィルタがあれば対象キャンペーンIDを絞り込む。
+    const allCampaigns = await listCampaigns(accountId);
 
-    const matchedRows = campaignNameFilter
-      ? allCampaignRows.filter((row) => row.campaign_name?.includes(campaignNameFilter))
-      : allCampaignRows;
+    const matchedCampaigns = campaignNameFilter
+      ? allCampaigns.filter((c) => c.name?.includes(campaignNameFilter))
+      : allCampaigns;
 
     // フィルタを指定したのに該当キャンペーンが1件も無い場合、アカウント全体（＝他店舗分を
-    // 含む可能性がある）のデータを誤って返さないよう、空のレポートを返す。
-    if (campaignNameFilter && matchedRows.length === 0) {
-      return emptyReport();
+    // 含む可能性がある）のデータを誤って返さないよう、エラーとして知らせる
+    // （黙って0件のデータを返すと「同期したのに何も変わらない」ように見えてしまうため）。
+    if (campaignNameFilter && matchedCampaigns.length === 0) {
+      const names = allCampaigns.map((c) => c.name).filter(Boolean).join("、");
+      throw new Error(
+        `キーワード「${campaignNameFilter}」に一致するキャンペーンが見つかりませんでした。` +
+          (names ? `このアカウントのキャンペーン名: ${names}` : "このアカウントにはキャンペーンがありません。")
+      );
     }
 
-    const campaignIds = matchedRows.map((row) => row.campaign_id).filter((id): id is string => !!id);
+    const campaignIds = matchedCampaigns.map((c) => c.id).filter((id): id is string => !!id);
     const filterParams: Record<string, string> = campaignNameFilter
       ? { filtering: JSON.stringify([{ field: "campaign.id", operator: "IN", value: campaignIds }]) }
       : {};
 
     // age×genderは併用できるが、hourlyはage/genderと併用不可のため別呼び出しにする。
-    const [totalsRows, ageGenderRows, hourlyRows] = await Promise.all([
+    const [totalsRows, ageGenderRows, hourlyRows, campaignMetricsRows] = await Promise.all([
       callInsights<AccountTotalsRow>(accountId, {
         fields: "spend,impressions,clicks,ctr,cpc,reach,frequency",
         time_range: timeRange,
@@ -177,7 +178,15 @@ export class MetaAdsClient implements AdPlatformClient {
         limit: "48",
         ...filterParams,
       }),
+      callInsights<CampaignRow>(accountId, {
+        fields: "campaign_id,spend,impressions,clicks,ctr,cpc",
+        level: "campaign",
+        time_range: timeRange,
+        limit: "500",
+        ...filterParams,
+      }),
     ]);
+    const metricsByCampaignId = new Map(campaignMetricsRows.map((row) => [row.campaign_id, row]));
 
     const totals = totalsRows[0];
 
@@ -215,18 +224,23 @@ export class MetaAdsClient implements AdPlatformClient {
 
     // コンバージョン関連は取得しない（ファイル冒頭のコメント参照）。既存の手入力値を保持するため、
     // 呼び出し側（sync.ts→upsertAdReport）にはconversions/cpa/cvrを含めず渡す。
-    const campaigns: AdCampaignMetrics[] = matchedRows.map((row) => ({
-      id: row.campaign_id ?? crypto.randomUUID(),
-      name: row.campaign_name ?? "",
-      spend: Number(row.spend ?? 0),
-      impressions: Number(row.impressions ?? 0),
-      clicks: Number(row.clicks ?? 0),
-      ctr: Number(row.ctr ?? 0),
-      cpc: Number(row.cpc ?? 0),
-      conversions: 0,
-      cpa: 0,
-      cvr: 0,
-    }));
+    // キャンペーンの一覧はmatchedCampaigns（実績とは無関係に実在確認済み）を基準にし、
+    // 数値はinsightsに行が無ければ0として扱う（配信したばかりで実績がまだ無い場合など）。
+    const campaigns: AdCampaignMetrics[] = matchedCampaigns.map((c) => {
+      const metrics = c.id ? metricsByCampaignId.get(c.id) : undefined;
+      return {
+        id: c.id ?? crypto.randomUUID(),
+        name: c.name ?? "",
+        spend: Number(metrics?.spend ?? 0),
+        impressions: Number(metrics?.impressions ?? 0),
+        clicks: Number(metrics?.clicks ?? 0),
+        ctr: Number(metrics?.ctr ?? 0),
+        cpc: Number(metrics?.cpc ?? 0),
+        conversions: 0,
+        cpa: 0,
+        cvr: 0,
+      };
+    });
 
     return {
       spend: Number(totals?.spend ?? 0),

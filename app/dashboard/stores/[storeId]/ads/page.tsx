@@ -2,13 +2,13 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, FileText, Plus } from "lucide-react";
+import { FileText } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AdReportForm from "@/components/growth-db/forms/AdReportForm";
 import AdReportAnalysisSummary from "@/components/growth-db/ads/AdReportAnalysisSummary";
 import { useStore, useMonthlyMetrics } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
-import { currentYearMonth, formatMonthLabel, shiftYearMonth } from "@/lib/growth-db/format";
+import { currentYearMonth } from "@/lib/growth-db/format";
 import { AD_PLATFORM_LABEL, AdPlatform } from "@/lib/growth-db/ad-report-types";
 
 const PLATFORMS: AdPlatform[] = ["google", "meta"];
@@ -16,26 +16,26 @@ const PLATFORMS: AdPlatform[] = ["google", "meta"];
 export default function StoreAdsPage({ params }: { params: Promise<{ storeId: string }> }) {
   const { storeId } = use(params);
   const { store, loading: storeLoading } = useStore(storeId);
+  // 成長データベースの月次データ（monthlyHistory）はAdReportAnalysisSummaryの
+  // 「成長データとの関連」表示にのみ使う。広告データの月選択はこれに依存させない
+  // （月次データが1件も無い新規店舗でも、任意の月の広告データを入力できるようにするため）。
   const { data: history, loading: historyLoading } = useMonthlyMetrics(storeId);
-  const { items: adReports, refresh: refreshAdReports } = useAdReports(storeId);
+  const { items: adReports, loading: adReportsLoading, refresh: refreshAdReports } = useAdReports(storeId);
 
   const [selectedMonth, setSelectedMonth] = useState<string | undefined>(undefined);
   const [platform, setPlatform] = useState<AdPlatform>("google");
 
-  const months = history.map((m) => m.yearMonth);
-
   useEffect(() => {
-    if (!selectedMonth && !historyLoading) {
-      setSelectedMonth(months.length > 0 ? months[months.length - 1] : currentYearMonth());
+    if (!selectedMonth && !adReportsLoading) {
+      const platformMonths = adReports.filter((r) => r.platform === platform).map((r) => r.yearMonth).sort();
+      setSelectedMonth(platformMonths.length > 0 ? platformMonths[platformMonths.length - 1] : currentYearMonth());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [historyLoading, months.length]);
+  }, [adReportsLoading, adReports.length]);
 
-  if (storeLoading || historyLoading || !store || !selectedMonth) {
+  if (storeLoading || historyLoading || adReportsLoading || !store || !selectedMonth) {
     return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
   }
-
-  const suggestedNextMonth = shiftYearMonth(months[months.length - 1] ?? currentYearMonth(), 1);
 
   return (
     <div>
@@ -49,34 +49,12 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="appearance-none pl-4 pr-9 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
-              >
-                {months.map((ym) => (
-                  <option key={ym} value={ym}>
-                    {formatMonthLabel(ym)}
-                  </option>
-                ))}
-                {!months.includes(selectedMonth) && (
-                  <option value={selectedMonth}>{formatMonthLabel(selectedMonth)}（新規）</option>
-                )}
-              </select>
-              <ChevronDown
-                size={15}
-                strokeWidth={2}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-              />
-            </div>
-            <button
-              onClick={() => setSelectedMonth(suggestedNextMonth)}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
-            >
-              <Plus size={15} strokeWidth={2} />
-              {formatMonthLabel(suggestedNextMonth)}を追加
-            </button>
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => e.target.value && setSelectedMonth(e.target.value)}
+              className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
+            />
             <Link
               href={`/dashboard/stores/${store.id}/ads/report?month=${selectedMonth}&platform=${platform}`}
               className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-white"
