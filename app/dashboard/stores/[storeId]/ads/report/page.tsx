@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ChevronDown, Download, Printer } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AdReportDocument from "@/components/growth-db/ads/report/AdReportDocument";
-import { useStore } from "@/lib/growth-db/hooks";
+import AdReportAIPanel from "@/components/growth-db/ads/AdReportAIPanel";
+import { useMonthlyMetrics, useStore } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
 import { buildAgeGroupTrend, buildCtrTrend } from "@/lib/growth-db/ad-report-trend";
 import { currentYearMonth, formatMonthLabel } from "@/lib/growth-db/format";
@@ -22,7 +23,8 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   const { storeId } = use(params);
   const initial = use(searchParams);
   const { store, loading: storeLoading } = useStore(storeId);
-  const { items: adReports, loading: reportsLoading } = useAdReports(storeId);
+  const { items: adReports, loading: reportsLoading, refresh: refreshAdReports } = useAdReports(storeId);
+  const { data: monthlyHistory } = useMonthlyMetrics(storeId);
 
   const [selectedMonth, setSelectedMonth] = useState<string | undefined>(initial.month);
   const [platform, setPlatform] = useState<AdPlatform>(
@@ -126,9 +128,19 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
       </div>
 
       {report ? (
-        <div className="overflow-x-auto">
-          <AdReportDocument storeName={store.name} report={report} ctrTrend={ctrTrend} ageGroupTrend={ageGroupTrend} />
-        </div>
+        <>
+          <AdReportAIPanel
+            storeId={store.id}
+            platform={platform}
+            report={report}
+            history={adReports}
+            monthlyHistory={monthlyHistory}
+            onSaved={refreshAdReports}
+          />
+          <div className="overflow-x-auto">
+            <AdReportDocument storeName={store.name} report={report} ctrTrend={ctrTrend} ageGroupTrend={ageGroupTrend} />
+          </div>
+        </>
       ) : (
         <div className="card-luxury p-12 text-center text-sm text-gray-400">
           {formatMonthLabel(selectedMonth)}の{AD_PLATFORM_LABEL[platform]}データがまだ保存されていません。

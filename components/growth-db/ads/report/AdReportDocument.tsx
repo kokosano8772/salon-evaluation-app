@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { AD_REPORT_ACCENT_COLOR, AD_REPORT_SECTION_HEADER_BG, AdReport, GenderBreakdown } from "@/lib/growth-db/ad-report-types";
 import { AgeGroupTrendPoint, CtrTrendPoint } from "@/lib/growth-db/ad-report-trend";
+import { parseAdReportAiResult } from "@/lib/growth-db/parse-ad-report-ai-result";
 import { formatMonthLabel, formatNumber, formatPercent } from "@/lib/growth-db/format";
 import ReportStatCard from "./ReportStatCard";
 import GenderDonutChart from "./GenderDonutChart";
@@ -124,17 +125,27 @@ export default function AdReportDocument({ storeName, report, ctrTrend, ageGroup
           <div className="bg-white rounded-2xl p-6">
             <SectionHeader>運用状況とご提案</SectionHeader>
             {report.aiResult ? (
-              <div className="flex gap-5 items-stretch">
-                <div
-                  className="shrink-0 w-28 rounded-xl flex items-center justify-center text-white text-lg font-bold"
-                  style={{ background: AD_REPORT_ACCENT_COLOR }}
-                >
-                  提案
-                </div>
-                <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap flex-1">{report.aiResult}</p>
-              </div>
+              (() => {
+                const { analysis, suggestion } = parseAdReportAiResult(report.aiResult);
+                return (
+                  <div className="space-y-4">
+                    {analysis && <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">{analysis}</p>}
+                    {suggestion && (
+                      <div className="flex gap-5 items-stretch">
+                        <div
+                          className="shrink-0 w-28 rounded-xl flex items-center justify-center text-white text-lg font-bold"
+                          style={{ background: AD_REPORT_ACCENT_COLOR }}
+                        >
+                          提案
+                        </div>
+                        <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap flex-1">{suggestion}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
             ) : (
-              <p className="text-sm text-gray-300 py-6 text-center">AI分析は準備中です（Phase 4で対応予定）</p>
+              <p className="text-sm text-gray-300 py-6 text-center">AI分析はまだ生成されていません</p>
             )}
           </div>
         </div>
