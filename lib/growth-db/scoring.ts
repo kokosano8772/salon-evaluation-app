@@ -399,17 +399,19 @@ function calculateCategoryScore(
 
 // history: 対象店舗の全月次データ（yearMonth昇順）。yearMonth: スコアを出したい対象月。
 // staffCount: 組織力カテゴリの店長・幹部比率算出に使う（Storeの現在値でよい）。
+// 不明（null）の場合は0扱いにし、店長・幹部比率のサブ指標はundefinedとして
+// 除外される（makeOrganizationSubMetricsのstaffCount<=0ガードによる）。
 export function calculateGrowthScore(
   storeId: string,
   yearMonth: string,
   history: MonthlyMetrics[],
-  staffCount: number
+  staffCount: number | null
 ): GrowthScore {
   const sorted = [...history].sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
   const targetIndex = sorted.findIndex((m) => m.yearMonth === yearMonth);
   const uptoIndex = targetIndex === -1 ? sorted.length - 1 : targetIndex;
 
-  const categoryScores = buildCategoryConfigs(staffCount).map((config) =>
+  const categoryScores = buildCategoryConfigs(staffCount ?? 0).map((config) =>
     calculateCategoryScore(config, sorted, uptoIndex)
   );
   const totalScore = sumBy(categoryScores, (c) => c.score);

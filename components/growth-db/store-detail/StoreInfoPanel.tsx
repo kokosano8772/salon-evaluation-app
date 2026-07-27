@@ -31,14 +31,14 @@ export default function StoreInfoPanel({ store }: { store: Store }) {
 
       <div>
         <InfoRow label="電話番号" value={store.phone || "未登録"} />
-        <InfoRow label="開業年" value={`${store.openedYear}年`} />
-        <InfoRow label="店舗数" value={`${store.storeCount}店舗`} />
-        <InfoRow label="席数" value={`${store.seatCount}席`} />
+        <InfoRow label="開業年" value={store.openedYear !== null ? `${store.openedYear}年` : "不明"} />
+        <InfoRow label="店舗数" value={store.storeCount !== null ? `${store.storeCount}店舗` : "不明"} />
+        <InfoRow label="席数" value={store.seatCount !== null ? `${store.seatCount}席` : "不明"} />
         <InfoRow label="営業時間" value={store.businessHours} />
         <InfoRow label="営業日" value={store.businessDays} />
-        <InfoRow label="スタッフ数" value={`${store.staffCount}名`} />
+        <InfoRow label="スタッフ数" value={store.staffCount !== null ? `${store.staffCount}名` : "不明"} />
         <InfoRow label="ターゲット" value={store.targetCustomer} />
-        <InfoRow label="平均単価" value={formatYen(store.averageUnitPrice)} />
+        <InfoRow label="平均単価" value={store.averageUnitPrice !== null ? formatYen(store.averageUnitPrice) : "不明"} />
       </div>
 
       <Link

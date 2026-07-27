@@ -42,7 +42,7 @@ export default function NumberField({ label, value, onChange, suffix, min = 0, s
 
   return (
     <label className="block">
-      <span className="block text-xs text-gray-500 mb-1.5">{label}</span>
+      {label && <span className="block text-xs text-gray-500 mb-1.5">{label}</span>}
       <div className="relative">
         <input
           type="number"

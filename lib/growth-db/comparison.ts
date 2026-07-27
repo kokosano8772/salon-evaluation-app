@@ -23,7 +23,9 @@ function clamp01(n: number): number {
   return Math.min(1, Math.max(0, n));
 }
 
-function numericDistance(a: number, b: number, range: number): number {
+// 片方でも不明（null）なら、文字列項目と同じく中立値として扱う。
+function numericDistance(a: number | null, b: number | null, range: number): number {
+  if (a === null || b === null) return 0.5;
   return clamp01(Math.abs(a - b) / range);
 }
 

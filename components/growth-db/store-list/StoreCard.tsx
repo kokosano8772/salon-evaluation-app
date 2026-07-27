@@ -34,11 +34,11 @@ export default function StoreCard({ store }: { store: Store }) {
       <div className="flex items-center gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <Users size={12} strokeWidth={2} />
-          スタッフ{store.staffCount}名
+          スタッフ{store.staffCount ?? "不明"}名
         </span>
         <span className="flex items-center gap-1">
           <Calendar size={12} strokeWidth={2} />
-          {store.openedYear}年開業
+          {store.openedYear ?? "不明"}年開業
         </span>
       </div>
 

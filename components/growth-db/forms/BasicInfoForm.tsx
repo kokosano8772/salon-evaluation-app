@@ -1,6 +1,6 @@
 import FormSection from "./FormSection";
 import TextField from "./TextField";
-import NumberField from "./NumberField";
+import NullableNumberField from "./NullableNumberField";
 import SelectField from "./SelectField";
 import { TARGET_CUSTOMER_OPTIONS, TRADE_AREA_OPTIONS, STORE_FORMAT_OPTIONS } from "@/lib/growth-db/constants";
 import { Store } from "@/lib/growth-db/types";
@@ -21,10 +21,10 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
       <TextField label="店舗名" value={value.name} onChange={(v) => set("name", v)} />
       <TextField label="電話番号" value={value.phone} onChange={(v) => set("phone", v)} placeholder="09012345678" />
       <TextField label="エリア" value={value.area} onChange={(v) => set("area", v)} placeholder="例: 渋谷区" />
-      <NumberField label="開業年" value={value.openedYear} onChange={(v) => set("openedYear", v)} suffix="年" />
-      <NumberField label="店舗数" value={value.storeCount} onChange={(v) => set("storeCount", v)} suffix="店舗" />
-      <NumberField label="席数" value={value.seatCount} onChange={(v) => set("seatCount", v)} suffix="席" />
-      <NumberField label="スタッフ数" value={value.staffCount} onChange={(v) => set("staffCount", v)} suffix="名" />
+      <NullableNumberField label="開業年" value={value.openedYear} onChange={(v) => set("openedYear", v)} suffix="年" />
+      <NullableNumberField label="店舗数" value={value.storeCount} onChange={(v) => set("storeCount", v)} suffix="店舗" />
+      <NullableNumberField label="席数" value={value.seatCount} onChange={(v) => set("seatCount", v)} suffix="席" />
+      <NullableNumberField label="スタッフ数" value={value.staffCount} onChange={(v) => set("staffCount", v)} suffix="名" />
       <TextField label="営業時間" value={value.businessHours} onChange={(v) => set("businessHours", v)} />
       <TextField label="営業日" value={value.businessDays} onChange={(v) => set("businessDays", v)} />
       <SelectField
@@ -33,7 +33,7 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
         onChange={(v) => set("targetCustomer", v)}
         options={TARGET_CUSTOMER_OPTIONS}
       />
-      <NumberField
+      <NullableNumberField
         label="平均単価"
         value={value.averageUnitPrice}
         onChange={(v) => set("averageUnitPrice", v)}

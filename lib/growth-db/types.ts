@@ -180,14 +180,14 @@ export interface Store {
   name: string;
   phone: string;
   area: string;
-  openedYear: number;
-  storeCount: number;
-  seatCount: number;
+  openedYear: number | null;
+  storeCount: number | null;
+  seatCount: number | null;
   businessHours: string;
   businessDays: string;
-  staffCount: number;
+  staffCount: number | null;
   targetCustomer: string;
-  averageUnitPrice: number;
+  averageUnitPrice: number | null;
   // 同規模・地域平均比較で使う分類軸。既存店舗では未設定（空文字）の場合がある。
   tradeArea: string;
   storeFormat: string;

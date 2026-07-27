@@ -27,7 +27,7 @@ function buildPrompt(store: Store, monthly: MonthlyMetrics, score: GrowthScore):
 【店舗情報】
 店舗名: ${store.name}
 エリア: ${store.area}
-スタッフ数: ${store.staffCount}名
+スタッフ数: ${store.staffCount ?? "不明"}名
 商圏: ${store.tradeArea || "未設定"}
 店舗形態: ${store.storeFormat || "未設定"}
 
