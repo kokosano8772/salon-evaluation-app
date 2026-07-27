@@ -208,6 +208,18 @@ export class MetaAdsClient implements AdPlatformClient {
       ? { filtering: JSON.stringify([{ field: "campaign.id", operator: "IN", value: campaignIds }]) }
       : {};
 
+    // ターゲット年齢層・配信スケジュールは広告セットの「今の設定値」であり、insightsと違って
+    // time_rangeで期間を絞れない。そのため店舗名だけでフィルタしたmatchedCampaigns
+    // （命名規則「[店舗名]-YYYYMM」により対象月以外の過去キャンペーンも含まれ得る）を
+    // そのまま使うと、他の月のキャンペーンの設定まで混ざって範囲が不正確に広がってしまう。
+    // 対象月（YYYYMM）も名前に含むキャンペーンだけに絞り込んでから広告セットを取得する。
+    // 該当が無い場合（命名規則に合わない等）は誤った値を出すより取得自体を諦める。
+    const yearMonthDigits = yearMonth.replace("-", "");
+    const monthScopedCampaignIds = matchedCampaigns
+      .filter((c) => c.name?.includes(yearMonthDigits))
+      .map((c) => c.id)
+      .filter((id): id is string => !!id);
+
     // age×genderは併用できるが、hourlyはage/genderと併用不可のため別呼び出しにする。
     const [totalsRows, ageGenderRows, hourlyRows, campaignMetricsRows, adSets] = await Promise.all([
       callInsights<AccountTotalsRow>(accountId, {
@@ -236,7 +248,7 @@ export class MetaAdsClient implements AdPlatformClient {
         limit: "500",
         ...filterParams,
       }),
-      listAdSets(accountId, campaignIds),
+      listAdSets(accountId, monthScopedCampaignIds),
     ]);
     const metricsByCampaignId = new Map(campaignMetricsRows.map((row) => [row.campaign_id, row]));
     const targetAgeRange = buildTargetAgeRange(adSets);
