@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Loader2, Plus, Trash2 } from "lucide-react";
+import { Check, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
 import {
   AD_PLATFORM_LABEL,
@@ -110,9 +110,13 @@ function emptyCampaign(): AdCampaignMetrics {
   };
 }
 
+type SyncState = "idle" | "syncing" | "error";
+
 export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: AdReportFormProps) {
   const [draft, setDraft] = useState<AdReportDraft | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [syncState, setSyncState] = useState<SyncState>("idle");
+  const [syncError, setSyncError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -225,8 +229,57 @@ export default function AdReportForm({ storeId, yearMonth, platform, onSaved }: 
     setTimeout(() => setSaveState("idle"), 2000);
   };
 
+  const handleSync = async () => {
+    if (!draft.accountId) {
+      setSyncState("error");
+      setSyncError("先にアカウントIDを入力してください");
+      return;
+    }
+    setSyncState("syncing");
+    setSyncError("");
+    try {
+      const res = await fetch("/api/growth-db/ad-report-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform, accountId: draft.accountId, yearMonth }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+
+      const data = json.data as Partial<AdReportDraft>;
+      setDraft((prev) => (prev ? { ...prev, ...data } : prev));
+      setSyncState("idle");
+    } catch (err) {
+      setSyncState("error");
+      setSyncError(err instanceof Error ? err.message : "不明なエラー");
+    }
+  };
+
   return (
     <div className="space-y-6 pb-24">
+      {platform === "meta" && (
+        <div className="card-luxury p-6">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-sm font-semibold text-charcoal-900">Meta Marketing APIから自動取得</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                アカウントIDを入力してから実行してください（コンバージョン数は自動取得されないため引き続き手入力してください）
+              </p>
+            </div>
+            <button
+              onClick={handleSync}
+              disabled={syncState === "syncing"}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+            >
+              {syncState === "syncing" ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} strokeWidth={2} />}
+              {syncState === "syncing" ? "取得中..." : "APIから同期"}
+            </button>
+          </div>
+          {syncState === "error" && <p className="text-xs text-red-500 mt-3">{syncError}</p>}
+        </div>
+      )}
+
       <FormSection title={`${AD_PLATFORM_LABEL[platform]} - アカウント全体`} description="対象期間の合計値を入力してください">
         <TextField label="アカウントID" value={draft.accountId} onChange={(v) => patch("accountId", v)} placeholder="例: 123-456-7890" />
         <TextField label="ターゲット年齢層" value={draft.targetAgeRange} onChange={(v) => patch("targetAgeRange", v)} placeholder="例: 20-39歳" />
