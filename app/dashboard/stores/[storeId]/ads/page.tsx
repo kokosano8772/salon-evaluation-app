@@ -6,6 +6,7 @@ import { FileText } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AdReportForm from "@/components/growth-db/forms/AdReportForm";
 import AdReportAnalysisSummary from "@/components/growth-db/ads/AdReportAnalysisSummary";
+import AdReportBulkSyncPanel from "@/components/growth-db/ads/AdReportBulkSyncPanel";
 import { useStore, useMonthlyMetrics } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
 import { currentYearMonth } from "@/lib/growth-db/format";
@@ -86,6 +87,8 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
           </button>
         ))}
       </div>
+
+      <AdReportBulkSyncPanel storeId={store.id} storeName={store.name} platform={platform} onSaved={refreshAdReports} />
 
       {(() => {
         const currentReport = adReports.find((r) => r.yearMonth === selectedMonth && r.platform === platform);

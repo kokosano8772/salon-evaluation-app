@@ -72,6 +72,57 @@ async function listCampaigns(accountId: string): Promise<CampaignListRow[]> {
   });
 }
 
+// ターゲット年齢層・配信スケジュール（配信停止の時間帯）は広告セットの設定値。
+// これは「今その時点で設定されている値」であり、月ごとの履歴ではない点に注意
+// （ファイル内コメント参照）。
+interface AdSetScheduleEntry {
+  start_minute: number;
+  end_minute: number;
+  days: number[];
+  timezone_type?: string;
+}
+
+interface AdSetRow {
+  id?: string;
+  targeting?: { age_min?: number; age_max?: number };
+  adset_schedule?: AdSetScheduleEntry[];
+}
+
+async function listAdSets(accountId: string, campaignIds: string[]): Promise<AdSetRow[]> {
+  if (campaignIds.length === 0) return [];
+  return callGraphApi<AdSetRow>(`${normalizeAccountId(accountId)}/adsets`, {
+    fields: "id,targeting{age_min,age_max},adset_schedule",
+    filtering: JSON.stringify([{ field: "campaign.id", operator: "IN", value: campaignIds }]),
+    limit: "500",
+  });
+}
+
+// 複数の広告セットの年齢ターゲティングをまとめて、最小〜最大のレンジ文字列にする
+function buildTargetAgeRange(adSets: AdSetRow[]): string | undefined {
+  const ages = adSets
+    .map((a) => a.targeting)
+    .filter((t): t is { age_min?: number; age_max?: number } => !!t);
+  const mins = ages.map((t) => t.age_min).filter((n): n is number => typeof n === "number");
+  const maxs = ages.map((t) => t.age_max).filter((n): n is number => typeof n === "number");
+  if (mins.length === 0 || maxs.length === 0) return undefined;
+  return `${Math.min(...mins)}-${Math.max(...maxs)}歳`;
+}
+
+// 複数の広告セットの配信スケジュールを曜日を区別せず統合し、「配信している時間帯」の
+// 集合を作る。どの広告セットにもスケジュール設定が無ければ「常時配信＝停止なし」とみなす。
+function buildDeliveringHours(adSets: AdSetRow[]): Set<number> | null {
+  const schedules = adSets.flatMap((a) => a.adset_schedule ?? []);
+  if (schedules.length === 0) return null;
+
+  const hours = new Set<number>();
+  for (const entry of schedules) {
+    const startHour = Math.floor(entry.start_minute / 60);
+    const endHour = Math.ceil(entry.end_minute / 60);
+    for (let h = startHour; h < endHour && h < 24; h++) hours.add(h);
+  }
+  return hours;
+}
+
 function mapGender(raw: string | undefined): keyof GenderBreakdownValue {
   if (raw === "male") return "male";
   if (raw === "female") return "female";
@@ -158,7 +209,7 @@ export class MetaAdsClient implements AdPlatformClient {
       : {};
 
     // age×genderは併用できるが、hourlyはage/genderと併用不可のため別呼び出しにする。
-    const [totalsRows, ageGenderRows, hourlyRows, campaignMetricsRows] = await Promise.all([
+    const [totalsRows, ageGenderRows, hourlyRows, campaignMetricsRows, adSets] = await Promise.all([
       callInsights<AccountTotalsRow>(accountId, {
         fields: "spend,impressions,clicks,ctr,cpc,reach,frequency",
         time_range: timeRange,
@@ -185,8 +236,11 @@ export class MetaAdsClient implements AdPlatformClient {
         limit: "500",
         ...filterParams,
       }),
+      listAdSets(accountId, campaignIds),
     ]);
     const metricsByCampaignId = new Map(campaignMetricsRows.map((row) => [row.campaign_id, row]));
+    const targetAgeRange = buildTargetAgeRange(adSets);
+    const deliveringHours = buildDeliveringHours(adSets);
 
     const totals = totalsRows[0];
 
@@ -220,7 +274,12 @@ export class MetaAdsClient implements AdPlatformClient {
       const slot = mapHourlySlot(row.hourly_stats_aggregated_by_advertiser_time_zone);
       if (slot) hourlyMap.set(slot, (hourlyMap.get(slot) ?? 0) + Number(row.clicks ?? 0));
     }
-    const hourlyClicks: HourlyClicks[] = HOURLY_SLOTS.map((hour) => ({ hour, clicks: hourlyMap.get(hour) ?? 0 }));
+    const hourlyClicks: HourlyClicks[] = HOURLY_SLOTS.map((hour, i) => ({
+      hour,
+      clicks: hourlyMap.get(hour) ?? 0,
+      // deliveringHoursがnull（配信スケジュール設定なし）の場合は常時配信＝停止なし
+      stopped: deliveringHours ? !deliveringHours.has(i) : false,
+    }));
 
     // コンバージョン関連は取得しない（ファイル冒頭のコメント参照）。既存の手入力値を保持するため、
     // 呼び出し側（sync.ts→upsertAdReport）にはconversions/cpa/cvrを含めず渡す。
@@ -250,6 +309,7 @@ export class MetaAdsClient implements AdPlatformClient {
       cpc: Number(totals?.cpc ?? 0),
       reach: totals?.reach !== undefined ? Number(totals.reach) : undefined,
       frequency: totals?.frequency !== undefined ? Number(totals.frequency) : undefined,
+      ...(targetAgeRange !== undefined ? { targetAgeRange } : {}),
       campaigns,
       genderBreakdown,
       hourlyClicks,
