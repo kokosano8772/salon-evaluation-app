@@ -321,28 +321,37 @@ export default function QuickResultPage() {
             >
               <p className="text-gray-500 text-xs leading-relaxed mb-4">
                 改善提案は{improvements.length}件あります。
-                {!isPreview && "詳細を確認するには詳細診断をご利用ください。"}
+                {!isPreview && "2件を無料公開中。残りを確認するには詳細診断をご利用ください。"}
               </p>
 
-              {/* Blurred improvement cards */}
-              <div className="relative">
-                <div
-                  className={`space-y-3 ${!isPreview ? "pointer-events-none select-none" : ""}`}
-                  style={isPreview ? {} : { filter: "blur(6px)" }}
-                >
-                  {improvements.map((imp, i) => (
-                    <ImprovementCard key={i} improvement={imp} index={i} />
-                  ))}
-                </div>
-
-                {/* Gradient fade at bottom of blurred area */}
-                {!isPreview && (
-                  <div
-                    className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
-                    style={{ background: "linear-gradient(to top, #FAF8F3 0%, transparent 100%)" }}
-                  />
-                )}
+              {/* Free preview cards */}
+              <div className="space-y-3">
+                {improvements.slice(0, 2).map((imp, i) => (
+                  <ImprovementCard key={i} improvement={imp} index={i} />
+                ))}
               </div>
+
+              {/* Blurred remaining cards */}
+              {improvements.length > 2 && (
+                <div className="relative mt-3">
+                  <div
+                    className={`space-y-3 ${!isPreview ? "pointer-events-none select-none" : ""}`}
+                    style={isPreview ? {} : { filter: "blur(6px)" }}
+                  >
+                    {improvements.slice(2).map((imp, i) => (
+                      <ImprovementCard key={i + 2} improvement={imp} index={i + 2} />
+                    ))}
+                  </div>
+
+                  {/* Gradient fade at bottom of blurred area */}
+                  {!isPreview && (
+                    <div
+                      className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
+                      style={{ background: "linear-gradient(to top, #FAF8F3 0%, transparent 100%)" }}
+                    />
+                  )}
+                </div>
+              )}
 
               {/* Sticky CTA card — stays in view while scrolling */}
               {!isPreview && (
