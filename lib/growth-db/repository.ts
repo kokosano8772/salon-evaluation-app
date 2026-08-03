@@ -32,6 +32,8 @@ export function mapStoreRow(row: StoreRow): Store {
     averageUnitPrice: row.average_unit_price,
     tradeArea: row.trade_area,
     storeFormat: row.store_format,
+    googleAdsActive: row.google_ads_active,
+    metaAdsActive: row.meta_ads_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -52,6 +54,8 @@ function storeToRow(store: Partial<Store>): Partial<StoreRow> {
   if (store.averageUnitPrice !== undefined) row.average_unit_price = store.averageUnitPrice;
   if (store.tradeArea !== undefined) row.trade_area = store.tradeArea;
   if (store.storeFormat !== undefined) row.store_format = store.storeFormat;
+  if (store.googleAdsActive !== undefined) row.google_ads_active = store.googleAdsActive;
+  if (store.metaAdsActive !== undefined) row.meta_ads_active = store.metaAdsActive;
   return row;
 }
 
@@ -93,6 +97,8 @@ function mapDiagnosisResultRow(row: DiagnosisResultRow): LinkedDiagnosisResult {
 export interface GetStoresParams {
   search?: string;
   area?: string;
+  googleAdsOnly?: boolean;
+  metaAdsOnly?: boolean;
   sortBy?: "name" | "area" | "score" | "updatedAt";
   sortDir?: "asc" | "desc";
   page?: number;
@@ -112,7 +118,7 @@ const SORT_COLUMN: Record<NonNullable<GetStoresParams["sortBy"]>, string> = {
 };
 
 export async function getStores(params: GetStoresParams = {}): Promise<GetStoresResult> {
-  const { search, area, sortBy = "updatedAt", sortDir = "desc", page = 1, pageSize = 12 } = params;
+  const { search, area, googleAdsOnly, metaAdsOnly, sortBy = "updatedAt", sortDir = "desc", page = 1, pageSize = 12 } = params;
   const supabase = createClient();
 
   let query = supabase.from("stores").select("*", { count: "exact" });
@@ -122,6 +128,12 @@ export async function getStores(params: GetStoresParams = {}): Promise<GetStores
   }
   if (area) {
     query = query.eq("area", area);
+  }
+  if (googleAdsOnly) {
+    query = query.eq("google_ads_active", true);
+  }
+  if (metaAdsOnly) {
+    query = query.eq("meta_ads_active", true);
   }
 
   const start = (page - 1) * pageSize;

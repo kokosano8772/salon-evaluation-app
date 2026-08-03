@@ -13,6 +13,8 @@ const PAGE_SIZE = 9;
 export default function StoreListPage() {
   const [search, setSearch] = useState("");
   const [area, setArea] = useState("");
+  const [googleAdsOnly, setGoogleAdsOnly] = useState(false);
+  const [metaAdsOnly, setMetaAdsOnly] = useState(false);
   const [sortBy, setSortBy] = useState<GetStoresParams["sortBy"]>("updatedAt");
   const [sortDir, setSortDir] = useState<GetStoresParams["sortDir"]>("desc");
   const [page, setPage] = useState(1);
@@ -20,6 +22,8 @@ export default function StoreListPage() {
   const { items, total, loading } = useStores({
     search,
     area: area || undefined,
+    googleAdsOnly: googleAdsOnly || undefined,
+    metaAdsOnly: metaAdsOnly || undefined,
     sortBy,
     sortDir,
     page,
@@ -43,6 +47,16 @@ export default function StoreListPage() {
         area={area}
         onAreaChange={(v) => {
           setArea(v);
+          setPage(1);
+        }}
+        googleAdsOnly={googleAdsOnly}
+        onGoogleAdsOnlyChange={(v) => {
+          setGoogleAdsOnly(v);
+          setPage(1);
+        }}
+        metaAdsOnly={metaAdsOnly}
+        onMetaAdsOnlyChange={(v) => {
+          setMetaAdsOnly(v);
           setPage(1);
         }}
         sortValue={`${sortBy}-${sortDir}`}

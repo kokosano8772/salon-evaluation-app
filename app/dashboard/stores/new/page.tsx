@@ -21,6 +21,8 @@ const INITIAL_VALUE: BasicInfoValue = {
   averageUnitPrice: 8000,
   tradeArea: "",
   storeFormat: "",
+  googleAdsActive: false,
+  metaAdsActive: false,
 };
 
 export default function NewStorePage() {

@@ -2,6 +2,7 @@ import FormSection from "./FormSection";
 import TextField from "./TextField";
 import NullableNumberField from "./NullableNumberField";
 import SelectField from "./SelectField";
+import CheckboxField from "./CheckboxField";
 import { TARGET_CUSTOMER_OPTIONS, TRADE_AREA_OPTIONS, STORE_FORMAT_OPTIONS } from "@/lib/growth-db/constants";
 import { Store } from "@/lib/growth-db/types";
 
@@ -53,6 +54,10 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
         options={STORE_FORMAT_OPTIONS}
         placeholder="未設定"
       />
+      <div className="sm:col-span-2 flex flex-wrap gap-x-6">
+        <CheckboxField label="Google広告を実施中" checked={value.googleAdsActive} onChange={(v) => set("googleAdsActive", v)} />
+        <CheckboxField label="インスタ広告（Meta広告）を実施中" checked={value.metaAdsActive} onChange={(v) => set("metaAdsActive", v)} />
+      </div>
     </FormSection>
   );
 }

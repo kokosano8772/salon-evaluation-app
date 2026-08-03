@@ -18,6 +18,16 @@ export default function StoreCard({ store }: { store: Store }) {
             <MapPin size={12} strokeWidth={2} />
             {store.area}
           </p>
+          {(store.googleAdsActive || store.metaAdsActive) && (
+            <div className="flex items-center gap-1 mt-1.5">
+              {store.googleAdsActive && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600">Google広告</span>
+              )}
+              {store.metaAdsActive && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-pink-50 text-pink-600">インスタ広告</span>
+              )}
+            </div>
+          )}
         </div>
         {!loading && score && (
           <div

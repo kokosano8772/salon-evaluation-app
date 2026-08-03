@@ -10,6 +10,10 @@ interface StoreListToolbarProps {
   onSearchChange: (value: string) => void;
   area: string;
   onAreaChange: (value: string) => void;
+  googleAdsOnly: boolean;
+  onGoogleAdsOnlyChange: (value: boolean) => void;
+  metaAdsOnly: boolean;
+  onMetaAdsOnlyChange: (value: boolean) => void;
   sortValue: string;
   onSortChange: (sortBy: GetStoresParams["sortBy"], sortDir: GetStoresParams["sortDir"]) => void;
 }
@@ -27,11 +31,16 @@ export default function StoreListToolbar({
   onSearchChange,
   area,
   onAreaChange,
+  googleAdsOnly,
+  onGoogleAdsOnlyChange,
+  metaAdsOnly,
+  onMetaAdsOnlyChange,
   sortValue,
   onSortChange,
 }: StoreListToolbarProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
+    <div className="mb-6">
+    <div className="flex flex-col md:flex-row md:items-center gap-3 mb-3">
       <div className="relative flex-1 min-w-0">
         <Search size={16} strokeWidth={2} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
@@ -85,6 +94,30 @@ export default function StoreListToolbar({
         <Plus size={16} strokeWidth={2.2} />
         店舗を追加
       </Link>
+    </div>
+
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => onGoogleAdsOnlyChange(!googleAdsOnly)}
+        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border ${
+          googleAdsOnly
+            ? "bg-[#C4788A] text-white border-[#C4788A]"
+            : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+        }`}
+      >
+        Google広告実施中のみ
+      </button>
+      <button
+        onClick={() => onMetaAdsOnlyChange(!metaAdsOnly)}
+        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border ${
+          metaAdsOnly
+            ? "bg-[#C4788A] text-white border-[#C4788A]"
+            : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+        }`}
+      >
+        インスタ広告実施中のみ
+      </button>
+    </div>
     </div>
   );
 }

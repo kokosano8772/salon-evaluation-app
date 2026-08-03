@@ -191,6 +191,9 @@ export interface Store {
   // 同規模・地域平均比較で使う分類軸。既存店舗では未設定（空文字）の場合がある。
   tradeArea: string;
   storeFormat: string;
+  // 広告運用の有無（一覧の絞り込み用）。ad_reportsの実績データとは独立した手動フラグ。
+  googleAdsActive: boolean;
+  metaAdsActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
