@@ -10,9 +10,10 @@ import AdReportBulkSyncPanel from "@/components/growth-db/ads/AdReportBulkSyncPa
 import { useStore, useMonthlyMetrics } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
 import { currentYearMonth } from "@/lib/growth-db/format";
-import { AD_PLATFORM_LABEL, AdPlatform } from "@/lib/growth-db/ad-report-types";
+import { AD_PLATFORM_LABEL, AD_REPORT_CATEGORY_LABEL, AdPlatform, AdReportCategory } from "@/lib/growth-db/ad-report-types";
 
 const PLATFORMS: AdPlatform[] = ["google", "meta"];
+const CATEGORIES: AdReportCategory[] = ["acquisition", "recruitment"];
 
 export default function StoreAdsPage({ params }: { params: Promise<{ storeId: string }> }) {
   const { storeId } = use(params);
@@ -25,6 +26,8 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
 
   const [selectedMonth, setSelectedMonth] = useState<string | undefined>(undefined);
   const [platform, setPlatform] = useState<AdPlatform>("google");
+  // 集客/求人の区分はGoogle広告のみで使う（Metaは常に集客扱い）
+  const [category, setCategory] = useState<AdReportCategory>("acquisition");
 
   useEffect(() => {
     if (!selectedMonth && !adReportsLoading) {
@@ -88,20 +91,46 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
         ))}
       </div>
 
-      <AdReportBulkSyncPanel storeId={store.id} storeName={store.name} platform={platform} onSaved={refreshAdReports} />
+      {platform === "google" && (
+        <div className="flex items-center gap-1 mb-6">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                category === c ? "bg-[#C4788A] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {AD_REPORT_CATEGORY_LABEL[c]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <AdReportBulkSyncPanel
+        storeId={store.id}
+        storeName={store.name}
+        platform={platform}
+        category={platform === "google" ? category : "acquisition"}
+        onSaved={refreshAdReports}
+      />
 
       {(() => {
-        const currentReport = adReports.find((r) => r.yearMonth === selectedMonth && r.platform === platform);
+        const activeCategory = platform === "google" ? category : "acquisition";
+        const currentReport = adReports.find(
+          (r) => r.yearMonth === selectedMonth && r.platform === platform && r.category === activeCategory
+        );
         if (!currentReport) return null;
         return <AdReportAnalysisSummary report={currentReport} history={adReports} monthlyHistory={history} />;
       })()}
 
       <AdReportForm
-        key={`${selectedMonth}-${platform}`}
+        key={`${selectedMonth}-${platform}-${platform === "google" ? category : "acquisition"}`}
         storeId={store.id}
         storeName={store.name}
         yearMonth={selectedMonth}
         platform={platform}
+        category={platform === "google" ? category : "acquisition"}
         onSaved={refreshAdReports}
       />
     </div>

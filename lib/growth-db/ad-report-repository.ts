@@ -3,7 +3,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Database } from "@/lib/supabase/database.types";
-import { AdCampaignMetrics, AdPlatform, AdReport, AgeGroupClicks, GenderBreakdown, HourlyClicks } from "./ad-report-types";
+import { AdCampaignMetrics, AdPlatform, AdReport, AdReportCategory, AgeGroupClicks, GenderBreakdown, HourlyClicks } from "./ad-report-types";
 
 type AdReportRow = Database["public"]["Tables"]["ad_reports"]["Row"];
 
@@ -13,6 +13,7 @@ export function mapAdReportRow(row: AdReportRow): AdReport {
     storeId: row.store_id,
     yearMonth: row.year_month,
     platform: row.platform,
+    category: row.category,
     accountId: row.account_id,
     spend: row.spend,
     impressions: row.impressions,
@@ -49,7 +50,8 @@ export async function listAdReports(storeId: string, yearMonth?: string): Promis
 export async function getAdReport(
   storeId: string,
   yearMonth: string,
-  platform: AdPlatform
+  platform: AdPlatform,
+  category: AdReportCategory = "acquisition"
 ): Promise<AdReport | null> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -58,20 +60,22 @@ export async function getAdReport(
     .eq("store_id", storeId)
     .eq("year_month", yearMonth)
     .eq("platform", platform)
+    .eq("category", category)
     .maybeSingle();
   if (error) throw error;
   return data ? mapAdReportRow(data) : null;
 }
 
 export type AdReportPatch = Partial<
-  Omit<AdReport, "id" | "storeId" | "yearMonth" | "platform" | "createdAt" | "updatedAt">
+  Omit<AdReport, "id" | "storeId" | "yearMonth" | "platform" | "category" | "createdAt" | "updatedAt">
 >;
 
 export async function upsertAdReport(
   storeId: string,
   yearMonth: string,
   platform: AdPlatform,
-  patch: AdReportPatch
+  patch: AdReportPatch,
+  category: AdReportCategory = "acquisition"
 ): Promise<AdReport> {
   const supabase = createClient();
 
@@ -79,6 +83,7 @@ export async function upsertAdReport(
     store_id: storeId,
     year_month: yearMonth,
     platform,
+    category,
   };
   if (patch.accountId !== undefined) row.account_id = patch.accountId;
   if (patch.spend !== undefined) row.spend = patch.spend;
@@ -100,7 +105,7 @@ export async function upsertAdReport(
 
   const { data, error } = await supabase
     .from("ad_reports")
-    .upsert(row, { onConflict: "store_id,year_month,platform" })
+    .upsert(row, { onConflict: "store_id,year_month,platform,category" })
     .select()
     .single();
   if (error) throw error;

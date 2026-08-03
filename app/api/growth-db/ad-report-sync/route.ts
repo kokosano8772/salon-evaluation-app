@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MetaAdsClient } from "@/lib/ad-platforms/meta-ads-client";
+import { GoogleAdsClient } from "@/lib/ad-platforms/google-ads-client";
 import { AdPlatform } from "@/lib/growth-db/ad-report-types";
 
 export const runtime = "nodejs";
@@ -38,12 +39,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "platform / accountId / yearMonth は必須です" }, { status: 400 });
   }
 
-  if (platform !== "meta") {
-    return NextResponse.json({ error: "Google広告のAPI連携は未実装です" }, { status: 501 });
-  }
-
   try {
-    const client = new MetaAdsClient();
+    const client = platform === "meta" ? new MetaAdsClient() : new GoogleAdsClient();
     const data = await client.fetchMonthlyReport(accountId, yearMonth, campaignNameFilter);
     return NextResponse.json({ data });
   } catch (error) {

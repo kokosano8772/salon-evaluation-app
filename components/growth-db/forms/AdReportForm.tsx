@@ -9,6 +9,7 @@ import {
   AdCampaignMetrics,
   AdPlatform,
   AdReport,
+  AdReportCategory,
   AgeGroupClicks,
   GenderBreakdown,
   GenderBreakdownValue,
@@ -25,6 +26,7 @@ interface AdReportFormProps {
   storeName: string;
   yearMonth: string;
   platform: AdPlatform;
+  category?: AdReportCategory;
   onSaved?: () => void;
 }
 
@@ -36,6 +38,7 @@ type AdReportDraft = Omit<
   | "storeId"
   | "yearMonth"
   | "platform"
+  | "category"
   | "createdAt"
   | "updatedAt"
   | "aiResult"
@@ -113,7 +116,14 @@ function emptyCampaign(): AdCampaignMetrics {
 
 type SyncState = "idle" | "syncing" | "synced" | "error";
 
-export default function AdReportForm({ storeId, storeName, yearMonth, platform, onSaved }: AdReportFormProps) {
+export default function AdReportForm({
+  storeId,
+  storeName,
+  yearMonth,
+  platform,
+  category = "acquisition",
+  onSaved,
+}: AdReportFormProps) {
   const [draft, setDraft] = useState<AdReportDraft | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [syncState, setSyncState] = useState<SyncState>("idle");
@@ -124,7 +134,7 @@ export default function AdReportForm({ storeId, storeName, yearMonth, platform, 
   useEffect(() => {
     let cancelled = false;
     setDraft(null);
-    repo.getAdReport(storeId, yearMonth, platform).then((existing) => {
+    repo.getAdReport(storeId, yearMonth, platform, category).then((existing) => {
       if (cancelled) return;
       if (existing) {
         const {
@@ -170,7 +180,7 @@ export default function AdReportForm({ storeId, storeName, yearMonth, platform, 
     return () => {
       cancelled = true;
     };
-  }, [storeId, yearMonth, platform]);
+  }, [storeId, yearMonth, platform, category]);
 
   if (!draft) {
     return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
@@ -226,7 +236,7 @@ export default function AdReportForm({ storeId, storeName, yearMonth, platform, 
 
   const handleSave = async () => {
     setSaveState("saving");
-    await repo.upsertAdReport(storeId, yearMonth, platform, draft);
+    await repo.upsertAdReport(storeId, yearMonth, platform, draft, category);
     setSaveState("saved");
     onSaved?.();
     setTimeout(() => setSaveState("idle"), 2000);
@@ -267,13 +277,17 @@ export default function AdReportForm({ storeId, storeName, yearMonth, platform, 
 
   return (
     <div className="space-y-6 pb-24">
-      {platform === "meta" && (
+      {(platform === "meta" || platform === "google") && (
         <div className="card-luxury p-6">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <div>
-              <p className="text-sm font-semibold text-charcoal-900">Meta Marketing APIから自動取得</p>
+              <p className="text-sm font-semibold text-charcoal-900">
+                {platform === "meta" ? "Meta Marketing API" : "Google Ads API"}から自動取得
+              </p>
               <p className="text-xs text-gray-400 mt-0.5">
-                アカウントIDを入力してから実行してください（コンバージョン数は自動取得されないため引き続き手入力してください）
+                {platform === "google"
+                  ? `アカウントIDを入力してから実行してください（現在「${category === "recruitment" ? "求人" : "集客"}」区分で同期します。上のタブで切り替えできます）`
+                  : "アカウントIDを入力してから実行してください（コンバージョン数は自動取得されないため引き続き手入力してください）"}
               </p>
             </div>
             <button
@@ -290,7 +304,7 @@ export default function AdReportForm({ storeId, storeName, yearMonth, platform, 
             label="キャンペーン名の絞り込みキーワード"
             value={campaignNameFilter}
             onChange={setCampaignNameFilter}
-            placeholder="例: 店舗名"
+            placeholder={platform === "google" ? "例: 店舗名（集客/求人を区別できる場合はそのキーワードも含める）" : "例: 店舗名"}
           />
           <p className="text-xs text-gray-400 mt-1.5">
             1つの広告アカウントに複数店舗のキャンペーンが混在している場合、このキーワードを含むキャンペーンだけを対象にします。空欄にするとアカウント内の全キャンペーンが対象になるため注意してください。

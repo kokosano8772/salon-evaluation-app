@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { Check, Loader2, RefreshCw, X } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
-import { AdPlatform } from "@/lib/growth-db/ad-report-types";
+import { AdPlatform, AdReportCategory } from "@/lib/growth-db/ad-report-types";
 import { currentYearMonth, formatMonthLabel, shiftYearMonth } from "@/lib/growth-db/format";
 
 interface AdReportBulkSyncPanelProps {
   storeId: string;
   storeName: string;
   platform: AdPlatform;
+  category?: AdReportCategory;
   onSaved?: () => void;
 }
 
@@ -35,15 +36,19 @@ function monthsInRange(start: string, end: string): string[] {
 // 過去に運用していた分をまとめて取り込むための一括同期。既存の1ヶ月ずつの
 // 「APIから同期」（AdReportForm内）はレビューしてから保存する流れだが、
 // こちらは月数が多いことを想定し、取得したデータをその場で自動保存する。
-export default function AdReportBulkSyncPanel({ storeId, storeName, platform, onSaved }: AdReportBulkSyncPanelProps) {
+export default function AdReportBulkSyncPanel({
+  storeId,
+  storeName,
+  platform,
+  category = "acquisition",
+  onSaved,
+}: AdReportBulkSyncPanelProps) {
   const [startMonth, setStartMonth] = useState(shiftYearMonth(currentYearMonth(), -5));
   const [endMonth, setEndMonth] = useState(currentYearMonth());
   const [accountId, setAccountId] = useState("");
   const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<MonthResult[]>([]);
-
-  if (platform !== "meta") return null;
 
   const handleRun = async () => {
     if (!accountId.trim() || startMonth > endMonth || running) return;
@@ -68,7 +73,7 @@ export default function AdReportBulkSyncPanel({ storeId, storeName, platform, on
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
 
-        await repo.upsertAdReport(storeId, yearMonth, platform, { ...json.data, accountId });
+        await repo.upsertAdReport(storeId, yearMonth, platform, { ...json.data, accountId }, category);
         setResults((prev) =>
           prev.map((r) =>
             r.yearMonth === yearMonth

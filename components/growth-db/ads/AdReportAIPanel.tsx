@@ -66,7 +66,7 @@ export default function AdReportAIPanel({ storeId, platform, report, history, mo
       }
 
       setStatus("saving");
-      await repo.upsertAdReport(storeId, report.yearMonth, platform, { aiResult: full });
+      await repo.upsertAdReport(storeId, report.yearMonth, platform, { aiResult: full }, report.category);
       setStatus("done");
       onSaved(full);
     } catch (err) {
@@ -77,11 +77,11 @@ export default function AdReportAIPanel({ storeId, platform, report, history, mo
 
   const saveEdit = useCallback(async () => {
     setEditStatus("saving");
-    await repo.upsertAdReport(storeId, report.yearMonth, platform, { aiResult: editedText });
+    await repo.upsertAdReport(storeId, report.yearMonth, platform, { aiResult: editedText }, report.category);
     setEditStatus("saved");
     onSaved(editedText);
     setTimeout(() => setEditStatus("idle"), 2000);
-  }, [storeId, platform, report.yearMonth, editedText, onSaved]);
+  }, [storeId, platform, report.yearMonth, report.category, editedText, onSaved]);
 
   const isBusy = status === "streaming" || status === "saving";
   const isDirty = editedText !== (report.aiResult ?? "");

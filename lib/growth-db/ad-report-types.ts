@@ -3,6 +3,16 @@
 
 export type AdPlatform = "google" | "meta";
 
+// Google広告では1店舗に集客目的・求人目的の複数キャンペーンが混在することがあり、
+// キャンペーン名からの自動判別ができないため、同期時に手動で選んでもらう区分。
+// 同じ店舗・同じ月でも区分ごとに別レコードとして保存する。
+export type AdReportCategory = "acquisition" | "recruitment";
+
+export const AD_REPORT_CATEGORY_LABEL: Record<AdReportCategory, string> = {
+  acquisition: "集客",
+  recruitment: "求人",
+};
+
 // Google Ads API・Meta Marketing APIどちらのレスポンスも、保存前にこの共通形式に
 // 変換してから使う（外部APIとレポート生成ロジックを疎結合にするための境界）。
 export interface AdCampaignMetrics {
@@ -54,6 +64,7 @@ export interface AdReport {
   storeId: string;
   yearMonth: string; // "YYYY-MM"
   platform: AdPlatform;
+  category: AdReportCategory;
   accountId: string;
   spend: number;
   impressions: number;

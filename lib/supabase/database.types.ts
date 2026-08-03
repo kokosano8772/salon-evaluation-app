@@ -105,6 +105,7 @@ export interface Database {
           store_id: string;
           year_month: string;
           platform: "google" | "meta";
+          category: "acquisition" | "recruitment";
           account_id: string;
           spend: number;
           impressions: number;
