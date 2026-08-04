@@ -22,6 +22,11 @@ export function buildAdReportAnalysisPrompt(
 ): string {
   const lines: string[] = [];
 
+  // Meta広告はコンバージョン数を自動取得できず、手入力（未入力なら0）に頼っているため
+  // 数値として信用できない。「0件」を実態の不振と誤解してAIが指摘してしまうのを防ぐため、
+  // Meta広告のレポートではコンバージョン/CPA/CVRに関する情報を一切AIに渡さない。
+  const trustConversions = report.platform !== "meta";
+
   lines.push(`# ${formatMonthLabel(report.yearMonth)}の広告実績データ（すべて計算済みの確定値）`);
   lines.push("");
   lines.push("## ①前月比較");
@@ -29,8 +34,10 @@ export function buildAdReportAnalysisPrompt(
   lines.push(`- クリック数: ${formatChange(comparison.clicks, "number")}`);
   lines.push(`- CTR: ${formatChange(comparison.ctr, "percent")}`);
   lines.push(`- CPC: ${formatChange(comparison.cpc, "yen")}`);
-  lines.push(`- コンバージョン数: ${formatChange(comparison.conversions, "number")}`);
-  lines.push(`- CPA: ${formatChange(comparison.cpa, "yen")}`);
+  if (trustConversions) {
+    lines.push(`- コンバージョン数: ${formatChange(comparison.conversions, "number")}`);
+    lines.push(`- CPA: ${formatChange(comparison.cpa, "yen")}`);
+  }
 
   if (report.ageGroupClicks && report.ageGroupClicks.length > 0) {
     const best = [...report.ageGroupClicks].sort((a, b) => b.clicks - a.clicks)[0];
@@ -44,24 +51,30 @@ export function buildAdReportAnalysisPrompt(
     if (report.targetAgeRange) lines.push(`- 設定ターゲット年齢: ${report.targetAgeRange}`);
   }
 
-  if (report.campaigns.length > 0) {
-    lines.push("");
-    lines.push("## ②キャンペーン分析");
+  // best/worst/highSpendLowPerformance/worsenedはすべてコンバージョン・CPA・CVRに
+  // 依存した分析のため、Meta広告では丸ごと対象外にする
+  if (trustConversions && report.campaigns.length > 0) {
+    const campaignLines: string[] = [];
     if (campaignAnalysis.best) {
-      lines.push(`- 最も成果が良いキャンペーン: 「${campaignAnalysis.best.name || "（名称未入力）"}」CPA ${formatYen(campaignAnalysis.best.cpa)}`);
+      campaignLines.push(`- 最も成果が良いキャンペーン: 「${campaignAnalysis.best.name || "（名称未入力）"}」CPA ${formatYen(campaignAnalysis.best.cpa)}`);
     }
     if (campaignAnalysis.worst) {
       const detail =
         campaignAnalysis.worst.conversions === 0
           ? `コンバージョン0件（広告費 ${formatYen(campaignAnalysis.worst.spend)}）`
           : `CPA ${formatYen(campaignAnalysis.worst.cpa)}`;
-      lines.push(`- 改善が必要なキャンペーン: 「${campaignAnalysis.worst.name || "（名称未入力）"}」${detail}`);
+      campaignLines.push(`- 改善が必要なキャンペーン: 「${campaignAnalysis.worst.name || "（名称未入力）"}」${detail}`);
     }
     for (const c of campaignAnalysis.highSpendLowPerformance) {
-      lines.push(`- 広告費を使っているが成果が弱い: 「${c.name || "（名称未入力）"}」広告費 ${formatYen(c.spend)}・CVR ${formatPercent(c.cvr)}`);
+      campaignLines.push(`- 広告費を使っているが成果が弱い: 「${c.name || "（名称未入力）"}」広告費 ${formatYen(c.spend)}・CVR ${formatPercent(c.cvr)}`);
     }
     for (const { campaign, cpaChangePercent } of campaignAnalysis.worsened) {
-      lines.push(`- 前月よりCPAが悪化: 「${campaign.name || "（名称未入力）"}」CPA ${formatYen(campaign.cpa)}・前月比 +${cpaChangePercent}%`);
+      campaignLines.push(`- 前月よりCPAが悪化: 「${campaign.name || "（名称未入力）"}」CPA ${formatYen(campaign.cpa)}・前月比 +${cpaChangePercent}%`);
+    }
+    if (campaignLines.length > 0) {
+      lines.push("");
+      lines.push("## ②キャンペーン分析");
+      lines.push(...campaignLines);
     }
   }
 
