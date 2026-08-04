@@ -30,7 +30,8 @@ export function buildAdReportAnalysisPrompt(
   lines.push(`# ${formatMonthLabel(report.yearMonth)}の広告実績データ（すべて計算済みの確定値）`);
   lines.push("");
   lines.push("## ①前月比較");
-  lines.push(`- 広告費: ${formatChange(comparison.spend, "yen")}`);
+  // 広告費の増減はこちら（代理店側）が決めているものであり、店舗オーナー向けの
+  // 文章として「上がった／下がった」を話題にすると生々しく響くため含めない。
   lines.push(`- クリック数: ${formatChange(comparison.clicks, "number")}`);
   lines.push(`- CTR: ${formatChange(comparison.ctr, "percent")}`);
   lines.push(`- CPC: ${formatChange(comparison.cpc, "yen")}`);
