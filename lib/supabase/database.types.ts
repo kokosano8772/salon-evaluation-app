@@ -25,6 +25,7 @@ export interface Database {
           store_format: string;
           google_ads_active: boolean;
           meta_ads_active: boolean;
+          ad_sync_defaults: unknown;
           latest_score: number | null;
           latest_score_year_month: string | null;
           created_at: string;

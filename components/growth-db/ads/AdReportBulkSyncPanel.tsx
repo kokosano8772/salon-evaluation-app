@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Loader2, RefreshCw, X } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
+import { getAdSyncDefault, saveAdSyncDefault } from "@/lib/growth-db/ad-sync-defaults";
 import { AdPlatform, AdReportCategory } from "@/lib/growth-db/ad-report-types";
-import { currentYearMonth, formatMonthLabel, shiftYearMonth, stripYearMonthSuffix } from "@/lib/growth-db/format";
+import { currentYearMonth, formatMonthLabel, shiftYearMonth } from "@/lib/growth-db/format";
 
 interface AdReportBulkSyncPanelProps {
   storeId: string;
@@ -46,12 +47,23 @@ export default function AdReportBulkSyncPanel({
   const [startMonth, setStartMonth] = useState(shiftYearMonth(currentYearMonth(), -5));
   const [endMonth, setEndMonth] = useState(currentYearMonth());
   const [accountId, setAccountId] = useState("");
-  // 実際のキャンペーン名の並びは店舗ごとに違うため店舗名から推測で組み立てず、
-  // 初期値は店舗名のみにする。同期に成功したら実際にマッチしたキャンペーンの
-  // 本物の名前から数字部分だけを取り除いた値に、ループ内で自動的に補正していく。
   const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<MonthResult[]>([]);
+
+  // アカウントID・絞り込みキーワードは店舗×プラットフォーム×区分ごとに
+  // stores.ad_sync_defaultsへ保存済みのものを自動で読み込む。
+  useEffect(() => {
+    let cancelled = false;
+    getAdSyncDefault(storeId, platform, category).then((syncDefault) => {
+      if (cancelled) return;
+      setAccountId(syncDefault?.accountId ?? "");
+      setCampaignNameFilter(syncDefault?.campaignNameFilter || storeName);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [storeId, platform, category, storeName]);
 
   const handleRun = async () => {
     if (!accountId.trim() || startMonth > endMonth || running) return;
@@ -60,9 +72,8 @@ export default function AdReportBulkSyncPanel({
     setRunning(true);
     setResults(months.map((yearMonth) => ({ yearMonth, status: "pending" })));
 
-    // ループの中で使う実際のキーワード。setState経由だとこの後の反復に反映されないため
-    // （クロージャが古い値を見たまま）、ローカル変数で持ち回って都度補正していく。
-    let effectiveFilter = campaignNameFilter.trim();
+    const effectiveFilter = campaignNameFilter.trim();
+    let succeededOnce = false;
 
     for (const yearMonth of months) {
       setResults((prev) => prev.map((r) => (r.yearMonth === yearMonth ? { ...r, status: "syncing" } : r)));
@@ -80,18 +91,8 @@ export default function AdReportBulkSyncPanel({
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
 
-        // 実際にマッチしたキャンペーンの本物の名前から数字部分だけを取り除いた値に
-        // 補正し、以降の月・次回以降の同期でも正確な絞り込みができるようにする。
-        const matchedName = json.data.campaigns?.[0]?.name as string | undefined;
-        if (matchedName) {
-          const stripped = stripYearMonthSuffix(matchedName);
-          if (stripped) {
-            effectiveFilter = stripped;
-            setCampaignNameFilter(stripped);
-          }
-        }
-
         await repo.upsertAdReport(storeId, yearMonth, platform, { ...json.data, accountId }, category);
+        succeededOnce = true;
         setResults((prev) =>
           prev.map((r) =>
             r.yearMonth === yearMonth
@@ -108,6 +109,12 @@ export default function AdReportBulkSyncPanel({
           )
         );
       }
+    }
+
+    // 1ヶ月でも同期に成功したら、その時使ったアカウントID・キーワードを
+    // 店舗ごとに保存し、次回以降どの月でも自動で読み込まれるようにする。
+    if (succeededOnce) {
+      await saveAdSyncDefault(storeId, platform, category, { accountId, campaignNameFilter: effectiveFilter });
     }
 
     setRunning(false);

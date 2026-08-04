@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
+import { getAdSyncDefault, saveAdSyncDefault } from "@/lib/growth-db/ad-sync-defaults";
 import {
   AD_PLATFORM_LABEL,
   AGE_GROUPS,
@@ -16,7 +17,6 @@ import {
   HOURLY_SLOTS,
   HourlyClicks,
 } from "@/lib/growth-db/ad-report-types";
-import { stripYearMonthSuffix } from "@/lib/growth-db/format";
 import FormSection from "./FormSection";
 import TextField from "./TextField";
 import NumberField from "./NumberField";
@@ -130,19 +130,20 @@ export default function AdReportForm({
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [syncError, setSyncError] = useState("");
   const [syncedCampaignCount, setSyncedCampaignCount] = useState(0);
-  // 月の絞り込みはtime_range（Meta）/segments.date（Google）や、コード内部の
-  // 月スコープ絞り込み（meta-ads-client.tsのyearMonthDigits）で別途処理済みのため、
-  // ここに数字を入れる必要はない。実際のキャンペーン名の並び（「エムアイ(求人) 豊田」
-  // のように区分が店舗名の途中に入る等）は店舗ごとに違うため、店舗名から推測で
-  // 組み立てず、初期値は店舗名のみにする。同期に成功したら実際にマッチした
-  // キャンペーンの本物の名前から数字部分だけを取り除いた値に自動で置き換える。
+  // アカウントID・絞り込みキーワードは店舗×プラットフォーム×区分ごとにstoresへ
+  // 保存済みのものを自動で読み込む（下のuseEffect）。一度同期に成功した値を
+  // 覚えておき、どの月でも自動で入るようにするため、ここでは空で初期化するだけ。
   const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
 
   useEffect(() => {
     let cancelled = false;
     setDraft(null);
-    repo.getAdReport(storeId, yearMonth, platform, category).then((existing) => {
+    Promise.all([
+      repo.getAdReport(storeId, yearMonth, platform, category),
+      getAdSyncDefault(storeId, platform, category),
+    ]).then(([existing, syncDefault]) => {
       if (cancelled) return;
+      setCampaignNameFilter(syncDefault?.campaignNameFilter || storeName);
       if (existing) {
         const {
           accountId,
@@ -163,7 +164,7 @@ export default function AdReportForm({
           targetAgeRange,
         } = existing;
         setDraft({
-          accountId,
+          accountId: accountId || syncDefault?.accountId || "",
           spend,
           impressions,
           clicks,
@@ -181,7 +182,7 @@ export default function AdReportForm({
           targetAgeRange: targetAgeRange ?? "",
         });
       } else {
-        setDraft(emptyDraft());
+        setDraft({ ...emptyDraft(), accountId: syncDefault?.accountId ?? "" });
       }
     });
     return () => {
@@ -275,13 +276,12 @@ export default function AdReportForm({
       setDraft((prev) => (prev ? { ...prev, ...data } : prev));
       setSyncedCampaignCount(data.campaigns?.length ?? 0);
 
-      // 実際にマッチしたキャンペーンの本物の名前から数字部分だけを取り除いた値に
-      // キーワードを置き換える（次回以降、店舗名からの推測に頼らず正確に絞り込める）
-      const matchedName = data.campaigns?.[0]?.name;
-      if (matchedName) {
-        const stripped = stripYearMonthSuffix(matchedName);
-        if (stripped) setCampaignNameFilter(stripped);
-      }
+      // 同期に成功したアカウントID・キーワードの組み合わせを店舗ごとに保存し、
+      // 次回以降どの月でも自動で読み込まれるようにする。
+      await saveAdSyncDefault(storeId, platform, category, {
+        accountId: draft.accountId,
+        campaignNameFilter: campaignNameFilter.trim(),
+      });
 
       setSyncState("synced");
       setTimeout(() => setSyncState("idle"), 4000);
@@ -324,6 +324,7 @@ export default function AdReportForm({
           />
           <p className="text-xs text-gray-400 mt-1.5">
             1つの広告アカウントに複数店舗のキャンペーンが混在している場合、このキーワードを含むキャンペーンだけを対象にします。空欄にするとアカウント内の全キャンペーンが対象になるため注意してください。
+            同期に成功したアカウントID・キーワードはこの店舗・区分用に自動で保存され、次回以降の同期でも自動で読み込まれます。
           </p>
           {syncState === "error" && <p className="text-xs text-red-500 mt-3 whitespace-pre-wrap">{syncError}</p>}
           {syncState === "synced" && (
