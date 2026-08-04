@@ -130,6 +130,7 @@ export default function AdReportForm({
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [syncError, setSyncError] = useState("");
   const [syncedCampaignCount, setSyncedCampaignCount] = useState(0);
+  const [saveDefaultError, setSaveDefaultError] = useState("");
   // アカウントID・絞り込みキーワードは店舗×プラットフォーム×区分ごとにstoresへ
   // 保存済みのものを自動で読み込む（下のuseEffect）。一度同期に成功した値を
   // 覚えておき、どの月でも自動で入るようにするため、ここでは空で初期化するだけ。
@@ -137,13 +138,29 @@ export default function AdReportForm({
 
   useEffect(() => {
     let cancelled = false;
+
+    // アカウントID・キーワードの読み込みはgetAdReportとは切り離した独立処理にする。
+    // Promise.allで束ねていると、こちらが失敗（マイグレーション未実行等）した際に
+    // getAdReport側の結果まで握りつぶされ、フォーム全体が読み込み中のまま止まる
+    // 不具合があったため分離した。
+    getAdSyncDefault(storeId, platform, category)
+      .then((syncDefault) => {
+        if (cancelled) return;
+        setCampaignNameFilter(syncDefault?.campaignNameFilter || storeName);
+        // getAdReport側が先に終わっていて、その月にアカウントIDが未保存だった場合は
+        // ここで店舗の保存済みデフォルトを補う（どちらが先に終わっても対応できるように）。
+        if (syncDefault?.accountId) {
+          setDraft((prev) => (prev && !prev.accountId ? { ...prev, accountId: syncDefault.accountId } : prev));
+        }
+      })
+      .catch((err) => {
+        console.error("同期条件の読み込みに失敗しました", err);
+        if (!cancelled) setCampaignNameFilter(storeName);
+      });
+
     setDraft(null);
-    Promise.all([
-      repo.getAdReport(storeId, yearMonth, platform, category),
-      getAdSyncDefault(storeId, platform, category),
-    ]).then(([existing, syncDefault]) => {
+    repo.getAdReport(storeId, yearMonth, platform, category).then((existing) => {
       if (cancelled) return;
-      setCampaignNameFilter(syncDefault?.campaignNameFilter || storeName);
       if (existing) {
         const {
           accountId,
@@ -164,7 +181,7 @@ export default function AdReportForm({
           targetAgeRange,
         } = existing;
         setDraft({
-          accountId: accountId || syncDefault?.accountId || "",
+          accountId: accountId || "",
           spend,
           impressions,
           clicks,
@@ -182,7 +199,7 @@ export default function AdReportForm({
           targetAgeRange: targetAgeRange ?? "",
         });
       } else {
-        setDraft({ ...emptyDraft(), accountId: syncDefault?.accountId ?? "" });
+        setDraft(emptyDraft());
       }
     });
     return () => {
@@ -280,13 +297,16 @@ export default function AdReportForm({
       // 次回以降どの月でも自動で読み込まれるようにする。ここが失敗しても
       // （マイグレーション未実行等）、データ自体の取得は成功しているので
       // 同期全体をエラー扱いにはしない。
+      setSaveDefaultError("");
       try {
         await saveAdSyncDefault(storeId, platform, category, {
           accountId: draft.accountId,
           campaignNameFilter: campaignNameFilter.trim(),
         });
       } catch (saveErr) {
+        const msg = saveErr instanceof Error ? saveErr.message : "不明なエラー";
         console.error("同期条件の保存に失敗しました", saveErr);
+        setSaveDefaultError(msg);
       }
 
       setSyncState("synced");

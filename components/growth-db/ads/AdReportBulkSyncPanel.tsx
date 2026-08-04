@@ -55,11 +55,15 @@ export default function AdReportBulkSyncPanel({
   // stores.ad_sync_defaultsへ保存済みのものを自動で読み込む。
   useEffect(() => {
     let cancelled = false;
-    getAdSyncDefault(storeId, platform, category).then((syncDefault) => {
-      if (cancelled) return;
-      setAccountId(syncDefault?.accountId ?? "");
-      setCampaignNameFilter(syncDefault?.campaignNameFilter || storeName);
-    });
+    getAdSyncDefault(storeId, platform, category)
+      .then((syncDefault) => {
+        if (cancelled) return;
+        setAccountId(syncDefault?.accountId ?? "");
+        setCampaignNameFilter(syncDefault?.campaignNameFilter || storeName);
+      })
+      .catch((err) => {
+        console.error("同期条件の読み込みに失敗しました", err);
+      });
     return () => {
       cancelled = true;
     };
