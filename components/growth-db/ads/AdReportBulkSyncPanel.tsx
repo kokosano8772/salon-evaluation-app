@@ -57,15 +57,9 @@ export default function AdReportBulkSyncPanel({
     setRunning(true);
     setResults(months.map((yearMonth) => ({ yearMonth, status: "pending" })));
 
-    const baseFilter = campaignNameFilter.trim();
-
     for (const yearMonth of months) {
       setResults((prev) => prev.map((r) => (r.yearMonth === yearMonth ? { ...r, status: "syncing" } : r)));
       try {
-        // Metaは「店舗名-YYYYMM」の命名規則で運用されているため、月ごとに対象月の
-        // 数字を自動で末尾に補完してから絞り込む（Googleは月を含まない命名のためそのまま）。
-        const effectiveFilter =
-          baseFilter && platform === "meta" ? `${baseFilter}-${yearMonth.replace("-", "")}` : baseFilter;
         const res = await fetch("/api/growth-db/ad-report-sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -73,7 +67,7 @@ export default function AdReportBulkSyncPanel({
             platform,
             accountId,
             yearMonth,
-            campaignNameFilter: effectiveFilter || undefined,
+            campaignNameFilter: campaignNameFilter.trim() || undefined,
           }),
         });
         const json = await res.json();
@@ -144,13 +138,9 @@ export default function AdReportBulkSyncPanel({
             type="text"
             value={campaignNameFilter}
             onChange={(e) => setCampaignNameFilter(e.target.value)}
+            placeholder="例: 店舗名、店舗名(求人) など"
             className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#C4788A]"
           />
-          {platform === "meta" && (
-            <p className="text-xs text-gray-400 mt-1.5">
-              Meta広告は月ごとに「-YYYYMM」を自動で末尾に補完して絞り込みます（例: 「{campaignNameFilter || "店舗名"}-202608」）。
-            </p>
-          )}
         </label>
       </div>
 

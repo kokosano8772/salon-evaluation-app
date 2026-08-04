@@ -129,11 +129,10 @@ export default function AdReportForm({
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [syncError, setSyncError] = useState("");
   const [syncedCampaignCount, setSyncedCampaignCount] = useState(0);
-  // Metaは「店舗名-YYYYMM」の命名規則で運用されているため、対象月の数字を自動で
-  // 補完した状態を初期値にする（Googleは月を含まない命名のため店舗名のみ）。
-  const [campaignNameFilter, setCampaignNameFilter] = useState(
-    platform === "meta" ? `${storeName}-${yearMonth.replace("-", "")}` : storeName
-  );
+  // 月の絞り込みはtime_range（Meta）/segments.date（Google）や、コード内部の
+  // 月スコープ絞り込み（meta-ads-client.tsのyearMonthDigits）で別途処理済みのため、
+  // ここに数字を入れる必要はない。店舗名や(求人)等の非数字の識別子だけで十分。
+  const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
 
   useEffect(() => {
     let cancelled = false;
