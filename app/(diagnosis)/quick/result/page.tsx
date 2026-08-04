@@ -372,11 +372,16 @@ export default function QuickResultPage() {
                 </div>
               )}
 
-              {/* Lock overlay — hidden while reading the 2 free cards; only appears full-screen
-                  once the blurred section scrolls into view (see IntersectionObserver above). */}
+              {/* Lock card — hidden while reading the 2 free cards; fades in once the blurred
+                  section scrolls into view (see IntersectionObserver above). */}
               {showLockOverlay && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/50 backdrop-blur-sm">
-                  <div className="w-full max-w-[400px] bg-white rounded-3xl p-6 shadow-xl flex flex-col items-center text-center">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className="mt-4"
+                >
+                  <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 flex flex-col items-center text-center">
                     <div
                       className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
                       style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
@@ -407,7 +412,7 @@ export default function QuickResultPage() {
                       <ArrowRight size={13} strokeWidth={2} />
                     </button>
                   </div>
-                </div>
+                </motion.div>
               )}
             </motion.div>
           )}
