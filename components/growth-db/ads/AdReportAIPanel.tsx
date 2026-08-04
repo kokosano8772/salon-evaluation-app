@@ -112,15 +112,18 @@ export default function AdReportAIPanel({ storeId, platform, report, history, mo
         </div>
       )}
 
-      {!isBusy && (report.aiResult || editedText) && (
+      {!isBusy && (
         <div className="mt-4">
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-xs text-gray-400">内容を直接編集できます（"## 提案" 以降が提案バッジ側に表示されます）</p>
+            <p className="text-xs text-gray-400">
+              AI分析を生成しなくても、ここに直接文章を書いて保存できます（"## 提案" 以降が提案バッジ側に表示されます）
+            </p>
           </div>
           <textarea
             value={editedText}
             onChange={(e) => setEditedText(e.target.value)}
             rows={6}
+            placeholder="運用状況の分析文章をここに直接入力できます"
             className="w-full text-xs text-charcoal-700 leading-relaxed rounded-xl border border-gray-200 p-3 focus:outline-none focus:border-[#C4788A]"
           />
           <div className="flex justify-end mt-2">
