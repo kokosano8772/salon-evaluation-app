@@ -40,10 +40,29 @@ export default function QuickResultPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action">("overview");
   const [isPreview, setIsPreview] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+  const blurredCardsRef = useRef<HTMLDivElement>(null);
+  const [showLockOverlay, setShowLockOverlay] = useState(false);
 
   useEffect(() => {
     if (!result) router.replace("/quick");
   }, [result, router]);
+
+  // 改善提案タブで、ぼかしたカードの部分が画面に入ってきたタイミングで
+  // 初めて全画面ロックを表示する（無料公開の2件を読んでいる間は隠さない）
+  useEffect(() => {
+    if (activeTab !== "action" || isPreview) {
+      setShowLockOverlay(false);
+      return;
+    }
+    const target = blurredCardsRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(([entry]) => setShowLockOverlay(entry.isIntersecting), {
+      threshold: 0.15,
+    });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [activeTab, isPreview]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -333,7 +352,7 @@ export default function QuickResultPage() {
 
               {/* Blurred remaining cards */}
               {improvements.length > 2 && (
-                <div className="relative mt-3">
+                <div className="relative mt-3" ref={blurredCardsRef}>
                   <div
                     className={`space-y-3 ${!isPreview ? "pointer-events-none select-none" : ""}`}
                     style={isPreview ? {} : { filter: "blur(6px)" }}
@@ -353,12 +372,11 @@ export default function QuickResultPage() {
                 </div>
               )}
 
-              {/* Lock card — sits in normal flow after the free + blurred cards, so scrolling
-                  to it never hides the free preview above it. Plain block instead of the old
-                  sticky positioning, which looked like an awkwardly floating box on mobile. */}
-              {!isPreview && (
-                <div className="mt-4">
-                  <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 flex flex-col items-center text-center">
+              {/* Lock overlay — hidden while reading the 2 free cards; only appears full-screen
+                  once the blurred section scrolls into view (see IntersectionObserver above). */}
+              {showLockOverlay && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/50 backdrop-blur-sm">
+                  <div className="w-full max-w-[400px] bg-white rounded-3xl p-6 shadow-xl flex flex-col items-center text-center">
                     <div
                       className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
                       style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
