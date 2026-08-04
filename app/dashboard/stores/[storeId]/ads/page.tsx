@@ -108,6 +108,7 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
       )}
 
       <AdReportBulkSyncPanel
+        key={`${platform}-${platform === "google" ? category : "acquisition"}`}
         storeId={store.id}
         storeName={store.name}
         platform={platform}

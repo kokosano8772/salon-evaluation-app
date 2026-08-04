@@ -131,8 +131,11 @@ export default function AdReportForm({
   const [syncedCampaignCount, setSyncedCampaignCount] = useState(0);
   // 月の絞り込みはtime_range（Meta）/segments.date（Google）や、コード内部の
   // 月スコープ絞り込み（meta-ads-client.tsのyearMonthDigits）で別途処理済みのため、
-  // ここに数字を入れる必要はない。店舗名や(求人)等の非数字の識別子だけで十分。
-  const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
+  // ここに数字を入れる必要はない。求人区分のキャンペーンは名前に「(求人)」が付く
+  // 運用のため、区分が求人のときは初期値にもそれを含める。
+  const [campaignNameFilter, setCampaignNameFilter] = useState(
+    category === "recruitment" ? `${storeName}(求人)` : storeName
+  );
 
   useEffect(() => {
     let cancelled = false;

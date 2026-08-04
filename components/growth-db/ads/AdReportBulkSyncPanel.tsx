@@ -46,7 +46,11 @@ export default function AdReportBulkSyncPanel({
   const [startMonth, setStartMonth] = useState(shiftYearMonth(currentYearMonth(), -5));
   const [endMonth, setEndMonth] = useState(currentYearMonth());
   const [accountId, setAccountId] = useState("");
-  const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
+  // 求人区分のキャンペーンは名前に「(求人)」が付く運用のため、区分が求人のときは
+  // 初期値にもそれを含める（月の数字は別途time_range/segments.dateで処理済みのため不要）。
+  const [campaignNameFilter, setCampaignNameFilter] = useState(
+    category === "recruitment" ? `${storeName}(求人)` : storeName
+  );
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<MonthResult[]>([]);
 
