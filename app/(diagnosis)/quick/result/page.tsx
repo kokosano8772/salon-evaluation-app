@@ -353,10 +353,10 @@ export default function QuickResultPage() {
                 </div>
               )}
 
-              {/* Sticky CTA card — stays in view while scrolling */}
+              {/* Lock overlay — full-screen fixed modal over a dimmed backdrop, not a floating sticky card */}
               {!isPreview && (
-                <div className="sticky bottom-[168px] z-20 mt-4">
-                  <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 flex flex-col items-center text-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/50 backdrop-blur-sm">
+                  <div className="w-full max-w-[400px] bg-white rounded-3xl p-6 shadow-xl flex flex-col items-center text-center">
                     <div
                       className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
                       style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
