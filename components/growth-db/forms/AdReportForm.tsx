@@ -277,11 +277,17 @@ export default function AdReportForm({
       setSyncedCampaignCount(data.campaigns?.length ?? 0);
 
       // 同期に成功したアカウントID・キーワードの組み合わせを店舗ごとに保存し、
-      // 次回以降どの月でも自動で読み込まれるようにする。
-      await saveAdSyncDefault(storeId, platform, category, {
-        accountId: draft.accountId,
-        campaignNameFilter: campaignNameFilter.trim(),
-      });
+      // 次回以降どの月でも自動で読み込まれるようにする。ここが失敗しても
+      // （マイグレーション未実行等）、データ自体の取得は成功しているので
+      // 同期全体をエラー扱いにはしない。
+      try {
+        await saveAdSyncDefault(storeId, platform, category, {
+          accountId: draft.accountId,
+          campaignNameFilter: campaignNameFilter.trim(),
+        });
+      } catch (saveErr) {
+        console.error("同期条件の保存に失敗しました", saveErr);
+      }
 
       setSyncState("synced");
       setTimeout(() => setSyncState("idle"), 4000);

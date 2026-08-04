@@ -113,8 +113,14 @@ export default function AdReportBulkSyncPanel({
 
     // 1ヶ月でも同期に成功したら、その時使ったアカウントID・キーワードを
     // 店舗ごとに保存し、次回以降どの月でも自動で読み込まれるようにする。
+    // ここが失敗しても（マイグレーション未実行等）各月のデータ自体の同期結果には
+    // 影響させない。
     if (succeededOnce) {
-      await saveAdSyncDefault(storeId, platform, category, { accountId, campaignNameFilter: effectiveFilter });
+      try {
+        await saveAdSyncDefault(storeId, platform, category, { accountId, campaignNameFilter: effectiveFilter });
+      } catch (saveErr) {
+        console.error("同期条件の保存に失敗しました", saveErr);
+      }
     }
 
     setRunning(false);
