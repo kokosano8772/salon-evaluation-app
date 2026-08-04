@@ -50,6 +50,19 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   const ctrTrend = report ? buildCtrTrend(adReports, platform, selectedMonth) : [];
   const ageGroupTrend = report ? buildAgeGroupTrend(adReports, platform, selectedMonth) : [];
 
+  // 印刷/PDF保存ダイアログが提示するファイル名候補はdocument.titleから決まるため、
+  // 印刷直前だけ「店舗名-広告レポート-YYYYMM」に差し替え、閉じたら元に戻す。
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = `${store.name}-広告レポート-${selectedMonth.replace("-", "")}`;
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+    };
+    window.addEventListener("afterprint", restoreTitle);
+    window.print();
+  };
+
   return (
     <div>
       <div className="ad-report-print-hide">
@@ -86,14 +99,14 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
                 />
               </div>
               <button
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
               >
                 <Printer size={15} strokeWidth={2} />
                 印刷
               </button>
               <button
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
               >
                 <Download size={15} strokeWidth={2} />
