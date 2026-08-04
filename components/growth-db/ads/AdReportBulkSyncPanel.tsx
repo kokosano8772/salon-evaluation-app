@@ -44,8 +44,9 @@ export default function AdReportBulkSyncPanel({
   category = "acquisition",
   onSaved,
 }: AdReportBulkSyncPanelProps) {
-  const [startMonth, setStartMonth] = useState(shiftYearMonth(currentYearMonth(), -5));
-  const [endMonth, setEndMonth] = useState(currentYearMonth());
+  // 広告レポートは前月分を見るのが基本のため、終了月のデフォルトも当月ではなく前月にする
+  const [startMonth, setStartMonth] = useState(shiftYearMonth(currentYearMonth(), -6));
+  const [endMonth, setEndMonth] = useState(shiftYearMonth(currentYearMonth(), -1));
   const [accountId, setAccountId] = useState("");
   const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
   const [running, setRunning] = useState(false);

@@ -9,7 +9,7 @@ import AdReportAnalysisSummary from "@/components/growth-db/ads/AdReportAnalysis
 import AdReportBulkSyncPanel from "@/components/growth-db/ads/AdReportBulkSyncPanel";
 import { useStore, useMonthlyMetrics } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
-import { currentYearMonth } from "@/lib/growth-db/format";
+import { currentYearMonth, shiftYearMonth } from "@/lib/growth-db/format";
 import { AD_PLATFORM_LABEL, AD_REPORT_CATEGORY_LABEL, AdPlatform, AdReportCategory } from "@/lib/growth-db/ad-report-types";
 
 const PLATFORMS: AdPlatform[] = ["google", "meta"];
@@ -32,7 +32,8 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
   useEffect(() => {
     if (!selectedMonth && !adReportsLoading) {
       const platformMonths = adReports.filter((r) => r.platform === platform).map((r) => r.yearMonth).sort();
-      setSelectedMonth(platformMonths.length > 0 ? platformMonths[platformMonths.length - 1] : currentYearMonth());
+      // 広告レポートは前月分を見るのが基本のため、データが無い場合は当月ではなく前月をデフォルトにする
+      setSelectedMonth(platformMonths.length > 0 ? platformMonths[platformMonths.length - 1] : shiftYearMonth(currentYearMonth(), -1));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adReportsLoading, adReports.length]);
