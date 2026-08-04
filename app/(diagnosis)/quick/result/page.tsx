@@ -40,28 +40,41 @@ export default function QuickResultPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action">("overview");
   const [isPreview, setIsPreview] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
-  const blurredCardsRef = useRef<HTMLDivElement>(null);
+  const freeCardsRef = useRef<HTMLDivElement>(null);
   const [showLockOverlay, setShowLockOverlay] = useState(false);
 
   useEffect(() => {
     if (!result) router.replace("/quick");
   }, [result, router]);
 
-  // 改善提案タブで、ぼかしたカードの部分が画面に入ってきたタイミングで
-  // 初めて全画面ロックを表示する（無料公開の2件を読んでいる間は隠さない）
+  // 改善提案タブで、無料公開している2件目の改善案が画面中央より上に
+  // スクロールされたタイミングで初めて全画面ロックを表示する
   useEffect(() => {
     if (activeTab !== "action" || isPreview) {
       setShowLockOverlay(false);
       return;
     }
-    const target = blurredCardsRef.current;
-    if (!target) return;
 
-    const observer = new IntersectionObserver(([entry]) => setShowLockOverlay(entry.isIntersecting), {
-      threshold: 0.15,
-    });
-    observer.observe(target);
-    return () => observer.disconnect();
+    let ticking = false;
+    const checkPosition = () => {
+      ticking = false;
+      const target = freeCardsRef.current;
+      if (!target) return;
+      setShowLockOverlay(target.getBoundingClientRect().bottom < window.innerHeight / 2);
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(checkPosition);
+    };
+
+    checkPosition();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [activeTab, isPreview]);
 
   useEffect(() => {
@@ -344,7 +357,7 @@ export default function QuickResultPage() {
               </p>
 
               {/* Free preview cards */}
-              <div className="space-y-3">
+              <div className="space-y-3" ref={freeCardsRef}>
                 {improvements.slice(0, 2).map((imp, i) => (
                   <ImprovementCard key={i} improvement={imp} index={i} />
                 ))}
@@ -352,7 +365,7 @@ export default function QuickResultPage() {
 
               {/* Blurred remaining cards */}
               {improvements.length > 2 && (
-                <div className="relative mt-3" ref={blurredCardsRef}>
+                <div className="relative mt-3">
                   <div
                     className={`space-y-3 ${!isPreview ? "pointer-events-none select-none" : ""}`}
                     style={isPreview ? {} : { filter: "blur(6px)" }}
