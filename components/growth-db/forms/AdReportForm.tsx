@@ -16,6 +16,7 @@ import {
   HOURLY_SLOTS,
   HourlyClicks,
 } from "@/lib/growth-db/ad-report-types";
+import { stripYearMonthSuffix } from "@/lib/growth-db/format";
 import FormSection from "./FormSection";
 import TextField from "./TextField";
 import NumberField from "./NumberField";
@@ -131,11 +132,11 @@ export default function AdReportForm({
   const [syncedCampaignCount, setSyncedCampaignCount] = useState(0);
   // 月の絞り込みはtime_range（Meta）/segments.date（Google）や、コード内部の
   // 月スコープ絞り込み（meta-ads-client.tsのyearMonthDigits）で別途処理済みのため、
-  // ここに数字を入れる必要はない。求人区分のキャンペーンは名前に「(求人)」が付く
-  // 運用のため、区分が求人のときは初期値にもそれを含める。
-  const [campaignNameFilter, setCampaignNameFilter] = useState(
-    category === "recruitment" ? `${storeName}(求人)` : storeName
-  );
+  // ここに数字を入れる必要はない。実際のキャンペーン名の並び（「エムアイ(求人) 豊田」
+  // のように区分が店舗名の途中に入る等）は店舗ごとに違うため、店舗名から推測で
+  // 組み立てず、初期値は店舗名のみにする。同期に成功したら実際にマッチした
+  // キャンペーンの本物の名前から数字部分だけを取り除いた値に自動で置き換える。
+  const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
 
   useEffect(() => {
     let cancelled = false;
@@ -273,6 +274,15 @@ export default function AdReportForm({
       const data = json.data as Partial<AdReportDraft>;
       setDraft((prev) => (prev ? { ...prev, ...data } : prev));
       setSyncedCampaignCount(data.campaigns?.length ?? 0);
+
+      // 実際にマッチしたキャンペーンの本物の名前から数字部分だけを取り除いた値に
+      // キーワードを置き換える（次回以降、店舗名からの推測に頼らず正確に絞り込める）
+      const matchedName = data.campaigns?.[0]?.name;
+      if (matchedName) {
+        const stripped = stripYearMonthSuffix(matchedName);
+        if (stripped) setCampaignNameFilter(stripped);
+      }
+
       setSyncState("synced");
       setTimeout(() => setSyncState("idle"), 4000);
     } catch (err) {

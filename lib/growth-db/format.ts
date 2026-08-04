@@ -51,3 +51,10 @@ export function growthScoreLabel(score: number): string {
   if (score >= 35) return "要改善";
   return "要注意";
 }
+
+// 実際のキャンペーン名（例: "エムアイ(求人) 豊田-202607"）から、末尾の
+// 「-YYYYMM」のような日付らしき6桁の数字部分だけを取り除く。次月以降の
+// 広告レポート同期で、絞り込みキーワードを実際の命名から自動で作るために使う。
+export function stripYearMonthSuffix(name: string): string {
+  return name.replace(/[\s-]*\d{6}\s*$/, "").trim();
+}
