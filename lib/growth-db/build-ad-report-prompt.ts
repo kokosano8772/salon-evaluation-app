@@ -14,6 +14,17 @@ function formatChange(comparison: MetricComparison, format: "yen" | "number" | "
   return `${value}（前月比 ${sign}${comparison.changePercent}%）`;
 }
 
+// 自社の実績上のCTR平均帯（0.3〜0.5%）に照らした評価。この判定はAIにさせず
+// コード側で確定させ、AIには「どう評価すべきか」の答えごと渡す。
+const CTR_AVERAGE_MIN = 0.3;
+const CTR_AVERAGE_MAX = 0.5;
+
+function ctrEvaluationLabel(ctr: number): string {
+  if (ctr > CTR_AVERAGE_MAX) return "業界平均（0.3〜0.5%）を上回る非常に良好な結果";
+  if (ctr >= CTR_AVERAGE_MIN) return "業界平均（0.3〜0.5%）並みの良好な結果";
+  return "業界平均（0.3〜0.5%）をやや下回るものの、まずまずの結果";
+}
+
 export function buildAdReportAnalysisPrompt(
   report: AdReport,
   comparison: AdReportComparison,
@@ -34,6 +45,7 @@ export function buildAdReportAnalysisPrompt(
   // 文章として「上がった／下がった」を話題にすると生々しく響くため含めない。
   lines.push(`- クリック数: ${formatChange(comparison.clicks, "number")}`);
   lines.push(`- CTR: ${formatChange(comparison.ctr, "percent")}`);
+  lines.push(`- CTRの評価: ${ctrEvaluationLabel(report.ctr)}（この評価表現をそのまま文章に使うこと。自分で良し悪しを判断し直さない）`);
   lines.push(`- CPC: ${formatChange(comparison.cpc, "yen")}`);
   if (trustConversions) {
     lines.push(`- コンバージョン数: ${formatChange(comparison.conversions, "number")}`);
