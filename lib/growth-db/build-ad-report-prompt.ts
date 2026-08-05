@@ -41,12 +41,12 @@ export function buildAdReportAnalysisPrompt(
   lines.push(`# ${formatMonthLabel(report.yearMonth)}の広告実績データ（すべて計算済みの確定値）`);
   lines.push("");
   lines.push("## ①前月比較");
-  // 広告費の増減はこちら（代理店側）が決めているものであり、店舗オーナー向けの
-  // 文章として「上がった／下がった」を話題にすると生々しく響くため含めない。
+  // 広告費・CPC等の金額に関わる増減はこちら（代理店側）が決めているものであり、
+  // 店舗オーナー向けの文章として「上がった／下がった」を話題にすると生々しく
+  // 響くため含めない。
   lines.push(`- クリック数: ${formatChange(comparison.clicks, "number")}`);
   lines.push(`- CTR: ${formatChange(comparison.ctr, "percent")}`);
   lines.push(`- CTRの評価: ${ctrEvaluationLabel(report.ctr)}（この評価表現をそのまま文章に使うこと。自分で良し悪しを判断し直さない）`);
-  lines.push(`- CPC: ${formatChange(comparison.cpc, "yen")}`);
   if (trustConversions) {
     lines.push(`- コンバージョン数: ${formatChange(comparison.conversions, "number")}`);
     lines.push(`- CPA: ${formatChange(comparison.cpa, "yen")}`);
