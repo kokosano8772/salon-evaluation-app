@@ -32,6 +32,7 @@ export function mapStoreRow(row: StoreRow): Store {
     averageUnitPrice: row.average_unit_price,
     tradeArea: row.trade_area,
     storeFormat: row.store_format,
+    businessCategory: row.business_category,
     googleAdsActive: row.google_ads_active,
     metaAdsActive: row.meta_ads_active,
     createdAt: row.created_at,
@@ -54,6 +55,7 @@ function storeToRow(store: Partial<Store>): Partial<StoreRow> {
   if (store.averageUnitPrice !== undefined) row.average_unit_price = store.averageUnitPrice;
   if (store.tradeArea !== undefined) row.trade_area = store.tradeArea;
   if (store.storeFormat !== undefined) row.store_format = store.storeFormat;
+  if (store.businessCategory !== undefined) row.business_category = store.businessCategory;
   if (store.googleAdsActive !== undefined) row.google_ads_active = store.googleAdsActive;
   if (store.metaAdsActive !== undefined) row.meta_ads_active = store.metaAdsActive;
   return row;

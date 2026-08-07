@@ -21,6 +21,7 @@ const INITIAL_VALUE: BasicInfoValue = {
   averageUnitPrice: 8000,
   tradeArea: "",
   storeFormat: "",
+  businessCategory: "",
   googleAdsActive: false,
   metaAdsActive: false,
 };

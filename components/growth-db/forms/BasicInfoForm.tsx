@@ -3,7 +3,12 @@ import TextField from "./TextField";
 import NullableNumberField from "./NullableNumberField";
 import SelectField from "./SelectField";
 import CheckboxField from "./CheckboxField";
-import { TARGET_CUSTOMER_OPTIONS, TRADE_AREA_OPTIONS, STORE_FORMAT_OPTIONS } from "@/lib/growth-db/constants";
+import {
+  TARGET_CUSTOMER_OPTIONS,
+  TRADE_AREA_OPTIONS,
+  STORE_FORMAT_OPTIONS,
+  BUSINESS_CATEGORY_OPTIONS,
+} from "@/lib/growth-db/constants";
 import { Store } from "@/lib/growth-db/types";
 
 export type BasicInfoValue = Omit<Store, "id" | "createdAt" | "updatedAt">;
@@ -52,6 +57,13 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
         value={value.storeFormat}
         onChange={(v) => set("storeFormat", v)}
         options={STORE_FORMAT_OPTIONS}
+        placeholder="未設定"
+      />
+      <SelectField
+        label="業種"
+        value={value.businessCategory}
+        onChange={(v) => set("businessCategory", v)}
+        options={BUSINESS_CATEGORY_OPTIONS}
         placeholder="未設定"
       />
       <div className="sm:col-span-2 flex flex-wrap gap-x-6">

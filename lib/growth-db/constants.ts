@@ -47,6 +47,9 @@ export const TRADE_AREA_OPTIONS = ["都市部", "地方都市", "郊外"] as con
 
 export const STORE_FORMAT_OPTIONS = ["単店舗", "多店舗", "マンツーマン"] as const;
 
+// Google広告レポートの業種別ベンチマーク表示に使う業種区分
+export const BUSINESS_CATEGORY_OPTIONS = ["美容院", "メンズサロン", "アイラッシュ", "ネイル"] as const;
+
 export const GROWTH_CATEGORY_META: Record<
   GrowthCategoryId,
   { name: string; nameEn: string; icon: string; color: string; description: string }
