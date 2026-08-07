@@ -55,7 +55,7 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
   return (
     <div>
       <div className="flex" style={{ height: CHART_HEIGHT }}>
-        <div className="flex flex-col-reverse justify-between text-[10px] text-gray-400 pr-2 shrink-0">
+        <div className="flex flex-col-reverse justify-between text-[10px] text-gray-400 pr-2 shrink-0 text-right">
           {ticks.map((t) => (
             <span key={t}>{t}%</span>
           ))}
