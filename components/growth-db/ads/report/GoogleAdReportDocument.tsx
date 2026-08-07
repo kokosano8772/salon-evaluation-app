@@ -29,11 +29,14 @@ function SectionCard({ children }: { children: ReactNode }) {
   return <div className="bg-white rounded-2xl p-5">{children}</div>;
 }
 
-function SectionTitle({ accent, children }: { accent: string; children: ReactNode }) {
+function SectionTitle({ accent, caption, children }: { accent: string; caption?: string; children: ReactNode }) {
   return (
-    <div className="flex items-center gap-2 mb-3">
-      <span className="w-1.5 h-5 rounded-full" style={{ backgroundColor: accent }} />
-      <p className="text-base font-bold text-charcoal-900">{children}</p>
+    <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-center gap-2">
+        <span className="w-1.5 h-5 rounded-full" style={{ backgroundColor: accent }} />
+        <p className="text-base font-bold text-charcoal-900">{children}</p>
+      </div>
+      {caption && <p className="text-xs text-gray-400">{caption}</p>}
     </div>
   );
 }
@@ -81,60 +84,72 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </div>
         </SectionCard>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-          <GoogleReportStatCard
-            icon={<Eye size={20} strokeWidth={2} />}
-            title="表示回数"
-            value={formatNumber(report.impressions)}
-            unit="回"
-            description="Google上で広告が見られた回数"
-            accent={theme.accent}
-          />
-          <GoogleReportStatCard
-            icon={<MousePointerClick size={20} strokeWidth={2} />}
-            title="クリック数"
-            value={formatNumber(report.clicks)}
-            unit="回"
-            description="ホームページへ移動した回数"
-            accent={theme.accent}
-          />
-          <GoogleReportStatCard
-            icon={<Calendar size={20} strokeWidth={2} />}
-            title={`${buttonLabel}\nクリック数`}
-            value={formatAdaptiveNumber(report.conversions)}
-            unit="回"
-            accent={theme.accent}
-          >
-            {breakdown.length > 0 && (
-              <div className="text-[11px] text-gray-500 leading-relaxed">
-                <p className="font-semibold text-gray-600">内訳:</p>
-                <p>
-                  {breakdown
-                    .map((b) => `${simplifyConversionActionName(b.name)} ${formatAdaptiveNumber(b.conversions)}回`)
-                    .join("／")}
-                </p>
-              </div>
-            )}
-          </GoogleReportStatCard>
-          <GoogleReportStatCard
-            icon={<Percent size={20} strokeWidth={2} />}
-            title={`${buttonLabel}を\n押した割合`}
-            value={report.cvr.toFixed(2)}
-            unit="%"
-            accent={theme.accent}
-          >
-            <div className="text-[11px] text-gray-400 leading-relaxed">
-              {benchmark && <p>自社平均{benchmark.ownAverage}%</p>}
-              <p>ココデザインでの目標: {AD_REPORT_TARGET_RATE}%</p>
-              {benchmark?.nationalAverage !== undefined && <p>全国平均約{benchmark.nationalAverage}%</p>}
+        <div className="mt-4">
+          <SectionCard>
+            <div className="flex divide-x divide-gray-100">
+              <GoogleReportStatCard
+                icon={<Eye size={20} strokeWidth={2} />}
+                title="表示回数"
+                value={formatNumber(report.impressions)}
+                unit="回"
+                description="Google上で広告が見られた回数"
+                accent={theme.accent}
+              />
+              <GoogleReportStatCard
+                icon={<MousePointerClick size={20} strokeWidth={2} />}
+                title="クリック数"
+                value={formatNumber(report.clicks)}
+                unit="回"
+                description="ホームページへ移動した回数"
+                accent={theme.accent}
+              />
+              <GoogleReportStatCard
+                icon={<Calendar size={20} strokeWidth={2} />}
+                title={`${buttonLabel}\nクリック数`}
+                value={formatAdaptiveNumber(report.conversions)}
+                unit="回"
+                accent={theme.accent}
+              >
+                {breakdown.length > 0 && (
+                  <div className="text-[11px] text-gray-500 leading-relaxed">
+                    <p className="font-semibold text-gray-600">内訳：</p>
+                    <p>
+                      {breakdown
+                        .map((b) => `${simplifyConversionActionName(b.name)} ${formatAdaptiveNumber(b.conversions)}回`)
+                        .join("／")}
+                    </p>
+                  </div>
+                )}
+              </GoogleReportStatCard>
+              <GoogleReportStatCard
+                icon={<Percent size={20} strokeWidth={2} />}
+                title={`${buttonLabel}を\n押した割合`}
+                value={report.cvr.toFixed(2)}
+                unit="%"
+                accent={theme.accent}
+                valueColor={theme.accent}
+              >
+                <div className="text-[11px] text-gray-400 leading-relaxed">
+                  {benchmark && <p>自社平均{benchmark.ownAverage}%</p>}
+                  <p>ココデザインでの目標: {AD_REPORT_TARGET_RATE}%</p>
+                  {benchmark?.nationalAverage !== undefined && <p>全国平均約{benchmark.nationalAverage}%</p>}
+                </div>
+              </GoogleReportStatCard>
             </div>
-          </GoogleReportStatCard>
+          </SectionCard>
         </div>
 
         <div className="mt-4">
           <SectionCard>
-            <SectionTitle accent={theme.accent}>【年代別】{buttonLabel}を押した割合</SectionTitle>
-            <GoogleAgeRateChart clicks={report.ageGroupClicks ?? []} conversions={report.ageGroupConversions ?? []} accent={theme.accent} />
+            <SectionTitle accent={theme.accent} caption={`() = ${buttonLabel}クリック数`}>
+              【年代別】{buttonLabel}を押した割合
+            </SectionTitle>
+            <GoogleAgeRateChart
+              clicks={report.ageGroupClicks ?? []}
+              conversions={report.ageGroupConversions ?? []}
+              accent={theme.chartAccent}
+              showCrown={!isRecruitment}
+            />
           </SectionCard>
         </div>
 
@@ -147,7 +162,8 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
               previousLabel={trend.previousCycleLabel}
               currentLabel={trend.currentCycleLabel}
               target={isRecruitment ? undefined : AD_REPORT_TARGET_RATE}
-              accent={theme.accent}
+              previousColor={theme.chartAccent}
+              currentColor={theme.highlightAccent}
             />
           </SectionCard>
         </div>
@@ -161,7 +177,8 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
                 currentCycle={trend.currentCycle}
                 previousLabel={trend.previousCycleLabel}
                 currentLabel={trend.currentCycleLabel}
-                accent={theme.accent}
+                previousColor={theme.chartAccent}
+                currentColor={theme.highlightAccent}
               />
             </SectionCard>
           </div>

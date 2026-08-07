@@ -5,6 +5,7 @@ interface GoogleAgeRateChartProps {
   clicks: AgeGroupClicks[];
   conversions: AgeGroupConversions[];
   accent: string;
+  showCrown?: boolean;
 }
 
 // 内部の年齢区分キーは20-24（Metaの13-17/18-24をまとめた区分と共有）だが、
@@ -17,10 +18,15 @@ function ageGroupLabel(ageGroup: AgeGroup): string {
   return AGE_GROUP_DISPLAY_LABEL[ageGroup] ?? (ageGroup === "65+" ? "65歳~" : `${ageGroup}歳`);
 }
 
+const CHART_HEIGHT = 160;
+const TICK_STEPS = 5;
+// バー内に件数ラベルを収められる高さの目安（それ未満はバーの上に出す）
+const INSIDE_LABEL_MIN_HEIGHT = 34;
+
 // 年代別クリック数・コンバージョン数から割合(%)を算出し、割合が最も高い年代・
 // コンバージョン数（＝ボタンクリック数）が最も多い年代に王冠マークを付ける
-// （実物PDFの見せ方に合わせる。2つ目の王冠は広告クリック数ではなくコンバージョン数基準）。
-export default function GoogleAgeRateChart({ clicks, conversions, accent }: GoogleAgeRateChartProps) {
+// （集客カテゴリの実物PDFの見せ方。求人カテゴリの実物では王冠は使われないため、showCrown=falseで非表示にできる）。
+export default function GoogleAgeRateChart({ clicks, conversions, accent, showCrown = true }: GoogleAgeRateChartProps) {
   const clicksByGroup = new Map(clicks.map((c) => [c.ageGroup, c.clicks]));
   const conversionsByGroup = new Map(conversions.map((c) => [c.ageGroup, c.conversions]));
 
@@ -36,6 +42,10 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent }: Goog
   }
 
   const maxRate = Math.max(...rows.map((r) => r.rate), 1);
+  // 実物PDFに合わせ、目盛りの最大値は10%刻みの「きりのいい数字」に丸める
+  const niceMax = Math.max(10, Math.ceil(maxRate / 10) * 10);
+  const ticks = Array.from({ length: TICK_STEPS + 1 }, (_, i) => Math.round((niceMax * i) / TICK_STEPS));
+
   const bestRateGroup: AgeGroup | null = rows.reduce((best, r) => (r.rate > (best?.rate ?? -1) ? r : best), rows[0]).ageGroup;
   const bestConversionsGroup: AgeGroup | null = rows.reduce(
     (best, r) => (r.conversions > (best?.conversions ?? -1) ? r : best),
@@ -44,32 +54,61 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent }: Goog
 
   return (
     <div>
-      <div className="flex items-end justify-between gap-2" style={{ height: 180 }}>
-        {rows.map((r) => (
-          <div key={r.ageGroup} className="flex-1 flex flex-col items-center justify-end h-full">
-            <div className="flex gap-0.5 mb-1 h-4">
-              {bestRateGroup === r.ageGroup && <span title="割合が最も高い年代">👑</span>}
-              {bestConversionsGroup === r.ageGroup && bestConversionsGroup !== bestRateGroup && (
-                <span className="opacity-60" title="ボタンクリック数が最も多い年代">
-                  👑
-                </span>
-              )}
-            </div>
-            <p className="text-xs font-bold text-charcoal-900">{r.rate.toFixed(2)}%</p>
+      <div className="flex" style={{ height: CHART_HEIGHT }}>
+        <div className="flex flex-col-reverse justify-between text-[10px] text-gray-400 pr-2 shrink-0">
+          {ticks.map((t) => (
+            <span key={t}>{t}%</span>
+          ))}
+        </div>
+        <div className="relative flex-1">
+          {ticks.map((t) => (
             <div
-              className="w-full max-w-[42px] rounded-t-md mt-1"
-              style={{ height: `${Math.max((r.rate / maxRate) * 90, 4)}px`, backgroundColor: accent }}
+              key={t}
+              className="absolute left-0 right-0 border-t border-gray-100"
+              style={{ bottom: `${(t / niceMax) * 100}%` }}
             />
-            <p className="text-[10px] text-gray-400 mt-1">（{formatAdaptiveNumber(r.conversions)}件）</p>
+          ))}
+          <div className="absolute inset-0 flex items-end justify-between gap-3">
+            {rows.map((r) => {
+              const barHeight = Math.max((r.rate / niceMax) * CHART_HEIGHT, 4);
+              const countInside = barHeight >= INSIDE_LABEL_MIN_HEIGHT;
+              return (
+                <div key={r.ageGroup} className="flex-1 flex flex-col items-center justify-end h-full">
+                  {showCrown && (bestRateGroup === r.ageGroup || (bestConversionsGroup === r.ageGroup && bestConversionsGroup !== bestRateGroup)) && (
+                    <div className="flex gap-0.5 mb-0.5 h-4">
+                      {bestRateGroup === r.ageGroup && <span title="割合が最も高い年代">👑</span>}
+                      {bestConversionsGroup === r.ageGroup && bestConversionsGroup !== bestRateGroup && (
+                        <span className="opacity-60" title="ボタンクリック数が最も多い年代">
+                          👑
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {!countInside && <p className="text-[10px] text-gray-400">（{formatAdaptiveNumber(r.conversions)}件）</p>}
+                  <p className="text-xs font-bold text-charcoal-900">{r.rate.toFixed(2)}%</p>
+                  <div
+                    className="w-full max-w-[56px] rounded-t-full mt-1 flex items-end justify-center"
+                    style={{ height: `${barHeight}px`, backgroundColor: accent }}
+                  >
+                    {countInside && (
+                      <p className="text-[10px] text-white font-semibold mb-1.5">（{formatAdaptiveNumber(r.conversions)}件）</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        </div>
       </div>
-      <div className="flex justify-between gap-2 mt-1 border-t border-gray-100 pt-1.5">
-        {rows.map((r) => (
-          <p key={r.ageGroup} className="flex-1 text-center text-[11px] text-gray-500">
-            {ageGroupLabel(r.ageGroup)}
-          </p>
-        ))}
+      <div className="flex mt-1 border-t border-gray-100 pt-1.5">
+        <div className="pr-2 shrink-0" style={{ width: "1.5em" }} />
+        <div className="flex-1 flex justify-between gap-3">
+          {rows.map((r) => (
+            <p key={r.ageGroup} className="flex-1 text-center text-[11px] text-gray-500">
+              {ageGroupLabel(r.ageGroup)}
+            </p>
+          ))}
+        </div>
       </div>
     </div>
   );

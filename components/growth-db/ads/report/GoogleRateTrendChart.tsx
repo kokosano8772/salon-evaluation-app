@@ -10,7 +10,8 @@ interface GoogleRateTrendChartProps {
   previousLabel: string;
   currentLabel: string;
   target?: number;
-  accent: string;
+  previousColor: string;
+  currentColor: string;
 }
 
 interface MergedPoint {
@@ -21,13 +22,11 @@ interface MergedPoint {
   currentRate?: number | null;
 }
 
-const PREVIOUS_COLOR = "#B9B2C7";
-
 interface TooltipPayload {
   payload?: MergedPoint;
 }
 
-function makeTooltip(accent: string, previousLegend: string, currentLegend: string) {
+function makeTooltip(previousColor: string, currentColor: string, previousLegend: string, currentLegend: string) {
   return function CustomTooltip({ active, payload }: { active?: boolean; payload?: readonly TooltipPayload[] }) {
     const p = payload?.[0]?.payload;
     if (active && p) {
@@ -35,12 +34,12 @@ function makeTooltip(accent: string, previousLegend: string, currentLegend: stri
         <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-lg">
           {p.currentRate != null && (
             <p className="text-gray-500 text-xs">
-              {currentLegend}（{p.currentLabel && formatMonthShortLabel(p.currentLabel)}） <span className="font-semibold" style={{ color: accent }}>{p.currentRate.toFixed(2)}</span>%
+              {currentLegend}（{p.currentLabel && formatMonthShortLabel(p.currentLabel)}） <span className="font-semibold" style={{ color: currentColor }}>{p.currentRate.toFixed(2)}</span>%
             </p>
           )}
           {p.previousRate != null && (
             <p className="text-gray-500 text-xs mt-0.5">
-              {previousLegend}（{p.previousLabel && formatMonthShortLabel(p.previousLabel)}） <span className="font-semibold" style={{ color: PREVIOUS_COLOR }}>{p.previousRate.toFixed(2)}</span>%
+              {previousLegend}（{p.previousLabel && formatMonthShortLabel(p.previousLabel)}） <span className="font-semibold" style={{ color: previousColor }}>{p.previousRate.toFixed(2)}</span>%
             </p>
           )}
         </div>
@@ -56,7 +55,8 @@ export default function GoogleRateTrendChart({
   previousLabel,
   currentLabel,
   target,
-  accent,
+  previousColor,
+  currentColor,
 }: GoogleRateTrendChartProps) {
   const hasPrevious = previousCycle.some((p) => p.rate != null);
   const hasCurrent = currentCycle.some((p) => p.rate != null);
@@ -77,13 +77,13 @@ export default function GoogleRateTrendChart({
       <div className="flex items-center justify-end gap-4 mb-1 text-xs text-gray-500">
         {hasPrevious && (
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 inline-block" style={{ backgroundColor: PREVIOUS_COLOR }} />
+            <span className="w-3 h-0.5 inline-block" style={{ backgroundColor: previousColor }} />
             {previousLabel}
           </span>
         )}
         {hasCurrent && (
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 inline-block" style={{ backgroundColor: accent }} />
+            <span className="w-3 h-0.5 inline-block" style={{ backgroundColor: currentColor }} />
             {currentLabel}
           </span>
         )}
@@ -108,7 +108,7 @@ export default function GoogleRateTrendChart({
             tickLine={false}
             width={40}
           />
-          <Tooltip content={makeTooltip(accent, previousLabel, currentLabel)} />
+          <Tooltip content={makeTooltip(previousColor, currentColor, previousLabel, currentLabel)} />
           {target !== undefined && (
             <ReferenceLine y={target} stroke="#C9BFA8" strokeDasharray="4 4" label={{ value: `目標値: ${target}%`, fontSize: 10, fill: "#999" }} />
           )}
@@ -116,9 +116,9 @@ export default function GoogleRateTrendChart({
             <Line
               type="monotone"
               dataKey="previousRate"
-              stroke={PREVIOUS_COLOR}
+              stroke={previousColor}
               strokeWidth={2}
-              dot={{ r: 3, fill: PREVIOUS_COLOR, strokeWidth: 0 }}
+              dot={{ r: 3, fill: previousColor, strokeWidth: 0 }}
               isAnimationActive={false}
               connectNulls
             />
@@ -127,9 +127,9 @@ export default function GoogleRateTrendChart({
             <Line
               type="monotone"
               dataKey="currentRate"
-              stroke={accent}
+              stroke={currentColor}
               strokeWidth={2}
-              dot={{ r: 3, fill: accent, strokeWidth: 0 }}
+              dot={{ r: 3, fill: currentColor, strokeWidth: 0 }}
               activeDot={{ r: 5 }}
               isAnimationActive={false}
               connectNulls

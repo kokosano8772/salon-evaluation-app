@@ -9,7 +9,8 @@ interface GoogleClicksTrendChartProps {
   currentCycle: YoyCyclePoint[];
   previousLabel: string;
   currentLabel: string;
-  accent: string;
+  previousColor: string;
+  currentColor: string;
 }
 
 interface MergedPoint {
@@ -20,8 +21,6 @@ interface MergedPoint {
   currentClicks?: number | null;
 }
 
-const PREVIOUS_COLOR = "#B9B2C7";
-
 interface BarLabelProps {
   x?: string | number;
   y?: string | number;
@@ -29,17 +28,19 @@ interface BarLabelProps {
   value?: string | number | boolean | null;
 }
 
-function renderClicksLabel({ x, y, width, value }: BarLabelProps) {
-  if (x === undefined || y === undefined || width === undefined || value === undefined || value === null || typeof value === "boolean") {
-    return null;
-  }
-  const cx = Number(x) + Number(width) / 2;
-  const cy = Number(y) - 6;
-  return (
-    <text x={cx} y={cy} textAnchor="middle" fontSize={10} fontFamily="'Noto Sans JP', sans-serif" fill="#999">
-      {Number(value)}回
-    </text>
-  );
+function makeClicksLabel(color: string) {
+  return function ClicksLabel({ x, y, width, value }: BarLabelProps) {
+    if (x === undefined || y === undefined || width === undefined || value === undefined || value === null || typeof value === "boolean") {
+      return null;
+    }
+    const cx = Number(x) + Number(width) / 2;
+    const cy = Number(y) - 6;
+    return (
+      <text x={cx} y={cy} textAnchor="middle" fontSize={10} fontFamily="'Noto Sans JP', sans-serif" fill={color}>
+        {Number(value).toLocaleString()}回
+      </text>
+    );
+  };
 }
 
 export default function GoogleClicksTrendChart({
@@ -47,7 +48,8 @@ export default function GoogleClicksTrendChart({
   currentCycle,
   previousLabel,
   currentLabel,
-  accent,
+  previousColor,
+  currentColor,
 }: GoogleClicksTrendChartProps) {
   const hasPrevious = previousCycle.some((p) => p.clicks != null);
   const hasCurrent = currentCycle.some((p) => p.clicks != null);
@@ -68,13 +70,13 @@ export default function GoogleClicksTrendChart({
       <div className="flex items-center justify-end gap-4 mb-1 text-xs text-gray-500">
         {hasPrevious && (
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: PREVIOUS_COLOR }} />
+            <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: previousColor }} />
             {previousLabel}
           </span>
         )}
         {hasCurrent && (
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: accent }} />
+            <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: currentColor }} />
             {currentLabel}
           </span>
         )}
@@ -101,22 +103,26 @@ export default function GoogleClicksTrendChart({
                 <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-lg">
                   {p.currentClicks != null && (
                     <p className="text-gray-500 text-xs">
-                      {currentLabel} <span className="font-semibold" style={{ color: accent }}>{p.currentClicks}</span>回
+                      {currentLabel} <span className="font-semibold" style={{ color: currentColor }}>{p.currentClicks}</span>回
                     </p>
                   )}
                   {p.previousClicks != null && (
                     <p className="text-gray-500 text-xs mt-0.5">
-                      {previousLabel} <span className="font-semibold" style={{ color: PREVIOUS_COLOR }}>{p.previousClicks}</span>回
+                      {previousLabel} <span className="font-semibold" style={{ color: previousColor }}>{p.previousClicks}</span>回
                     </p>
                   )}
                 </div>
               );
             }}
           />
-          {hasPrevious && <Bar dataKey="previousClicks" fill={PREVIOUS_COLOR} radius={[4, 4, 0, 0]} isAnimationActive={false} />}
+          {hasPrevious && (
+            <Bar dataKey="previousClicks" fill={previousColor} radius={[4, 4, 0, 0]} isAnimationActive={false}>
+              <LabelList dataKey="previousClicks" content={makeClicksLabel("#999")} />
+            </Bar>
+          )}
           {hasCurrent && (
-            <Bar dataKey="currentClicks" fill={accent} radius={[4, 4, 0, 0]} isAnimationActive={false}>
-              <LabelList dataKey="currentClicks" content={renderClicksLabel} />
+            <Bar dataKey="currentClicks" fill={currentColor} radius={[4, 4, 0, 0]} isAnimationActive={false}>
+              <LabelList dataKey="currentClicks" content={makeClicksLabel(currentColor)} />
             </Bar>
           )}
         </BarChart>

@@ -139,7 +139,13 @@ export const AD_REPORT_SECTION_HEADER_BG = "#FBCE8C";
 
 // Google広告レポート（集客/求人で配色を分ける。実物PDFに合わせたセージグリーン/
 // ウォームブラウン）
-export const GOOGLE_REPORT_THEME: Record<AdReportCategory, { bg: string; accent: string; accentSoft: string; text: string }> = {
-  acquisition: { bg: "#F3F2ED", accent: "#93A87B", accentSoft: "#C6D2B4", text: "#4A5A3C" },
-  recruitment: { bg: "#F2ECE3", accent: "#A9835F", accentSoft: "#DCC3A4", text: "#5C452E" },
+// accent: アイコン円・見出しの縦棒・数値ハイライトなど「区分の色」に使う配色
+// chartAccent: 年代別グラフの棒・推移グラフの「前年」系列の色（実物では区分によらずセージグリーン固定）
+// highlightAccent: 推移グラフの「当期」系列の色（実物では区分ごとに異なる差し色）
+export const GOOGLE_REPORT_THEME: Record<
+  AdReportCategory,
+  { bg: string; accent: string; accentSoft: string; text: string; chartAccent: string; highlightAccent: string }
+> = {
+  acquisition: { bg: "#F3F2ED", accent: "#93A87B", accentSoft: "#C6D2B4", text: "#4A5A3C", chartAccent: "#93A87B", highlightAccent: "#C4788A" },
+  recruitment: { bg: "#F2ECE3", accent: "#A9835F", accentSoft: "#DCC3A4", text: "#5C452E", chartAccent: "#93A87B", highlightAccent: "#F5A83C" },
 };
