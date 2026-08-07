@@ -88,7 +88,7 @@ export default function GoogleRateTrendChart({
           </span>
         )}
       </div>
-      <ResponsiveContainer width="100%" height={180}>
+      <ResponsiveContainer width="100%" height={120}>
         <LineChart data={merged} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="#f0f0f0" vertical={false} />
           <XAxis
