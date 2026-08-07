@@ -125,6 +125,7 @@ export interface Database {
           gender_breakdown: unknown | null;
           hourly_clicks: unknown | null;
           age_group_clicks: unknown | null;
+          conversion_action_breakdown: unknown | null;
           target_age_range: string;
           ai_result: string | null;
           created_at: string;

@@ -50,6 +50,14 @@ export interface AgeGroupClicks {
   clicks: number;
 }
 
+// コンバージョンアクション名ごとの内訳（Google広告のみ）。「予約ボタン」「電話クリック」等、
+// 店舗ごとに設定しているアクション名・項目数が異なるため、固定のカテゴリにせず
+// 実際にAPIから返ってきたアクション名をそのまま保持する。
+export interface ConversionActionBreakdown {
+  name: string;
+  conversions: number;
+}
+
 // 24時間分の時間帯別クリック数（"0-1"〜"23-24"）
 export const HOURLY_SLOTS = Array.from({ length: 24 }, (_, h) => `${h}-${h + 1}`);
 
@@ -80,6 +88,7 @@ export interface AdReport {
   genderBreakdown?: GenderBreakdown;
   hourlyClicks?: HourlyClicks[];
   ageGroupClicks?: AgeGroupClicks[];
+  conversionActionBreakdown?: ConversionActionBreakdown[]; // Google広告のみ
   targetAgeRange: string; // 例: "20-39歳"
   aiResult: string | null;
   createdAt: string;

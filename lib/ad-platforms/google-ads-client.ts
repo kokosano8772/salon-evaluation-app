@@ -21,7 +21,7 @@
 // https://developers.google.com/google-ads/api/rest/common/search
 // https://developers.google.com/google-ads/api/docs/query/overview
 
-import { AdCampaignMetrics } from "@/lib/growth-db/ad-report-types";
+import { AdCampaignMetrics, ConversionActionBreakdown } from "@/lib/growth-db/ad-report-types";
 import { AdPlatformClient, NormalizedAdReport } from "./types";
 
 const GOOGLE_ADS_API_VERSION = "v25";
@@ -129,6 +129,13 @@ interface CampaignMetricsRow {
   };
 }
 
+// コンバージョンアクション名ごとの内訳。店舗ごとに設定してるアクション名・項目数が
+// 違うため、固定のフィールドにせずsegments.conversion_action_nameでそのまま取得する。
+interface ConversionActionRow {
+  segments?: { conversionActionName?: string };
+  metrics?: { conversions?: number };
+}
+
 const MICROS_PER_UNIT = 1_000_000;
 
 function toPercent(fraction: number | undefined): number {
@@ -169,6 +176,25 @@ export class GoogleAdsClient implements AdPlatformClient {
         (campaignNameFilter ? ` AND campaign.name LIKE '%${escapeGaqlLike(campaignNameFilter)}%'` : "")
     );
     const metricsByCampaignId = new Map(metricsRows.map((row) => [row.campaign?.id, row.metrics]));
+
+    // コンバージョンアクション名ごとの内訳。campaign.idごとには分けず、対象期間・
+    // 対象キャンペーン全体でアクション名ごとに合算する（店舗単位の内訳として使うため）。
+    const conversionActionRows = await searchGoogleAds<ConversionActionRow>(
+      accountId,
+      "SELECT segments.conversion_action_name, metrics.conversions FROM campaign " +
+        `WHERE segments.date BETWEEN '${since}' AND '${until}'` +
+        (campaignNameFilter ? ` AND campaign.name LIKE '%${escapeGaqlLike(campaignNameFilter)}%'` : "")
+    );
+    const conversionActionTotals = new Map<string, number>();
+    for (const row of conversionActionRows) {
+      const name = row.segments?.conversionActionName;
+      if (!name) continue;
+      conversionActionTotals.set(name, (conversionActionTotals.get(name) ?? 0) + (row.metrics?.conversions ?? 0));
+    }
+    const conversionActionBreakdown: ConversionActionBreakdown[] = Array.from(conversionActionTotals, ([name, conversions]) => ({
+      name,
+      conversions,
+    }));
 
     const campaigns: AdCampaignMetrics[] = existingCampaigns.map((c) => {
       const m = metricsByCampaignId.get(c.campaign?.id);
@@ -212,6 +238,7 @@ export class GoogleAdsClient implements AdPlatformClient {
       cpa: totals.conversions > 0 ? Math.round((totals.spend / totals.conversions) * 10) / 10 : 0,
       cvr: totals.clicks > 0 ? Math.round((totals.conversions / totals.clicks) * 1000) / 10 : 0,
       campaigns,
+      conversionActionBreakdown,
     };
   }
 }
