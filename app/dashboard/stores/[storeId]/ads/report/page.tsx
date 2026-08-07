@@ -81,8 +81,12 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
       const pages = document.querySelectorAll<HTMLElement>(".ad-report-page");
       const maxHeight = Math.max(0, ...Array.from(pages).map((el) => el.offsetHeight));
       if (maxHeight > 0) {
+        // 画面表示と印刷時のレンダリング差（フォントの微妙な高さの違い等）で
+        // ぴったりの高さだと1pxでも超えて次ページに中身がはみ出すことがあるため、
+        // 安全マージンを付けておく。
+        const printHeight = maxHeight + 24;
         printSizeStyle = document.createElement("style");
-        printSizeStyle.textContent = `@media print { @page { size: 900px ${maxHeight}px; margin: 0; } }`;
+        printSizeStyle.textContent = `@media print { @page { size: 900px ${printHeight}px; margin: 0; } }`;
         document.head.appendChild(printSizeStyle);
       }
     }
