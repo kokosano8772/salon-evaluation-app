@@ -363,14 +363,16 @@ export default function AdReportForm({
 
       <FormSection title={`${AD_PLATFORM_LABEL[platform]} - アカウント全体`} description="対象期間の合計値を入力してください">
         <TextField label="アカウントID" value={draft.accountId} onChange={(v) => patch("accountId", v)} placeholder="例: 123-456-7890" />
-        <TextField label="ターゲット年齢層" value={draft.targetAgeRange} onChange={(v) => patch("targetAgeRange", v)} placeholder="例: 20-39歳" />
-        <NumberField label="広告費" value={draft.spend} onChange={(v) => patch("spend", v)} suffix="円" />
+        {platform === "meta" && (
+          <TextField label="ターゲット年齢層" value={draft.targetAgeRange} onChange={(v) => patch("targetAgeRange", v)} placeholder="例: 20-39歳" />
+        )}
+        {platform === "meta" && <NumberField label="広告費" value={draft.spend} onChange={(v) => patch("spend", v)} suffix="円" />}
         <NumberField label="インプレッション数" value={draft.impressions} onChange={(v) => patch("impressions", v)} />
         <NumberField label="クリック数" value={draft.clicks} onChange={(v) => patch("clicks", v)} />
         <PercentField label="CTR" value={draft.ctr} onChange={(v) => patch("ctr", v)} />
-        <NumberField label="CPC" value={draft.cpc} onChange={(v) => patch("cpc", v)} suffix="円" />
+        {platform === "meta" && <NumberField label="CPC" value={draft.cpc} onChange={(v) => patch("cpc", v)} suffix="円" />}
         <NumberField label="コンバージョン数" value={draft.conversions} onChange={(v) => patch("conversions", v)} />
-        <NumberField label="CPA" value={draft.cpa} onChange={(v) => patch("cpa", v)} suffix="円" />
+        {platform === "meta" && <NumberField label="CPA" value={draft.cpa} onChange={(v) => patch("cpa", v)} suffix="円" />}
         <PercentField label="コンバージョン率" value={draft.cvr} onChange={(v) => patch("cvr", v)} />
         {platform === "meta" && (
           <>
@@ -380,110 +382,115 @@ export default function AdReportForm({
         )}
       </FormSection>
 
-      <div className="card-luxury p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-sm font-semibold text-charcoal-900">キャンペーン別データ</p>
-            <p className="text-xs text-gray-400 mt-0.5">キャンペーン単位の実績を入力してください</p>
-          </div>
-          <button
-            onClick={addCampaign}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-medium text-charcoal-700 hover:bg-gray-50"
-          >
-            <Plus size={14} strokeWidth={2} />
-            キャンペーンを追加
-          </button>
-        </div>
-
-        {draft.campaigns.length === 0 ? (
-          <p className="text-sm text-gray-400 py-6 text-center">まだキャンペーンが登録されていません</p>
-        ) : (
-          <div className="space-y-4">
-            {draft.campaigns.map((campaign, i) => (
-              <div key={campaign.id} className="rounded-2xl border border-gray-100 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold text-gray-400 tracking-wide">キャンペーン {i + 1}</p>
-                  <button
-                    onClick={() => removeCampaign(campaign.id)}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
-                    title="削除"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <TextField label="キャンペーン名" value={campaign.name} onChange={(v) => patchCampaign(campaign.id, "name", v)} />
-                  <NumberField label="広告費" value={campaign.spend} onChange={(v) => patchCampaign(campaign.id, "spend", v)} suffix="円" />
-                  <NumberField label="インプレッション数" value={campaign.impressions} onChange={(v) => patchCampaign(campaign.id, "impressions", v)} />
-                  <NumberField label="クリック数" value={campaign.clicks} onChange={(v) => patchCampaign(campaign.id, "clicks", v)} />
-                  <PercentField label="CTR" value={campaign.ctr} onChange={(v) => patchCampaign(campaign.id, "ctr", v)} />
-                  <NumberField label="CPC" value={campaign.cpc} onChange={(v) => patchCampaign(campaign.id, "cpc", v)} suffix="円" />
-                  <NumberField label="コンバージョン数" value={campaign.conversions} onChange={(v) => patchCampaign(campaign.id, "conversions", v)} />
-                  <NumberField label="CPA" value={campaign.cpa} onChange={(v) => patchCampaign(campaign.id, "cpa", v)} suffix="円" />
-                  <PercentField label="コンバージョン率" value={campaign.cvr} onChange={(v) => patchCampaign(campaign.id, "cvr", v)} />
-                </div>
+      {/* キャンペーン別データ・性別内訳・時間帯別クリックはMeta広告レポートでのみ表示に使う項目のため、
+          Google広告では入力フォームからも省く（Googleのレポートは代わりにコンバージョンアクション別内訳・
+          年代別・検索語句をAPI同期で取得して表示している）。 */}
+      {platform === "meta" && (
+        <>
+          <div className="card-luxury p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-semibold text-charcoal-900">キャンペーン別データ</p>
+                <p className="text-xs text-gray-400 mt-0.5">キャンペーン単位の実績を入力してください</p>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <button
+                onClick={addCampaign}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-medium text-charcoal-700 hover:bg-gray-50"
+              >
+                <Plus size={14} strokeWidth={2} />
+                キャンペーンを追加
+              </button>
+            </div>
 
-      <div className="card-luxury p-6">
-        <p className="text-sm font-semibold text-charcoal-900 mb-1">性別別の内訳</p>
-        <p className="text-xs text-gray-400 mb-4">男性・女性・その他ごとの実績を入力してください</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {(Object.keys(GENDER_LABEL) as (keyof GenderBreakdownValue)[]).map((gender) => (
-            <div key={gender}>
-              <p className="text-xs font-semibold text-gray-400 tracking-wide mb-3">{GENDER_LABEL[gender]}</p>
+            {draft.campaigns.length === 0 ? (
+              <p className="text-sm text-gray-400 py-6 text-center">まだキャンペーンが登録されていません</p>
+            ) : (
               <div className="space-y-4">
-                <NumberField
-                  label="インプレッション数"
-                  value={draft.genderBreakdown.impressions[gender]}
-                  onChange={(v) => patchGender("impressions", gender, v)}
-                />
-                {platform === "meta" && (
-                  <NumberField
-                    label="リーチ"
-                    value={draft.genderBreakdown.reach[gender]}
-                    onChange={(v) => patchGender("reach", gender, v)}
-                  />
-                )}
-                <NumberField
-                  label="クリック数"
-                  value={draft.genderBreakdown.clicks[gender]}
-                  onChange={(v) => patchGender("clicks", gender, v)}
-                />
-                <PercentField
-                  label="CTR"
-                  value={draft.genderBreakdown.ctr[gender]}
-                  onChange={(v) => patchGender("ctr", gender, v)}
-                />
+                {draft.campaigns.map((campaign, i) => (
+                  <div key={campaign.id} className="rounded-2xl border border-gray-100 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-gray-400 tracking-wide">キャンペーン {i + 1}</p>
+                      <button
+                        onClick={() => removeCampaign(campaign.id)}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
+                        title="削除"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <TextField label="キャンペーン名" value={campaign.name} onChange={(v) => patchCampaign(campaign.id, "name", v)} />
+                      <NumberField label="広告費" value={campaign.spend} onChange={(v) => patchCampaign(campaign.id, "spend", v)} suffix="円" />
+                      <NumberField label="インプレッション数" value={campaign.impressions} onChange={(v) => patchCampaign(campaign.id, "impressions", v)} />
+                      <NumberField label="クリック数" value={campaign.clicks} onChange={(v) => patchCampaign(campaign.id, "clicks", v)} />
+                      <PercentField label="CTR" value={campaign.ctr} onChange={(v) => patchCampaign(campaign.id, "ctr", v)} />
+                      <NumberField label="CPC" value={campaign.cpc} onChange={(v) => patchCampaign(campaign.id, "cpc", v)} suffix="円" />
+                      <NumberField label="コンバージョン数" value={campaign.conversions} onChange={(v) => patchCampaign(campaign.id, "conversions", v)} />
+                      <NumberField label="CPA" value={campaign.cpa} onChange={(v) => patchCampaign(campaign.id, "cpa", v)} suffix="円" />
+                      <PercentField label="コンバージョン率" value={campaign.cvr} onChange={(v) => patchCampaign(campaign.id, "cvr", v)} />
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            )}
+          </div>
 
-      <div className="card-luxury p-6">
-        <p className="text-sm font-semibold text-charcoal-900 mb-1">時間帯別クリック数</p>
-        <p className="text-xs text-gray-400 mb-4">0時〜24時の時間帯ごとのクリック数と配信停止の有無を入力してください</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {draft.hourlyClicks.map((slot, i) => (
-            <div key={slot.hour} className="rounded-xl border border-gray-100 p-3">
-              <p className="text-xs font-semibold text-gray-400 mb-2">{slot.hour}時</p>
-              <NumberField label="クリック数" value={slot.clicks} onChange={(v) => patchHourly(i, "clicks", v)} />
-              <label className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
-                <input
-                  type="checkbox"
-                  checked={slot.stopped ?? false}
-                  onChange={(e) => patchHourly(i, "stopped", e.target.checked)}
-                />
-                配信停止
-              </label>
+          <div className="card-luxury p-6">
+            <p className="text-sm font-semibold text-charcoal-900 mb-1">性別別の内訳</p>
+            <p className="text-xs text-gray-400 mb-4">男性・女性・その他ごとの実績を入力してください</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {(Object.keys(GENDER_LABEL) as (keyof GenderBreakdownValue)[]).map((gender) => (
+                <div key={gender}>
+                  <p className="text-xs font-semibold text-gray-400 tracking-wide mb-3">{GENDER_LABEL[gender]}</p>
+                  <div className="space-y-4">
+                    <NumberField
+                      label="インプレッション数"
+                      value={draft.genderBreakdown.impressions[gender]}
+                      onChange={(v) => patchGender("impressions", gender, v)}
+                    />
+                    <NumberField
+                      label="リーチ"
+                      value={draft.genderBreakdown.reach[gender]}
+                      onChange={(v) => patchGender("reach", gender, v)}
+                    />
+                    <NumberField
+                      label="クリック数"
+                      value={draft.genderBreakdown.clicks[gender]}
+                      onChange={(v) => patchGender("clicks", gender, v)}
+                    />
+                    <PercentField
+                      label="CTR"
+                      value={draft.genderBreakdown.ctr[gender]}
+                      onChange={(v) => patchGender("ctr", gender, v)}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+
+          <div className="card-luxury p-6">
+            <p className="text-sm font-semibold text-charcoal-900 mb-1">時間帯別クリック数</p>
+            <p className="text-xs text-gray-400 mb-4">0時〜24時の時間帯ごとのクリック数と配信停止の有無を入力してください</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {draft.hourlyClicks.map((slot, i) => (
+                <div key={slot.hour} className="rounded-xl border border-gray-100 p-3">
+                  <p className="text-xs font-semibold text-gray-400 mb-2">{slot.hour}時</p>
+                  <NumberField label="クリック数" value={slot.clicks} onChange={(v) => patchHourly(i, "clicks", v)} />
+                  <label className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
+                    <input
+                      type="checkbox"
+                      checked={slot.stopped ?? false}
+                      onChange={(e) => patchHourly(i, "stopped", e.target.checked)}
+                    />
+                    配信停止
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="card-luxury p-6">
         <p className="text-sm font-semibold text-charcoal-900 mb-1">年齢層別クリック数</p>
