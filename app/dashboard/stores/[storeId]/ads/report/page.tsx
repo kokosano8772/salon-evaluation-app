@@ -18,7 +18,7 @@ const CATEGORIES: AdReportCategory[] = ["acquisition", "recruitment"];
 
 interface StoreAdReportPageProps {
   params: Promise<{ storeId: string }>;
-  searchParams: Promise<{ month?: string; platform?: string }>;
+  searchParams: Promise<{ month?: string; platform?: string; category?: string }>;
 }
 
 export default function StoreAdReportPage({ params, searchParams }: StoreAdReportPageProps) {
@@ -33,7 +33,9 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
     initial.platform === "google" || initial.platform === "meta" ? initial.platform : "meta"
   );
   // 集客/求人の区分はGoogle広告のみで使う（Metaは常に集客扱い）
-  const [category, setCategory] = useState<AdReportCategory>("acquisition");
+  const [category, setCategory] = useState<AdReportCategory>(
+    initial.category === "recruitment" ? "recruitment" : "acquisition"
+  );
   const platformReports = useMemo(
     () =>
       adReports
@@ -147,6 +149,7 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
             <button
               key={p}
               onClick={() => {
+                if (p === platform) return;
                 setPlatform(p);
                 setCategory("acquisition");
                 setSelectedMonth(undefined);
@@ -166,6 +169,7 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
               <button
                 key={c}
                 onClick={() => {
+                  if (c === category) return;
                   setCategory(c);
                   setSelectedMonth(undefined);
                 }}

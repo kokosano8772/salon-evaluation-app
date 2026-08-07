@@ -61,7 +61,9 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
               className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
             />
             <Link
-              href={`/dashboard/stores/${store.id}/ads/report?month=${selectedMonth}&platform=${platform}`}
+              href={`/dashboard/stores/${store.id}/ads/report?month=${selectedMonth}&platform=${platform}&category=${
+                platform === "google" ? category : "acquisition"
+              }`}
               className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-white"
               style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
             >
