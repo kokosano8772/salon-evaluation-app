@@ -28,6 +28,7 @@ import {
   AgeGroupClicks,
   AgeGroupConversions,
   ConversionActionBreakdown,
+  SearchTermClicks,
 } from "@/lib/growth-db/ad-report-types";
 import { AdPlatformClient, NormalizedAdReport } from "./types";
 
@@ -150,6 +151,12 @@ interface AgeRangeRow {
   metrics?: { clicks?: string; conversions?: number };
 }
 
+// 検索語句レポート。search_term_view リソースから取得する。
+interface SearchTermRow {
+  searchTermView?: { searchTerm?: string };
+  metrics?: { clicks?: string };
+}
+
 // Metaの実際の年齢区分と同様、Googleの実際の年齢区分（AGE_RANGE_18_24〜）を
 // うちのAGE_GROUPS（20-24始まり）に合わせて吸収する。
 function mapGoogleAgeRange(raw: string | undefined): AgeGroup | null {
@@ -257,6 +264,29 @@ export class GoogleAdsClient implements AdPlatformClient {
       conversions: ageConversionsTotals.get(ageGroup) ?? 0,
     }));
 
+    // クリックが多かった検索語句。店舗名（絞り込みキーワード）を含む語句は
+    // 「サロン名で検索しただけ」であり実績として意味が薄いため除外する。
+    const searchTermRows =
+      campaignIds.length > 0
+        ? await searchGoogleAds<SearchTermRow>(
+            accountId,
+            "SELECT search_term_view.search_term, metrics.clicks FROM search_term_view " +
+              `WHERE segments.date BETWEEN '${since}' AND '${until}' ` +
+              `AND campaign.id IN (${campaignIds.join(",")})`
+          )
+        : [];
+    const searchTermTotals = new Map<string, number>();
+    const excludeKeyword = campaignNameFilter?.toLowerCase();
+    for (const row of searchTermRows) {
+      const term = row.searchTermView?.searchTerm;
+      if (!term) continue;
+      if (excludeKeyword && term.toLowerCase().includes(excludeKeyword)) continue;
+      searchTermTotals.set(term, (searchTermTotals.get(term) ?? 0) + Number(row.metrics?.clicks ?? 0));
+    }
+    const searchTerms: SearchTermClicks[] = Array.from(searchTermTotals, ([term, clicks]) => ({ term, clicks }))
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 10);
+
     const campaigns: AdCampaignMetrics[] = existingCampaigns.map((c) => {
       const m = metricsByCampaignId.get(c.campaign?.id);
       const impressions = Number(m?.impressions ?? 0);
@@ -302,6 +332,7 @@ export class GoogleAdsClient implements AdPlatformClient {
       conversionActionBreakdown,
       ageGroupClicks,
       ageGroupConversions,
+      searchTerms,
     };
   }
 }

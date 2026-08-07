@@ -57,6 +57,12 @@ export interface AgeGroupConversions {
   conversions: number;
 }
 
+// クリックが多かった検索語句（Google広告のみ）。店舗名を含む語句は同期時に除外済み。
+export interface SearchTermClicks {
+  term: string;
+  clicks: number;
+}
+
 // コンバージョンアクション名ごとの内訳（Google広告のみ）。「予約ボタン」「電話クリック」等、
 // 店舗ごとに設定しているアクション名・項目数が異なるため、固定のカテゴリにせず
 // 実際にAPIから返ってきたアクション名をそのまま保持する。
@@ -97,6 +103,7 @@ export interface AdReport {
   ageGroupClicks?: AgeGroupClicks[];
   ageGroupConversions?: AgeGroupConversions[]; // Google広告のみ
   conversionActionBreakdown?: ConversionActionBreakdown[]; // Google広告のみ
+  searchTerms?: SearchTermClicks[]; // Google広告のみ
   targetAgeRange: string; // 例: "20-39歳"
   aiResult: string | null;
   createdAt: string;

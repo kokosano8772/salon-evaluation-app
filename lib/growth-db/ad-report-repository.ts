@@ -13,6 +13,7 @@ import {
   ConversionActionBreakdown,
   GenderBreakdown,
   HourlyClicks,
+  SearchTermClicks,
 } from "./ad-report-types";
 
 type AdReportRow = Database["public"]["Tables"]["ad_reports"]["Row"];
@@ -41,6 +42,7 @@ export function mapAdReportRow(row: AdReportRow): AdReport {
     ageGroupClicks: (row.age_group_clicks as AgeGroupClicks[] | null) ?? undefined,
     ageGroupConversions: (row.age_group_conversions as AgeGroupConversions[] | null) ?? undefined,
     conversionActionBreakdown: (row.conversion_action_breakdown as ConversionActionBreakdown[] | null) ?? undefined,
+    searchTerms: (row.search_terms as SearchTermClicks[] | null) ?? undefined,
     targetAgeRange: row.target_age_range,
     aiResult: row.ai_result,
     createdAt: row.created_at,
@@ -114,6 +116,7 @@ export async function upsertAdReport(
   if (patch.ageGroupClicks !== undefined) row.age_group_clicks = patch.ageGroupClicks;
   if (patch.ageGroupConversions !== undefined) row.age_group_conversions = patch.ageGroupConversions;
   if (patch.conversionActionBreakdown !== undefined) row.conversion_action_breakdown = patch.conversionActionBreakdown;
+  if (patch.searchTerms !== undefined) row.search_terms = patch.searchTerms;
   if (patch.targetAgeRange !== undefined) row.target_age_range = patch.targetAgeRange;
   if (patch.aiResult !== undefined) row.ai_result = patch.aiResult;
 
