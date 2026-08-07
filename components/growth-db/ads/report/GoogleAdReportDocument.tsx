@@ -26,15 +26,15 @@ function simplifyConversionActionName(name: string): string {
 }
 
 function SectionCard({ children }: { children: ReactNode }) {
-  return <div className="bg-white rounded-2xl p-5">{children}</div>;
+  return <div className="bg-white rounded-2xl p-6">{children}</div>;
 }
 
 function SectionTitle({ accent, caption, children }: { accent: string; caption?: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2 mb-3">
-      <div className="flex items-center gap-2">
-        <span className="w-1.5 h-5 rounded-full" style={{ backgroundColor: accent }} />
-        <p className="text-base font-bold text-charcoal-900">{children}</p>
+    <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="flex items-center gap-2.5">
+        <span className="w-2 h-6 rounded-full" style={{ backgroundColor: accent }} />
+        <p className="text-2xl font-bold text-charcoal-900">{children}</p>
       </div>
       {caption && <p className="text-xs text-gray-400">{caption}</p>}
     </div>
@@ -60,33 +60,35 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto"
         style={{ background: theme.bg }}
       >
-        <h1 className="text-3xl font-extrabold text-center text-charcoal-900">Google広告成果報告レポート</h1>
-        <p className="text-center text-base text-charcoal-700 mt-1.5">
+        <h1 className="text-5xl font-extrabold text-center text-charcoal-900">Google広告成果報告レポート</h1>
+        <p className="text-center text-lg text-charcoal-700 mt-2">
           {storeName}様{isRecruitment ? "（求人）" : ""} | {formatMonthLabel(report.yearMonth)}分
         </p>
 
-        <SectionCard>
-          <div className="flex items-start gap-4 mt-2">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
-              style={{ backgroundColor: theme.accent, color: "white" }}
-            >
-              <ThumbsUp size={22} strokeWidth={2} />
+        <div className="mt-6">
+          <SectionCard>
+            <div className="flex items-start gap-5">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
+                style={{ backgroundColor: theme.accent, color: "white" }}
+              >
+                <ThumbsUp size={28} strokeWidth={2} />
+              </div>
+              <div>
+                <p className="text-xl font-extrabold" style={{ color: theme.text }}>
+                  {formatMonthShortLabel(report.yearMonth)}の運用状況：◎好調
+                </p>
+                <p className="text-base text-charcoal-700 mt-1.5 leading-relaxed whitespace-pre-wrap">
+                  {summary || "AI分析はまだ生成されていません"}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-lg font-extrabold" style={{ color: theme.text }}>
-                {formatMonthShortLabel(report.yearMonth)}の運用状況：◎好調
-              </p>
-              <p className="text-sm text-charcoal-700 mt-1 leading-relaxed whitespace-pre-wrap">
-                {summary || "AI分析はまだ生成されていません"}
-              </p>
-            </div>
-          </div>
-        </SectionCard>
+          </SectionCard>
+        </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
           <GoogleReportStatCard
-            icon={<Eye size={20} strokeWidth={2} />}
+            icon={<Eye size={24} strokeWidth={2} />}
             title="表示回数"
             value={formatNumber(report.impressions)}
             unit="回"
@@ -95,7 +97,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             valueColor={theme.accent}
           />
           <GoogleReportStatCard
-            icon={<MousePointerClick size={20} strokeWidth={2} />}
+            icon={<MousePointerClick size={24} strokeWidth={2} />}
             title="クリック数"
             value={formatNumber(report.clicks)}
             unit="回"
@@ -104,7 +106,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             valueColor={theme.accent}
           />
           <GoogleReportStatCard
-            icon={<Calendar size={20} strokeWidth={2} />}
+            icon={<Calendar size={24} strokeWidth={2} />}
             title={`${buttonLabel}\nクリック数`}
             value={formatAdaptiveNumber(report.conversions)}
             unit="回"
@@ -112,7 +114,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             valueColor={theme.accent}
           >
             {breakdown.length > 0 && (
-              <div className="text-[11px] text-gray-500 leading-relaxed">
+              <div className="text-xs text-gray-500 leading-relaxed">
                 <p className="font-semibold text-gray-600">内訳：</p>
                 <p>
                   {breakdown
@@ -123,14 +125,14 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             )}
           </GoogleReportStatCard>
           <GoogleReportStatCard
-            icon={<Percent size={20} strokeWidth={2} />}
+            icon={<Percent size={24} strokeWidth={2} />}
             title={`${buttonLabel}を\n押した割合`}
             value={report.cvr.toFixed(2)}
             unit="%"
             accent={theme.accent}
             valueColor={theme.accent}
           >
-            <div className="text-[11px] text-gray-400 leading-relaxed">
+            <div className="text-xs text-gray-400 leading-relaxed">
               {benchmark && <p>自社平均{benchmark.ownAverage}%</p>}
               <p>ココデザインでの目標: {AD_REPORT_TARGET_RATE}%</p>
               {benchmark?.nationalAverage !== undefined && <p>全国平均約{benchmark.nationalAverage}%</p>}
@@ -138,7 +140,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </GoogleReportStatCard>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-6">
           <SectionCard>
             <SectionTitle accent={theme.accent} caption={`() = ${buttonLabel}クリック数`}>
               【年代別】{buttonLabel}を押した割合
@@ -152,7 +154,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </SectionCard>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-6">
           <SectionCard>
             <SectionTitle accent={theme.accent}>{buttonLabel}を押した割合の推移</SectionTitle>
             <GoogleRateTrendChart
@@ -168,7 +170,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         </div>
 
         {isRecruitment && (
-          <div className="mt-4">
+          <div className="mt-6">
             <SectionCard>
               <SectionTitle accent={theme.accent}>クリック数の推移</SectionTitle>
               <GoogleClicksTrendChart
@@ -184,10 +186,10 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         )}
 
         {!isRecruitment && report.searchTerms && report.searchTerms.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-6">
             <SectionCard>
               <SectionTitle accent={theme.accent}>クリックが多かった検索語句</SectionTitle>
-              <p className="text-xs text-gray-400 mb-3">広告からホームページに来るきっかけになった検索語句（サロン名での検索は除外）</p>
+              <p className="text-sm text-gray-400 mb-3">広告からホームページに来るきっかけになった検索語句（サロン名での検索は除外）</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {report.searchTerms.slice(0, 3).map((s, i) => (
                   <div key={s.term} className="flex items-center gap-2 rounded-xl border px-4 py-3" style={{ borderColor: theme.accentSoft }}>
@@ -200,7 +202,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </div>
         )}
 
-        <p className="text-center text-xs text-gray-400 mt-6">KOKODESIGN</p>
+        <p className="text-center text-sm text-gray-400 mt-8">KOKODESIGN</p>
       </div>
 
       {/* ページ2 */}
