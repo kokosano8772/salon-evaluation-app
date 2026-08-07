@@ -90,7 +90,7 @@ export default function GoogleClicksTrendChart({
               const ym = merged[i]?.previousLabel ?? merged[i]?.currentLabel;
               return ym ? formatMonthShortLabel(ym) : "";
             }}
-            tick={{ fontSize: 17, fill: "#999", fontFamily: "'Noto Sans JP', sans-serif" }}
+            tick={{ fontSize: 16, fill: "#999", fontFamily: "'Noto Sans JP', sans-serif" }}
             axisLine={{ stroke: "#eee" }}
             tickLine={false}
           />

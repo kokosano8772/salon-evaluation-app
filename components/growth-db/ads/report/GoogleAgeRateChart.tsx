@@ -104,7 +104,7 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
         <div className="pr-2 shrink-0" style={{ width: "1.5em" }} />
         <div className="flex-1 flex justify-between gap-3">
           {rows.map((r) => (
-            <p key={r.ageGroup} className="flex-1 text-center text-[17px] text-gray-500">
+            <p key={r.ageGroup} className="flex-1 text-center text-[16px] text-gray-500">
               {ageGroupLabel(r.ageGroup)}
             </p>
           ))}
