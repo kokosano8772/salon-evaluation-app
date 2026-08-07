@@ -3,6 +3,7 @@
 // 数値だけをレポートに描画する。
 
 import { AdReportCategory, AGE_GROUPS, AdReport } from "./ad-report-types";
+import { shiftYearMonth } from "./format";
 
 const TREND_MONTHS = 12;
 
@@ -50,36 +51,70 @@ export function buildAgeGroupTrend(
     });
 }
 
-// Google広告レポートの「予約/問い合わせボタンを押した割合の推移」用。
-// 集客は前年同期比較（2系列）で表示する想定のため、monthsに24等を指定して
-// 呼び出し側（レポート画面）で直近12ヶ月・その前12ヶ月に分割して使う。
-export interface ConversionRateTrendPoint {
+// Google広告レポートの「予約/問い合わせボタンを押した割合の推移」「クリック数の推移」用。
+// 「直近12ヶ月」という単純なスライドウィンドウではなく、実際の運用に合わせて
+// 「広告を始めた月を基準にした1年サイクル」で前年同期比較（2系列）を組む。
+// 例: 7月に開始した店舗なら 7月始まり〜翌6月終わりが1サイクル。
+// 進行中の今サイクル（1〜12ヶ月分）と、直前に完了した1年サイクル（最大12ヶ月分）を
+// スロット位置（0=サイクル開始月）で揃えて返す。
+export interface YoyCyclePoint {
   yearMonth: string;
-  rate: number; // cvr (%)
+  rate: number | null; // cvr (%)
+  clicks: number | null;
 }
 
-export function buildConversionRateTrend(
+export interface YoyTrend {
+  previousCycleLabel: string; // 例: "2025.7〜"
+  currentCycleLabel: string; // 例: "2026.7〜"
+  previousCycle: YoyCyclePoint[]; // 常に12件（データが無い月はnull）
+  currentCycle: YoyCyclePoint[]; // 常に12件（未到来・データが無い月はnull）
+}
+
+const EMPTY_YOY_TREND: YoyTrend = { previousCycleLabel: "", currentCycleLabel: "", previousCycle: [], currentCycle: [] };
+
+export function buildYoyTrend(
   history: AdReport[],
   platform: AdReport["platform"],
   category: AdReportCategory,
-  uptoYearMonth: string,
-  months: number = TREND_MONTHS
-): ConversionRateTrendPoint[] {
-  return recentReports(history, platform, uptoYearMonth, months, category).map((r) => ({ yearMonth: r.yearMonth, rate: r.cvr }));
-}
+  uptoYearMonth: string
+): YoyTrend {
+  const reports = history
+    .filter((r) => r.platform === platform && r.category === category && r.yearMonth <= uptoYearMonth)
+    .sort((a, b) => (a.yearMonth < b.yearMonth ? -1 : 1));
+  if (reports.length === 0) return EMPTY_YOY_TREND;
 
-// Google広告（求人）レポートの「クリック数の推移」用。
-export interface ClicksTrendPoint {
-  yearMonth: string;
-  clicks: number;
-}
+  // アンカー月 = 記録が残っている最初の月の「月」。この月を基準に1年サイクルを区切る。
+  const anchorMonth = Number(reports[0].yearMonth.split("-")[1]);
 
-export function buildClicksTrend(
-  history: AdReport[],
-  platform: AdReport["platform"],
-  category: AdReportCategory,
-  uptoYearMonth: string,
-  months: number = TREND_MONTHS
-): ClicksTrendPoint[] {
-  return recentReports(history, platform, uptoYearMonth, months, category).map((r) => ({ yearMonth: r.yearMonth, clicks: r.clicks }));
+  let cycleStart = uptoYearMonth;
+  for (let i = 0; i < 12; i++) {
+    if (Number(cycleStart.split("-")[1]) === anchorMonth) break;
+    cycleStart = shiftYearMonth(cycleStart, -1);
+  }
+  const previousCycleStart = shiftYearMonth(cycleStart, -12);
+
+  const reportsByMonth = new Map(reports.map((r) => [r.yearMonth, r]));
+
+  const previousCycle: YoyCyclePoint[] = Array.from({ length: 12 }, (_, i) => {
+    const yearMonth = shiftYearMonth(previousCycleStart, i);
+    const r = reportsByMonth.get(yearMonth);
+    return { yearMonth, rate: r?.cvr ?? null, clicks: r?.clicks ?? null };
+  });
+
+  const currentCycle: YoyCyclePoint[] = Array.from({ length: 12 }, (_, i) => {
+    const yearMonth = shiftYearMonth(cycleStart, i);
+    if (yearMonth > uptoYearMonth) return { yearMonth, rate: null, clicks: null };
+    const r = reportsByMonth.get(yearMonth);
+    return { yearMonth, rate: r?.cvr ?? null, clicks: r?.clicks ?? null };
+  });
+
+  const [py, pm] = previousCycleStart.split("-");
+  const [cy, cm] = cycleStart.split("-");
+
+  return {
+    previousCycleLabel: `${py}.${Number(pm)}〜`,
+    currentCycleLabel: `${cy}.${Number(cm)}〜`,
+    previousCycle,
+    currentCycle,
+  };
 }

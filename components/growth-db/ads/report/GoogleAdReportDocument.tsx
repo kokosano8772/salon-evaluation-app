@@ -2,9 +2,9 @@ import { ReactNode } from "react";
 import { Calendar, Eye, MousePointerClick, Percent, ThumbsUp } from "lucide-react";
 import { AdReport, GOOGLE_REPORT_THEME } from "@/lib/growth-db/ad-report-types";
 import { getBusinessCategoryBenchmark, AD_REPORT_TARGET_RATE } from "@/lib/growth-db/business-category-benchmarks";
-import { ConversionRateTrendPoint, ClicksTrendPoint } from "@/lib/growth-db/ad-report-trend";
+import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
 import { parseGoogleAdReportAiResult } from "@/lib/growth-db/parse-google-ad-report-ai-result";
-import { formatMonthLabel, formatMonthShortLabel, formatNumber } from "@/lib/growth-db/format";
+import { formatAdaptiveNumber, formatMonthLabel, formatMonthShortLabel, formatNumber } from "@/lib/growth-db/format";
 import GoogleReportStatCard from "./GoogleReportStatCard";
 import GoogleAgeRateChart from "./GoogleAgeRateChart";
 import GoogleRateTrendChart from "./GoogleRateTrendChart";
@@ -14,13 +14,19 @@ interface GoogleAdReportDocumentProps {
   storeName: string;
   businessCategory: string;
   report: AdReport;
-  rateTrendCurrent: ConversionRateTrendPoint[];
-  rateTrendPrevious?: ConversionRateTrendPoint[]; // 集客のみ（前年同期比較）
-  clicksTrend?: ClicksTrendPoint[]; // 求人のみ
+  trend: YoyTrend;
+}
+
+// 実際のコンバージョンアクション名は「店舗名（用途／チャネル）」のように長くなりがちなため、
+// 「／」区切りの最後の要素（チャネル名など）だけを抜き出して表示を簡潔にする。
+// パターンに合わない名前はそのまま表示する（店舗ごとに命名が違う可能性があるため）。
+function simplifyConversionActionName(name: string): string {
+  const match = name.match(/／\s*([^）／]+)\s*）?\s*$/);
+  return match ? match[1].trim() : name;
 }
 
 function SectionCard({ children }: { children: ReactNode }) {
-  return <div className="bg-white rounded-2xl p-6">{children}</div>;
+  return <div className="bg-white rounded-2xl p-5">{children}</div>;
 }
 
 function SectionTitle({ accent, children }: { accent: string; children: ReactNode }) {
@@ -35,14 +41,7 @@ function SectionTitle({ accent, children }: { accent: string; children: ReactNod
 const RECRUITMENT_CONFIRM_OPTIONS = ["応募・面接につながった", "問い合わせのみあった", "特に反応はなかった"];
 const ACQUISITION_CONFIRM_OPTIONS = ["忙しかった", "ほどほどだった", "暇だった"];
 
-export default function GoogleAdReportDocument({
-  storeName,
-  businessCategory,
-  report,
-  rateTrendCurrent,
-  rateTrendPrevious,
-  clicksTrend,
-}: GoogleAdReportDocumentProps) {
+export default function GoogleAdReportDocument({ storeName, businessCategory, report, trend }: GoogleAdReportDocumentProps) {
   const isRecruitment = report.category === "recruitment";
   const theme = GOOGLE_REPORT_THEME[report.category];
   const benchmark = getBusinessCategoryBenchmark(businessCategory);
@@ -82,7 +81,7 @@ export default function GoogleAdReportDocument({
           </div>
         </SectionCard>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
           <GoogleReportStatCard
             icon={<Eye size={20} strokeWidth={2} />}
             title="表示回数"
@@ -102,18 +101,18 @@ export default function GoogleAdReportDocument({
           <GoogleReportStatCard
             icon={<Calendar size={20} strokeWidth={2} />}
             title={`${buttonLabel}\nクリック数`}
-            value={report.conversions.toFixed(2)}
+            value={formatAdaptiveNumber(report.conversions)}
             unit="回"
             accent={theme.accent}
           >
             {breakdown.length > 0 && (
               <div className="text-[11px] text-gray-500 leading-relaxed">
                 <p className="font-semibold text-gray-600">内訳:</p>
-                {breakdown.map((b) => (
-                  <p key={b.name}>
-                    {b.name} {b.conversions.toFixed(2)}回
-                  </p>
-                ))}
+                <p>
+                  {breakdown
+                    .map((b) => `${simplifyConversionActionName(b.name)} ${formatAdaptiveNumber(b.conversions)}回`)
+                    .join("／")}
+                </p>
               </div>
             )}
           </GoogleReportStatCard>
@@ -132,36 +131,44 @@ export default function GoogleAdReportDocument({
           </GoogleReportStatCard>
         </div>
 
-        <div className="mt-5">
+        <div className="mt-4">
           <SectionCard>
             <SectionTitle accent={theme.accent}>【年代別】{buttonLabel}を押した割合</SectionTitle>
             <GoogleAgeRateChart clicks={report.ageGroupClicks ?? []} conversions={report.ageGroupConversions ?? []} accent={theme.accent} />
           </SectionCard>
         </div>
 
-        <div className="mt-5">
+        <div className="mt-4">
           <SectionCard>
             <SectionTitle accent={theme.accent}>{buttonLabel}を押した割合の推移</SectionTitle>
             <GoogleRateTrendChart
-              currentSeries={rateTrendCurrent}
-              previousSeries={isRecruitment ? undefined : rateTrendPrevious}
+              previousCycle={trend.previousCycle}
+              currentCycle={trend.currentCycle}
+              previousLabel={trend.previousCycleLabel}
+              currentLabel={trend.currentCycleLabel}
               target={isRecruitment ? undefined : AD_REPORT_TARGET_RATE}
               accent={theme.accent}
             />
           </SectionCard>
         </div>
 
-        {isRecruitment && clicksTrend && (
-          <div className="mt-5">
+        {isRecruitment && (
+          <div className="mt-4">
             <SectionCard>
               <SectionTitle accent={theme.accent}>クリック数の推移</SectionTitle>
-              <GoogleClicksTrendChart data={clicksTrend} accent={theme.accent} />
+              <GoogleClicksTrendChart
+                previousCycle={trend.previousCycle}
+                currentCycle={trend.currentCycle}
+                previousLabel={trend.previousCycleLabel}
+                currentLabel={trend.currentCycleLabel}
+                accent={theme.accent}
+              />
             </SectionCard>
           </div>
         )}
 
         {!isRecruitment && report.searchTerms && report.searchTerms.length > 0 && (
-          <div className="mt-5">
+          <div className="mt-4">
             <SectionCard>
               <SectionTitle accent={theme.accent}>クリックが多かった検索語句</SectionTitle>
               <p className="text-xs text-gray-400 mb-3">広告からホームページに来るきっかけになった検索語句（サロン名での検索は除外）</p>
@@ -177,7 +184,7 @@ export default function GoogleAdReportDocument({
           </div>
         )}
 
-        <p className="text-center text-xs text-gray-400 mt-8">KOKODESIGN</p>
+        <p className="text-center text-xs text-gray-400 mt-6">KOKODESIGN</p>
       </div>
 
       {/* ページ2 */}

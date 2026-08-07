@@ -12,6 +12,12 @@ export function formatNumber(value: number): string {
   return Math.round(value).toLocaleString("ja-JP");
 }
 
+// コンバージョン数など、整数のことが多いが按分計測で小数になることもある値の表示用。
+// 整数ならそのまま、小数なら小数第2位までにする（"9回"／"34.13回" のように）。
+export function formatAdaptiveNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
 // "2024-03" -> "2024年3月"
 export function formatMonthLabel(yearMonth: string): string {
   const [year, month] = yearMonth.split("-");

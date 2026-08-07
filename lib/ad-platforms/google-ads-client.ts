@@ -184,6 +184,12 @@ function toPercent(fraction: number | undefined): number {
   return Math.round((fraction ?? 0) * 1000) / 10;
 }
 
+// コンバージョン率（予約/問い合わせボタンを押した割合）はレポート上で小数第2位まで
+// 表示するため、CTRより1桁細かく丸める。
+function toPercent2(fraction: number | undefined): number {
+  return Math.round((fraction ?? 0) * 10000) / 100;
+}
+
 function toYen(micros: string | number | undefined): number {
   return Number(micros ?? 0) / MICROS_PER_UNIT;
 }
@@ -303,7 +309,7 @@ export class GoogleAdsClient implements AdPlatformClient {
         cpc: toYen(m?.averageCpc),
         conversions,
         cpa: toYen(m?.costPerConversion),
-        cvr: toPercent(m?.conversionsFromInteractionsRate),
+        cvr: toPercent2(m?.conversionsFromInteractionsRate),
       };
     });
 
@@ -327,7 +333,7 @@ export class GoogleAdsClient implements AdPlatformClient {
       cpc: totals.clicks > 0 ? Math.round((totals.spend / totals.clicks) * 10) / 10 : 0,
       conversions: totals.conversions,
       cpa: totals.conversions > 0 ? Math.round((totals.spend / totals.conversions) * 10) / 10 : 0,
-      cvr: totals.clicks > 0 ? Math.round((totals.conversions / totals.clicks) * 1000) / 10 : 0,
+      cvr: totals.clicks > 0 ? Math.round((totals.conversions / totals.clicks) * 10000) / 100 : 0,
       campaigns,
       conversionActionBreakdown,
       ageGroupClicks,

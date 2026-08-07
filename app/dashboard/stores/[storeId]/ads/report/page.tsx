@@ -9,7 +9,7 @@ import GoogleAdReportDocument from "@/components/growth-db/ads/report/GoogleAdRe
 import AdReportAIPanel from "@/components/growth-db/ads/AdReportAIPanel";
 import { useMonthlyMetrics, useStore } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
-import { buildAgeGroupTrend, buildClicksTrend, buildConversionRateTrend, buildCtrTrend } from "@/lib/growth-db/ad-report-trend";
+import { buildAgeGroupTrend, buildCtrTrend, buildYoyTrend } from "@/lib/growth-db/ad-report-trend";
 import { currentYearMonth, formatMonthLabel, shiftYearMonth } from "@/lib/growth-db/format";
 import { AD_PLATFORM_LABEL, AD_REPORT_CATEGORY_LABEL, AdPlatform, AdReportCategory } from "@/lib/growth-db/ad-report-types";
 
@@ -62,15 +62,11 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   const ctrTrend = report && platform === "meta" ? buildCtrTrend(adReports, platform, selectedMonth) : [];
   const ageGroupTrend = report && platform === "meta" ? buildAgeGroupTrend(adReports, platform, selectedMonth) : [];
 
-  // Google広告のみ: 割合の推移（集客は前年同期比較のため24ヶ月分を取得し、直近12/その前12に分割）
-  const rateTrendAll =
-    report && platform === "google" ? buildConversionRateTrend(adReports, platform, category, selectedMonth, 24) : [];
-  const rateTrendCurrent = rateTrendAll.slice(-12);
-  const rateTrendPrevious = category === "acquisition" ? rateTrendAll.slice(-24, -12) : undefined;
-  const clicksTrend =
-    report && platform === "google" && category === "recruitment"
-      ? buildClicksTrend(adReports, platform, category, selectedMonth, 12)
-      : undefined;
+  // Google広告のみ: 広告開始月を基準にした1年サイクルでの前年同期比較トレンド
+  const yoyTrend =
+    report && platform === "google"
+      ? buildYoyTrend(adReports, platform, category, selectedMonth)
+      : { previousCycleLabel: "", currentCycleLabel: "", previousCycle: [], currentCycle: [] };
 
   // 印刷/PDF保存ダイアログが提示するファイル名候補はdocument.titleから決まるため、
   // 印刷直前だけ「店舗名-広告レポート-YYYYMM」に差し替え、閉じたら元に戻す。
@@ -200,9 +196,7 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
                 storeName={store.name}
                 businessCategory={store.businessCategory}
                 report={report}
-                rateTrendCurrent={rateTrendCurrent}
-                rateTrendPrevious={rateTrendPrevious}
-                clicksTrend={clicksTrend}
+                trend={yoyTrend}
               />
             ) : (
               <AdReportDocument storeName={store.name} report={report} ctrTrend={ctrTrend} ageGroupTrend={ageGroupTrend} />
