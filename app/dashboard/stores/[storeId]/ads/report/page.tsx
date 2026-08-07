@@ -5,14 +5,16 @@ import Link from "next/link";
 import { ChevronDown, Download, Printer } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AdReportDocument from "@/components/growth-db/ads/report/AdReportDocument";
+import GoogleAdReportDocument from "@/components/growth-db/ads/report/GoogleAdReportDocument";
 import AdReportAIPanel from "@/components/growth-db/ads/AdReportAIPanel";
 import { useMonthlyMetrics, useStore } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
-import { buildAgeGroupTrend, buildCtrTrend } from "@/lib/growth-db/ad-report-trend";
+import { buildAgeGroupTrend, buildClicksTrend, buildConversionRateTrend, buildCtrTrend } from "@/lib/growth-db/ad-report-trend";
 import { currentYearMonth, formatMonthLabel, shiftYearMonth } from "@/lib/growth-db/format";
-import { AD_PLATFORM_LABEL, AdPlatform } from "@/lib/growth-db/ad-report-types";
+import { AD_PLATFORM_LABEL, AD_REPORT_CATEGORY_LABEL, AdPlatform, AdReportCategory } from "@/lib/growth-db/ad-report-types";
 
 const PLATFORMS: AdPlatform[] = ["google", "meta"];
+const CATEGORIES: AdReportCategory[] = ["acquisition", "recruitment"];
 
 interface StoreAdReportPageProps {
   params: Promise<{ storeId: string }>;
@@ -30,9 +32,14 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   const [platform, setPlatform] = useState<AdPlatform>(
     initial.platform === "google" || initial.platform === "meta" ? initial.platform : "meta"
   );
+  // 集客/求人の区分はGoogle広告のみで使う（Metaは常に集客扱い）
+  const [category, setCategory] = useState<AdReportCategory>("acquisition");
   const platformReports = useMemo(
-    () => adReports.filter((r) => r.platform === platform).sort((a, b) => (a.yearMonth < b.yearMonth ? -1 : 1)),
-    [adReports, platform]
+    () =>
+      adReports
+        .filter((r) => r.platform === platform && r.category === category)
+        .sort((a, b) => (a.yearMonth < b.yearMonth ? -1 : 1)),
+    [adReports, platform, category]
   );
 
   useEffect(() => {
@@ -43,15 +50,25 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reportsLoading, platformReports.length]);
+  }, [reportsLoading, platformReports.length, category]);
 
   if (storeLoading || reportsLoading || !store || !selectedMonth) {
     return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
   }
 
   const report = platformReports.find((r) => r.yearMonth === selectedMonth) ?? null;
-  const ctrTrend = report ? buildCtrTrend(adReports, platform, selectedMonth) : [];
-  const ageGroupTrend = report ? buildAgeGroupTrend(adReports, platform, selectedMonth) : [];
+  const ctrTrend = report && platform === "meta" ? buildCtrTrend(adReports, platform, selectedMonth) : [];
+  const ageGroupTrend = report && platform === "meta" ? buildAgeGroupTrend(adReports, platform, selectedMonth) : [];
+
+  // Google広告のみ: 割合の推移（集客は前年同期比較のため24ヶ月分を取得し、直近12/その前12に分割）
+  const rateTrendAll =
+    report && platform === "google" ? buildConversionRateTrend(adReports, platform, category, selectedMonth, 24) : [];
+  const rateTrendCurrent = rateTrendAll.slice(-12);
+  const rateTrendPrevious = category === "acquisition" ? rateTrendAll.slice(-24, -12) : undefined;
+  const clicksTrend =
+    report && platform === "google" && category === "recruitment"
+      ? buildClicksTrend(adReports, platform, category, selectedMonth, 12)
+      : undefined;
 
   // 印刷/PDF保存ダイアログが提示するファイル名候補はdocument.titleから決まるため、
   // 印刷直前だけ「店舗名-広告レポート-YYYYMM」に差し替え、閉じたら元に戻す。
@@ -125,12 +142,13 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
           }
         />
 
-        <div className="flex items-center gap-1 mb-6 border-b border-gray-100">
+        <div className="flex items-center gap-1 mb-3 border-b border-gray-100">
           {PLATFORMS.map((p) => (
             <button
               key={p}
               onClick={() => {
                 setPlatform(p);
+                setCategory("acquisition");
                 setSelectedMonth(undefined);
               }}
               className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px ${
@@ -141,6 +159,25 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
             </button>
           ))}
         </div>
+
+        {platform === "google" && (
+          <div className="flex items-center gap-1 mb-6">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c}
+                onClick={() => {
+                  setCategory(c);
+                  setSelectedMonth(undefined);
+                }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  category === c ? "bg-[#C4788A] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                {AD_REPORT_CATEGORY_LABEL[c]}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {report ? (
@@ -154,7 +191,18 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
             onSaved={refreshAdReports}
           />
           <div className="overflow-x-auto">
-            <AdReportDocument storeName={store.name} report={report} ctrTrend={ctrTrend} ageGroupTrend={ageGroupTrend} />
+            {platform === "google" ? (
+              <GoogleAdReportDocument
+                storeName={store.name}
+                businessCategory={store.businessCategory}
+                report={report}
+                rateTrendCurrent={rateTrendCurrent}
+                rateTrendPrevious={rateTrendPrevious}
+                clicksTrend={clicksTrend}
+              />
+            ) : (
+              <AdReportDocument storeName={store.name} report={report} ctrTrend={ctrTrend} ageGroupTrend={ageGroupTrend} />
+            )}
           </div>
         </>
       ) : (

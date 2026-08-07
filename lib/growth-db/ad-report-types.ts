@@ -136,3 +136,10 @@ export const AGE_GROUP_CHART_COLOR: Record<AgeGroup, string> = {
 // レポート全体の共通アクセント（大きな数値・折れ線グラフ・見出し帯など）
 export const AD_REPORT_ACCENT_COLOR = "#F5A83C";
 export const AD_REPORT_SECTION_HEADER_BG = "#FBCE8C";
+
+// Google広告レポート（集客/求人で配色を分ける。実物PDFに合わせたセージグリーン/
+// ウォームブラウン）
+export const GOOGLE_REPORT_THEME: Record<AdReportCategory, { bg: string; accent: string; accentSoft: string; text: string }> = {
+  acquisition: { bg: "#F3F2ED", accent: "#93A87B", accentSoft: "#C6D2B4", text: "#4A5A3C" },
+  recruitment: { bg: "#F2ECE3", accent: "#A9835F", accentSoft: "#DCC3A4", text: "#5C452E" },
+};
