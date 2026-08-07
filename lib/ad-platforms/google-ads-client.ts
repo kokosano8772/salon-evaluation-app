@@ -195,13 +195,27 @@ function toYen(micros: string | number | undefined): number {
 }
 
 export class GoogleAdsClient implements AdPlatformClient {
-  async fetchMonthlyReport(accountId: string, yearMonth: string, campaignNameFilter?: string): Promise<NormalizedAdReport> {
+  async fetchMonthlyReport(
+    accountId: string,
+    yearMonth: string,
+    campaignNameFilter?: string,
+    campaignNameExclude?: string
+  ): Promise<NormalizedAdReport> {
     const { since, until } = monthRange(yearMonth);
+
+    // 集客のキャンペーン名が求人キャンペーン名の部分文字列になっている店舗
+    // （例: 集客「AmeLab」／求人「AmeLab（求人）」）だと、絞り込みキーワードだけでは
+    // 集客の同期に求人分まで混ざってしまう。campaignNameExcludeが指定されていれば
+    // それを含むキャンペーンをGAQLレベルで除外する。
+    const nameClauseParts: string[] = [];
+    if (campaignNameFilter) nameClauseParts.push(`campaign.name LIKE '%${escapeGaqlLike(campaignNameFilter)}%'`);
+    if (campaignNameExclude) nameClauseParts.push(`NOT campaign.name LIKE '%${escapeGaqlLike(campaignNameExclude)}%'`);
+    const nameClause = nameClauseParts.join(" AND ");
 
     // キャンペーンの「存在確認」は日付条件の無いクエリで行う。日付・指標付きのクエリだと
     // その期間に実績（配信）が無いキャンペーンが結果に含まれず、「存在しない」と誤判定
     // されてしまうため（Meta連携で同種の不具合が起きたのと同じ理由）。
-    const nameCondition = campaignNameFilter ? ` WHERE campaign.name LIKE '%${escapeGaqlLike(campaignNameFilter)}%'` : "";
+    const nameCondition = nameClause ? ` WHERE ${nameClause}` : "";
     const existingCampaigns = await searchGoogleAds<CampaignExistenceRow>(
       accountId,
       `SELECT campaign.id, campaign.name FROM campaign${nameCondition}`
@@ -221,7 +235,7 @@ export class GoogleAdsClient implements AdPlatformClient {
       "SELECT campaign.id, campaign.name, metrics.impressions, metrics.clicks, metrics.ctr, " +
         "metrics.average_cpc, metrics.cost_micros, metrics.conversions, metrics.cost_per_conversion, " +
         `metrics.conversions_from_interactions_rate FROM campaign WHERE segments.date BETWEEN '${since}' AND '${until}'` +
-        (campaignNameFilter ? ` AND campaign.name LIKE '%${escapeGaqlLike(campaignNameFilter)}%'` : "")
+        (nameClause ? ` AND ${nameClause}` : "")
     );
     const metricsByCampaignId = new Map(metricsRows.map((row) => [row.campaign?.id, row.metrics]));
 
@@ -231,7 +245,7 @@ export class GoogleAdsClient implements AdPlatformClient {
       accountId,
       "SELECT segments.conversion_action_name, metrics.conversions FROM campaign " +
         `WHERE segments.date BETWEEN '${since}' AND '${until}'` +
-        (campaignNameFilter ? ` AND campaign.name LIKE '%${escapeGaqlLike(campaignNameFilter)}%'` : "")
+        (nameClause ? ` AND ${nameClause}` : "")
     );
     const conversionActionTotals = new Map<string, number>();
     for (const row of conversionActionRows) {

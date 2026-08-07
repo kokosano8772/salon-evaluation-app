@@ -8,6 +8,11 @@ import { AdPlatform, AdReportCategory } from "./ad-report-types";
 export interface AdSyncDefault {
   accountId: string;
   campaignNameFilter: string;
+  // 集客のキャンペーン名が求人キャンペーン名の部分文字列になっている店舗
+  // （例: 集客「AmeLab」／求人「AmeLab（求人）」）では、絞り込みキーワードだけでは
+  // 集客の同期に求人分まで混ざってしまう。このキーワードを含むキャンペーンを
+  // 明示的に除外できるようにする（Google広告のみで使用）。
+  campaignNameExclude?: string;
 }
 
 type AdSyncDefaultsMap = Record<string, AdSyncDefault>;

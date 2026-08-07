@@ -159,6 +159,9 @@ export default function AdReportForm({
   // 保存済みのものを自動で読み込む（下のuseEffect）。一度同期に成功した値を
   // 覚えておき、どの月でも自動で入るようにするため、ここでは空で初期化するだけ。
   const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
+  // 集客のキャンペーン名が求人キャンペーン名の部分文字列になっている店舗
+  // （例: 集客「AmeLab」／求人「AmeLab（求人）」）向けの除外キーワード（Google広告のみ）。
+  const [campaignNameExclude, setCampaignNameExclude] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -171,6 +174,7 @@ export default function AdReportForm({
       .then((syncDefault) => {
         if (cancelled) return;
         setCampaignNameFilter(syncDefault?.campaignNameFilter || storeName);
+        setCampaignNameExclude(syncDefault?.campaignNameExclude ?? "");
         // getAdReport側が先に終わっていて、その月にアカウントIDが未保存だった場合は
         // ここで店舗の保存済みデフォルトを補う（どちらが先に終わっても対応できるように）。
         if (syncDefault?.accountId) {
@@ -352,6 +356,7 @@ export default function AdReportForm({
           accountId: draft.accountId,
           yearMonth,
           campaignNameFilter: campaignNameFilter.trim() || undefined,
+          campaignNameExclude: platform === "google" ? campaignNameExclude.trim() || undefined : undefined,
         }),
       });
       const json = await res.json();
@@ -370,6 +375,7 @@ export default function AdReportForm({
         await saveAdSyncDefault(storeId, platform, category, {
           accountId: draft.accountId,
           campaignNameFilter: campaignNameFilter.trim(),
+          campaignNameExclude: platform === "google" ? campaignNameExclude.trim() : undefined,
         });
       } catch (saveErr) {
         const msg = saveErr instanceof Error ? saveErr.message : "不明なエラー";
@@ -416,10 +422,25 @@ export default function AdReportForm({
             onChange={setCampaignNameFilter}
             placeholder={platform === "google" ? "例: 店舗名（集客/求人を区別できる場合はそのキーワードも含める）" : "例: 店舗名"}
           />
-          <p className="text-xs text-gray-400 mt-1.5">
+          <p className="text-xs text-gray-400 mt-1.5 mb-3">
             1つの広告アカウントに複数店舗のキャンペーンが混在している場合、このキーワードを含むキャンペーンだけを対象にします。空欄にするとアカウント内の全キャンペーンが対象になるため注意してください。
             同期に成功したアカウントID・キーワードはこの店舗・区分用に自動で保存され、次回以降の同期でも自動で読み込まれます。
           </p>
+          {platform === "google" && (
+            <>
+              <TextField
+                label="除外キーワード（任意）"
+                value={campaignNameExclude}
+                onChange={setCampaignNameExclude}
+                placeholder="例: 求人（集客のキャンペーン名が求人キャンペーン名の一部になっている場合に指定）"
+              />
+              <p className="text-xs text-gray-400 mt-1.5">
+                「集客」の店舗名が「求人」のキャンペーン名にそのまま含まれている（例: 集客「AmeLab」／求人「AmeLab（求人）」）場合、
+                絞り込みキーワードだけだと集客の同期に求人分まで混ざってしまいます。その場合はここに「求人」等、
+                求人キャンペーン名にだけ含まれる文字列を入力すると、そのキャンペーンを除外できます。
+              </p>
+            </>
+          )}
           {syncState === "error" && <p className="text-xs text-red-500 mt-3 whitespace-pre-wrap">{syncError}</p>}
           {syncState === "synced" && (
             <p className="text-xs text-[#6BAB8A] mt-3">

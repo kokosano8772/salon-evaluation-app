@@ -12,6 +12,7 @@ interface SyncRequestBody {
   accountId: string;
   yearMonth: string;
   campaignNameFilter?: string;
+  campaignNameExclude?: string;
 }
 
 // /dashboard配下と同じくSupabase Authでログインしたスタッフのみ呼び出せる。
@@ -34,14 +35,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });
   }
 
-  const { platform, accountId, yearMonth, campaignNameFilter } = body;
+  const { platform, accountId, yearMonth, campaignNameFilter, campaignNameExclude } = body;
   if (!platform || !accountId || !yearMonth) {
     return NextResponse.json({ error: "platform / accountId / yearMonth は必須です" }, { status: 400 });
   }
 
   try {
     const client = platform === "meta" ? new MetaAdsClient() : new GoogleAdsClient();
-    const data = await client.fetchMonthlyReport(accountId, yearMonth, campaignNameFilter);
+    const data = await client.fetchMonthlyReport(accountId, yearMonth, campaignNameFilter, campaignNameExclude);
     return NextResponse.json({ data });
   } catch (error) {
     const message = error instanceof Error ? error.message : "不明なエラー";

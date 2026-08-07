@@ -49,6 +49,7 @@ export default function AdReportBulkSyncPanel({
   const [endMonth, setEndMonth] = useState(shiftYearMonth(currentYearMonth(), -1));
   const [accountId, setAccountId] = useState("");
   const [campaignNameFilter, setCampaignNameFilter] = useState(storeName);
+  const [campaignNameExclude, setCampaignNameExclude] = useState("");
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<MonthResult[]>([]);
 
@@ -61,6 +62,7 @@ export default function AdReportBulkSyncPanel({
         if (cancelled) return;
         setAccountId(syncDefault?.accountId ?? "");
         setCampaignNameFilter(syncDefault?.campaignNameFilter || storeName);
+        setCampaignNameExclude(syncDefault?.campaignNameExclude ?? "");
       })
       .catch((err) => {
         console.error("同期条件の読み込みに失敗しました", err);
@@ -78,6 +80,7 @@ export default function AdReportBulkSyncPanel({
     setResults(months.map((yearMonth) => ({ yearMonth, status: "pending" })));
 
     const effectiveFilter = campaignNameFilter.trim();
+    const effectiveExclude = platform === "google" ? campaignNameExclude.trim() : "";
     let succeededOnce = false;
 
     for (const yearMonth of months) {
@@ -91,6 +94,7 @@ export default function AdReportBulkSyncPanel({
             accountId,
             yearMonth,
             campaignNameFilter: effectiveFilter || undefined,
+            campaignNameExclude: effectiveExclude || undefined,
           }),
         });
         const json = await res.json();
@@ -122,7 +126,11 @@ export default function AdReportBulkSyncPanel({
     // 影響させない。
     if (succeededOnce) {
       try {
-        await saveAdSyncDefault(storeId, platform, category, { accountId, campaignNameFilter: effectiveFilter });
+        await saveAdSyncDefault(storeId, platform, category, {
+          accountId,
+          campaignNameFilter: effectiveFilter,
+          campaignNameExclude: effectiveExclude,
+        });
       } catch (saveErr) {
         console.error("同期条件の保存に失敗しました", saveErr);
       }
@@ -178,6 +186,18 @@ export default function AdReportBulkSyncPanel({
             className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#C4788A]"
           />
         </label>
+        {platform === "google" && (
+          <label className="block">
+            <span className="block text-xs text-gray-500 mb-1.5">除外キーワード（任意）</span>
+            <input
+              type="text"
+              value={campaignNameExclude}
+              onChange={(e) => setCampaignNameExclude(e.target.value)}
+              placeholder="例: 求人（集客の店舗名が求人キャンペーン名に含まれる場合）"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#C4788A]"
+            />
+          </label>
+        )}
       </div>
 
       <button

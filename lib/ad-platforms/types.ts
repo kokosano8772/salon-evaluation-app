@@ -15,6 +15,14 @@ export interface AdPlatformClient {
    * @param campaignNameFilter 1つの広告アカウントに複数店舗のキャンペーンが
    *   混在している場合に、キャンペーン名に含まれる文字列でその店舗の分だけに
    *   絞り込む（例: 店舗名）。省略時はアカウント内の全キャンペーンを対象にする。
+   * @param campaignNameExclude campaignNameFilterに一致しつつ、この文字列も
+   *   含むキャンペーンを除外する（例: 集客「AmeLab」が求人「AmeLab（求人）」を
+   *   部分文字列として含んでしまう場合に「求人」を指定して除外する）。
    */
-  fetchMonthlyReport(accountId: string, yearMonth: string, campaignNameFilter?: string): Promise<NormalizedAdReport>;
+  fetchMonthlyReport(
+    accountId: string,
+    yearMonth: string,
+    campaignNameFilter?: string,
+    campaignNameExclude?: string
+  ): Promise<NormalizedAdReport>;
 }
