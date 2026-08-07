@@ -82,7 +82,7 @@ export default function GoogleClicksTrendChart({
         )}
       </div>
       <ResponsiveContainer width="100%" height={128}>
-        <BarChart data={merged} margin={{ top: 20, right: 8, left: 0, bottom: 0 }}>
+        <BarChart data={merged} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="#f0f0f0" vertical={false} />
           <XAxis
             dataKey="index"

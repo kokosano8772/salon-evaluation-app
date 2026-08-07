@@ -162,7 +162,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         </div>
 
         <div className="mt-4">
-          <SectionCard pb={8} pt={8}>
+          <SectionCard pb={8}>
             <SectionTitle accent={theme.accent}>{buttonLabel}を押した割合の推移</SectionTitle>
             <GoogleRateTrendChart
               previousCycle={trend.previousCycle}
@@ -178,7 +178,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
 
         {isRecruitment && (
           <div className="mt-4">
-            <SectionCard pb={8} pt={8}>
+            <SectionCard pb={8}>
               <SectionTitle accent={theme.accent}>クリック数の推移</SectionTitle>
               <GoogleClicksTrendChart
                 previousCycle={trend.previousCycle}
