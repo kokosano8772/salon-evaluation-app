@@ -86,7 +86,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </SectionCard>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-[0.85fr_0.85fr_1.15fr_1.15fr] gap-4 mt-4">
           <GoogleReportStatCard
             icon={<Eye size={24} strokeWidth={2} />}
             title="表示回数"
