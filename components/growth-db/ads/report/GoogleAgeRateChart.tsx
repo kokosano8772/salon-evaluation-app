@@ -18,7 +18,7 @@ function ageGroupLabel(ageGroup: AgeGroup): string {
   return AGE_GROUP_DISPLAY_LABEL[ageGroup] ?? (ageGroup === "65+" ? "65歳~" : `${ageGroup}歳`);
 }
 
-const CHART_HEIGHT = 180;
+const CHART_HEIGHT = 120;
 const TICK_STEPS = 5;
 // バー内に件数ラベルを収められる高さの目安（それ未満はバーの上に出す）
 const INSIDE_LABEL_MIN_HEIGHT = 34;
