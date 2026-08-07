@@ -12,10 +12,13 @@ import {
   AdReport,
   AdReportCategory,
   AgeGroupClicks,
+  AgeGroupConversions,
+  ConversionActionBreakdown,
   GenderBreakdown,
   GenderBreakdownValue,
   HOURLY_SLOTS,
   HourlyClicks,
+  SearchTermClicks,
 } from "@/lib/growth-db/ad-report-types";
 import FormSection from "./FormSection";
 import TextField from "./TextField";
@@ -46,10 +49,16 @@ type AdReportDraft = Omit<
   | "genderBreakdown"
   | "hourlyClicks"
   | "ageGroupClicks"
+  | "ageGroupConversions"
+  | "conversionActionBreakdown"
+  | "searchTerms"
 > & {
   genderBreakdown: GenderBreakdown;
   hourlyClicks: HourlyClicks[];
   ageGroupClicks: AgeGroupClicks[];
+  ageGroupConversions: AgeGroupConversions[];
+  conversionActionBreakdown: ConversionActionBreakdown[];
+  searchTerms: SearchTermClicks[];
 };
 
 const GENDER_LABEL: Record<keyof GenderBreakdownValue, string> = {
@@ -79,6 +88,18 @@ function emptyAgeGroupClicks(): AgeGroupClicks[] {
   return AGE_GROUPS.map((ageGroup) => ({ ageGroup, clicks: 0 }));
 }
 
+function emptyAgeGroupConversions(): AgeGroupConversions[] {
+  return AGE_GROUPS.map((ageGroup) => ({ ageGroup, conversions: 0 }));
+}
+
+function emptyConversionAction(): ConversionActionBreakdown {
+  return { name: "", conversions: 0 };
+}
+
+function emptySearchTerm(): SearchTermClicks {
+  return { term: "", clicks: 0 };
+}
+
 function emptyDraft(): AdReportDraft {
   return {
     accountId: "",
@@ -96,6 +117,9 @@ function emptyDraft(): AdReportDraft {
     genderBreakdown: emptyGenderBreakdown(),
     hourlyClicks: emptyHourlyClicks(),
     ageGroupClicks: emptyAgeGroupClicks(),
+    ageGroupConversions: emptyAgeGroupConversions(),
+    conversionActionBreakdown: [],
+    searchTerms: [],
     targetAgeRange: "",
   };
 }
@@ -178,6 +202,9 @@ export default function AdReportForm({
           genderBreakdown,
           hourlyClicks,
           ageGroupClicks,
+          ageGroupConversions,
+          conversionActionBreakdown,
+          searchTerms,
           targetAgeRange,
         } = existing;
         setDraft({
@@ -196,6 +223,12 @@ export default function AdReportForm({
           genderBreakdown: genderBreakdown ?? emptyGenderBreakdown(),
           hourlyClicks: hourlyClicks && hourlyClicks.length === HOURLY_SLOTS.length ? hourlyClicks : emptyHourlyClicks(),
           ageGroupClicks: ageGroupClicks && ageGroupClicks.length === AGE_GROUPS.length ? ageGroupClicks : emptyAgeGroupClicks(),
+          ageGroupConversions:
+            ageGroupConversions && ageGroupConversions.length === AGE_GROUPS.length
+              ? ageGroupConversions
+              : emptyAgeGroupConversions(),
+          conversionActionBreakdown: conversionActionBreakdown ?? [],
+          searchTerms: searchTerms ?? [],
           targetAgeRange: targetAgeRange ?? "",
         });
       } else {
@@ -258,6 +291,41 @@ export default function AdReportForm({
         : prev
     );
   };
+
+  const patchAgeGroupConversion = (index: number, value: number) => {
+    setDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            ageGroupConversions: prev.ageGroupConversions.map((a, i) => (i === index ? { ...a, conversions: value } : a)),
+          }
+        : prev
+    );
+  };
+
+  const patchConversionAction = (index: number, key: keyof ConversionActionBreakdown, value: string | number) => {
+    setDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            conversionActionBreakdown: prev.conversionActionBreakdown.map((c, i) => (i === index ? { ...c, [key]: value } : c)),
+          }
+        : prev
+    );
+  };
+  const addConversionAction = () => patch("conversionActionBreakdown", [...draft.conversionActionBreakdown, emptyConversionAction()]);
+  const removeConversionAction = (index: number) =>
+    patch("conversionActionBreakdown", draft.conversionActionBreakdown.filter((_, i) => i !== index));
+
+  const patchSearchTerm = (index: number, key: keyof SearchTermClicks, value: string | number) => {
+    setDraft((prev) =>
+      prev
+        ? { ...prev, searchTerms: prev.searchTerms.map((s, i) => (i === index ? { ...s, [key]: value } : s)) }
+        : prev
+    );
+  };
+  const addSearchTerm = () => patch("searchTerms", [...draft.searchTerms, emptySearchTerm()]);
+  const removeSearchTerm = (index: number) => patch("searchTerms", draft.searchTerms.filter((_, i) => i !== index));
 
   const handleSave = async () => {
     setSaveState("saving");
@@ -506,6 +574,119 @@ export default function AdReportForm({
           ))}
         </div>
       </div>
+
+      {/* 以下3項目はGoogle広告レポート（年代別コンバージョン率グラフ・内訳・検索語句）で使う項目。
+          通常はAPI同期で自動取得されるが、同期できない月やAPI未設定の店舗でも手入力できるようにする。 */}
+      {platform === "google" && (
+        <>
+          <div className="card-luxury p-6">
+            <p className="text-sm font-semibold text-charcoal-900 mb-1">年齢層別コンバージョン数</p>
+            <p className="text-xs text-gray-400 mb-4">
+              年齢層ごとの{category === "recruitment" ? "お問い合わせ" : "予約"}ボタンクリック数を入力してください
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {draft.ageGroupConversions.map((entry, i) => (
+                <NumberField
+                  key={entry.ageGroup}
+                  label={`${entry.ageGroup}歳`}
+                  value={entry.conversions}
+                  onChange={(v) => patchAgeGroupConversion(i, v)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="card-luxury p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-semibold text-charcoal-900">コンバージョンアクション別内訳</p>
+                <p className="text-xs text-gray-400 mt-0.5">「電話」「LINE」等、コンバージョンアクションごとの件数を入力してください</p>
+              </div>
+              <button
+                onClick={addConversionAction}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-medium text-charcoal-700 hover:bg-gray-50"
+              >
+                <Plus size={14} strokeWidth={2} />
+                項目を追加
+              </button>
+            </div>
+            {draft.conversionActionBreakdown.length === 0 ? (
+              <p className="text-sm text-gray-400 py-6 text-center">まだ項目が登録されていません</p>
+            ) : (
+              <div className="space-y-3">
+                {draft.conversionActionBreakdown.map((entry, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <TextField
+                        label="アクション名"
+                        value={entry.name}
+                        onChange={(v) => patchConversionAction(i, "name", v)}
+                        placeholder="例: 電話"
+                      />
+                    </div>
+                    <div className="w-32">
+                      <NumberField label="件数" value={entry.conversions} onChange={(v) => patchConversionAction(i, "conversions", v)} />
+                    </div>
+                    <button
+                      onClick={() => removeConversionAction(i)}
+                      className="w-9 h-9 mt-6 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 shrink-0"
+                      title="削除"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {category === "acquisition" && (
+            <div className="card-luxury p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-semibold text-charcoal-900">クリックが多かった検索語句</p>
+                  <p className="text-xs text-gray-400 mt-0.5">クリック数が多い順に入力してください（サロン名は含めない）</p>
+                </div>
+                <button
+                  onClick={addSearchTerm}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-medium text-charcoal-700 hover:bg-gray-50"
+                >
+                  <Plus size={14} strokeWidth={2} />
+                  語句を追加
+                </button>
+              </div>
+              {draft.searchTerms.length === 0 ? (
+                <p className="text-sm text-gray-400 py-6 text-center">まだ語句が登録されていません</p>
+              ) : (
+                <div className="space-y-3">
+                  {draft.searchTerms.map((entry, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <TextField
+                          label="検索語句"
+                          value={entry.term}
+                          onChange={(v) => patchSearchTerm(i, "term", v)}
+                          placeholder="例: カットが上手い美容室"
+                        />
+                      </div>
+                      <div className="w-32">
+                        <NumberField label="クリック数" value={entry.clicks} onChange={(v) => patchSearchTerm(i, "clicks", v)} />
+                      </div>
+                      <button
+                        onClick={() => removeSearchTerm(i)}
+                        className="w-9 h-9 mt-6 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 shrink-0"
+                        title="削除"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
 
       <div className="fixed bottom-0 left-0 right-0 md:left-64 z-40 bg-white/90 backdrop-blur border-t border-gray-100 px-5 md:px-10 py-4 flex justify-end">
         <button
