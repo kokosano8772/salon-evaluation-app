@@ -9,6 +9,7 @@ import {
   AdReport,
   AdReportCategory,
   AgeGroupClicks,
+  AgeGroupConversions,
   ConversionActionBreakdown,
   GenderBreakdown,
   HourlyClicks,
@@ -38,6 +39,7 @@ export function mapAdReportRow(row: AdReportRow): AdReport {
     genderBreakdown: (row.gender_breakdown as GenderBreakdown | null) ?? undefined,
     hourlyClicks: (row.hourly_clicks as HourlyClicks[] | null) ?? undefined,
     ageGroupClicks: (row.age_group_clicks as AgeGroupClicks[] | null) ?? undefined,
+    ageGroupConversions: (row.age_group_conversions as AgeGroupConversions[] | null) ?? undefined,
     conversionActionBreakdown: (row.conversion_action_breakdown as ConversionActionBreakdown[] | null) ?? undefined,
     targetAgeRange: row.target_age_range,
     aiResult: row.ai_result,
@@ -110,6 +112,7 @@ export async function upsertAdReport(
   if (patch.genderBreakdown !== undefined) row.gender_breakdown = patch.genderBreakdown;
   if (patch.hourlyClicks !== undefined) row.hourly_clicks = patch.hourlyClicks;
   if (patch.ageGroupClicks !== undefined) row.age_group_clicks = patch.ageGroupClicks;
+  if (patch.ageGroupConversions !== undefined) row.age_group_conversions = patch.ageGroupConversions;
   if (patch.conversionActionBreakdown !== undefined) row.conversion_action_breakdown = patch.conversionActionBreakdown;
   if (patch.targetAgeRange !== undefined) row.target_age_range = patch.targetAgeRange;
   if (patch.aiResult !== undefined) row.ai_result = patch.aiResult;

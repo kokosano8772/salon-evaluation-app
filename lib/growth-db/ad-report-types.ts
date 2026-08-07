@@ -50,6 +50,13 @@ export interface AgeGroupClicks {
   clicks: number;
 }
 
+// 年代別のコンバージョン数（Google広告のみ）。予約/問い合わせボタンを押した割合を
+// 年代別に出すために、ageGroupClicksとは別枠で持つ。
+export interface AgeGroupConversions {
+  ageGroup: AgeGroup;
+  conversions: number;
+}
+
 // コンバージョンアクション名ごとの内訳（Google広告のみ）。「予約ボタン」「電話クリック」等、
 // 店舗ごとに設定しているアクション名・項目数が異なるため、固定のカテゴリにせず
 // 実際にAPIから返ってきたアクション名をそのまま保持する。
@@ -88,6 +95,7 @@ export interface AdReport {
   genderBreakdown?: GenderBreakdown;
   hourlyClicks?: HourlyClicks[];
   ageGroupClicks?: AgeGroupClicks[];
+  ageGroupConversions?: AgeGroupConversions[]; // Google広告のみ
   conversionActionBreakdown?: ConversionActionBreakdown[]; // Google広告のみ
   targetAgeRange: string; // 例: "20-39歳"
   aiResult: string | null;

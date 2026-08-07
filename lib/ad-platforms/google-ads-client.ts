@@ -21,7 +21,14 @@
 // https://developers.google.com/google-ads/api/rest/common/search
 // https://developers.google.com/google-ads/api/docs/query/overview
 
-import { AdCampaignMetrics, ConversionActionBreakdown } from "@/lib/growth-db/ad-report-types";
+import {
+  AdCampaignMetrics,
+  AgeGroup,
+  AGE_GROUPS,
+  AgeGroupClicks,
+  AgeGroupConversions,
+  ConversionActionBreakdown,
+} from "@/lib/growth-db/ad-report-types";
 import { AdPlatformClient, NormalizedAdReport } from "./types";
 
 const GOOGLE_ADS_API_VERSION = "v25";
@@ -136,6 +143,34 @@ interface ConversionActionRow {
   metrics?: { conversions?: number };
 }
 
+// 年代別の指標は campaign リソースのセグメントとしては取れず、専用の
+// age_range_view リソースから取得する必要がある。
+interface AgeRangeRow {
+  adGroupCriterion?: { ageRange?: { type?: string } };
+  metrics?: { clicks?: string; conversions?: number };
+}
+
+// Metaの実際の年齢区分と同様、Googleの実際の年齢区分（AGE_RANGE_18_24〜）を
+// うちのAGE_GROUPS（20-24始まり）に合わせて吸収する。
+function mapGoogleAgeRange(raw: string | undefined): AgeGroup | null {
+  switch (raw) {
+    case "AGE_RANGE_18_24":
+      return "20-24";
+    case "AGE_RANGE_25_34":
+      return "25-34";
+    case "AGE_RANGE_35_44":
+      return "35-44";
+    case "AGE_RANGE_45_54":
+      return "45-54";
+    case "AGE_RANGE_55_64":
+      return "55-64";
+    case "AGE_RANGE_65_UP":
+      return "65+";
+    default:
+      return null; // AGE_RANGE_UNDETERMINED 等
+  }
+}
+
 const MICROS_PER_UNIT = 1_000_000;
 
 function toPercent(fraction: number | undefined): number {
@@ -196,6 +231,32 @@ export class GoogleAdsClient implements AdPlatformClient {
       conversions,
     }));
 
+    // 年代別の指標はcampaignリソースのセグメントとしては取得できないため、
+    // 専用のage_range_viewリソースから、対象キャンペーンIDで絞り込んで取得する。
+    const campaignIds = existingCampaigns.map((c) => c.campaign?.id).filter((id): id is string => !!id);
+    const ageRangeRows =
+      campaignIds.length > 0
+        ? await searchGoogleAds<AgeRangeRow>(
+            accountId,
+            "SELECT ad_group_criterion.age_range.type, metrics.clicks, metrics.conversions FROM age_range_view " +
+              `WHERE segments.date BETWEEN '${since}' AND '${until}' ` +
+              `AND campaign.id IN (${campaignIds.join(",")})`
+          )
+        : [];
+    const ageClicksTotals = new Map<AgeGroup, number>(AGE_GROUPS.map((g) => [g, 0]));
+    const ageConversionsTotals = new Map<AgeGroup, number>(AGE_GROUPS.map((g) => [g, 0]));
+    for (const row of ageRangeRows) {
+      const ageGroup = mapGoogleAgeRange(row.adGroupCriterion?.ageRange?.type);
+      if (!ageGroup) continue;
+      ageClicksTotals.set(ageGroup, (ageClicksTotals.get(ageGroup) ?? 0) + Number(row.metrics?.clicks ?? 0));
+      ageConversionsTotals.set(ageGroup, (ageConversionsTotals.get(ageGroup) ?? 0) + (row.metrics?.conversions ?? 0));
+    }
+    const ageGroupClicks: AgeGroupClicks[] = AGE_GROUPS.map((ageGroup) => ({ ageGroup, clicks: ageClicksTotals.get(ageGroup) ?? 0 }));
+    const ageGroupConversions: AgeGroupConversions[] = AGE_GROUPS.map((ageGroup) => ({
+      ageGroup,
+      conversions: ageConversionsTotals.get(ageGroup) ?? 0,
+    }));
+
     const campaigns: AdCampaignMetrics[] = existingCampaigns.map((c) => {
       const m = metricsByCampaignId.get(c.campaign?.id);
       const impressions = Number(m?.impressions ?? 0);
@@ -239,6 +300,8 @@ export class GoogleAdsClient implements AdPlatformClient {
       cvr: totals.clicks > 0 ? Math.round((totals.conversions / totals.clicks) * 1000) / 10 : 0,
       campaigns,
       conversionActionBreakdown,
+      ageGroupClicks,
+      ageGroupConversions,
     };
   }
 }
