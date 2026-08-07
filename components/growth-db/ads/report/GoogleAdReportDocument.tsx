@@ -65,20 +65,20 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           {storeName}様{isRecruitment ? "（求人）" : ""} | {formatMonthLabel(report.yearMonth)}分
         </p>
 
-        <div className="mt-6">
+        <div className="mt-4">
           <SectionCard>
-            <div className="flex items-start gap-5">
+            <div className="flex items-center gap-6 py-4">
               <div
-                className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
+                className="w-24 h-24 rounded-full flex items-center justify-center shrink-0"
                 style={{ backgroundColor: theme.accent, color: "white" }}
               >
-                <ThumbsUp size={28} strokeWidth={2} />
+                <ThumbsUp size={42} strokeWidth={2} />
               </div>
               <div>
-                <p className="text-xl font-extrabold" style={{ color: theme.text }}>
+                <p className="text-3xl font-extrabold" style={{ color: theme.text }}>
                   {formatMonthShortLabel(report.yearMonth)}の運用状況：◎好調
                 </p>
-                <p className="text-base text-charcoal-700 mt-1.5 leading-relaxed whitespace-pre-wrap">
+                <p className="text-lg text-charcoal-700 mt-2 leading-relaxed whitespace-pre-wrap">
                   {summary || "AI分析はまだ生成されていません"}
                 </p>
               </div>
@@ -86,7 +86,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </SectionCard>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
           <GoogleReportStatCard
             icon={<Eye size={24} strokeWidth={2} />}
             title="表示回数"
@@ -140,7 +140,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </GoogleReportStatCard>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-4">
           <SectionCard>
             <SectionTitle accent={theme.accent} caption={`() = ${buttonLabel}クリック数`}>
               【年代別】{buttonLabel}を押した割合
@@ -154,7 +154,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </SectionCard>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-4">
           <SectionCard>
             <SectionTitle accent={theme.accent}>{buttonLabel}を押した割合の推移</SectionTitle>
             <GoogleRateTrendChart
@@ -170,7 +170,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         </div>
 
         {isRecruitment && (
-          <div className="mt-6">
+          <div className="mt-4">
             <SectionCard>
               <SectionTitle accent={theme.accent}>クリック数の推移</SectionTitle>
               <GoogleClicksTrendChart
@@ -186,7 +186,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         )}
 
         {!isRecruitment && report.searchTerms && report.searchTerms.length > 0 && (
-          <div className="mt-6">
+          <div className="mt-4">
             <SectionCard>
               <SectionTitle accent={theme.accent}>クリックが多かった検索語句</SectionTitle>
               <p className="text-sm text-gray-400 mb-3">広告からホームページに来るきっかけになった検索語句（サロン名での検索は除外）</p>
