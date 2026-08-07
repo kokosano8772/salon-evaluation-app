@@ -76,11 +76,22 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
 
     // GoogleレポートはMeta用の固定ページ高(9.375in×14.58in=900×1400px)を前提にしていないため、
     // 印刷時に実際のカード高さを測って@pageを上書きし、印刷結果の下部が余白だらけにならないようにする。
+    // @pageは1ページ目・2ページ目に対して同じ高さが適用される（Chromeはページ毎に異なる
+    // @pageサイズを安定してサポートしていない）ため、2ページの高さが違うと短い方に余白が
+    // 残ってしまう。そこで先に短い方のページへ一時的にmin-heightを当てて高さを揃えてから、
+    // その揃えた高さを@pageに指定する。
     let printSizeStyle: HTMLStyleElement | null = null;
+    const heightOverrides: { el: HTMLElement; original: string }[] = [];
     if (platform === "google") {
-      const pages = document.querySelectorAll<HTMLElement>(".ad-report-page");
-      const maxHeight = Math.max(0, ...Array.from(pages).map((el) => el.offsetHeight));
+      const pages = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
+      const maxHeight = Math.max(0, ...pages.map((el) => el.offsetHeight));
       if (maxHeight > 0) {
+        pages.forEach((el) => {
+          if (el.offsetHeight < maxHeight) {
+            heightOverrides.push({ el, original: el.style.minHeight });
+            el.style.minHeight = `${maxHeight}px`;
+          }
+        });
         // 画面表示と印刷時のレンダリング差（フォントの微妙な高さの違い等）で
         // ぴったりの高さだと1pxでも超えて次ページに中身がはみ出すことがあるため、
         // 安全マージンを付けておく。
@@ -94,6 +105,9 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
     const restoreTitle = () => {
       document.title = originalTitle;
       printSizeStyle?.remove();
+      heightOverrides.forEach(({ el, original }) => {
+        el.style.minHeight = original;
+      });
       window.removeEventListener("afterprint", restoreTitle);
     };
     window.addEventListener("afterprint", restoreTitle);
