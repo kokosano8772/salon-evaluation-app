@@ -126,7 +126,7 @@ export default function GoogleRateTrendChart({
           )}
           {hasPrevious && (
             <Line
-              type="monotone"
+              type="linear"
               dataKey="previousRate"
               stroke={previousColor}
               strokeWidth={2}
@@ -137,7 +137,7 @@ export default function GoogleRateTrendChart({
           )}
           {hasCurrent && (
             <Line
-              type="monotone"
+              type="linear"
               dataKey="currentRate"
               stroke={currentColor}
               strokeWidth={2}
