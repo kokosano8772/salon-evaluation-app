@@ -73,8 +73,23 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   const handlePrint = () => {
     const originalTitle = document.title;
     document.title = `${store.name}-広告レポート-${selectedMonth.replace("-", "")}`;
+
+    // GoogleレポートはMeta用の固定ページ高(9.375in×14.58in=900×1400px)を前提にしていないため、
+    // 印刷時に実際のカード高さを測って@pageを上書きし、印刷結果の下部が余白だらけにならないようにする。
+    let printSizeStyle: HTMLStyleElement | null = null;
+    if (platform === "google") {
+      const pages = document.querySelectorAll<HTMLElement>(".ad-report-page");
+      const maxHeight = Math.max(0, ...Array.from(pages).map((el) => el.offsetHeight));
+      if (maxHeight > 0) {
+        printSizeStyle = document.createElement("style");
+        printSizeStyle.textContent = `@media print { @page { size: 900px ${maxHeight}px; margin: 0; } }`;
+        document.head.appendChild(printSizeStyle);
+      }
+    }
+
     const restoreTitle = () => {
       document.title = originalTitle;
+      printSizeStyle?.remove();
       window.removeEventListener("afterprint", restoreTitle);
     };
     window.addEventListener("afterprint", restoreTitle);
