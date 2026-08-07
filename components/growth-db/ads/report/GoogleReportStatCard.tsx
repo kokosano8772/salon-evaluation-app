@@ -25,7 +25,7 @@ export default function GoogleReportStatCard({
     <div className="bg-white rounded-2xl p-5 h-full flex flex-col items-center text-center">
       <div
         className="w-10 h-10 rounded-full flex items-center justify-center mb-2.5"
-        style={{ backgroundColor: `${accent}40`, color: accent }}
+        style={{ backgroundColor: `${accent}68`, color: "#fff" }}
       >
         {icon}
       </div>

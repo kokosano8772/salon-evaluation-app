@@ -137,8 +137,9 @@ export const AGE_GROUP_CHART_COLOR: Record<AgeGroup, string> = {
 export const AD_REPORT_ACCENT_COLOR = "#F5A83C";
 export const AD_REPORT_SECTION_HEADER_BG = "#FBCE8C";
 
-// Google広告レポート（集客/求人で配色を分ける。実物PDFに合わせたセージグリーン/
-// ウォームブラウン）
+// Google広告レポート（集客/求人で配色を分ける）。
+// 求人側の色はベース画像（report/google/求人/ベース.jpg）から実ピクセル値を
+// サンプリングして決定（目視ではなくPIL等での実測値。集客側は未計測のため従来値のまま）。
 // accent: アイコン円・見出しの縦棒・数値ハイライトなど「区分の色」に使う配色
 // chartAccent: 年代別グラフの棒・推移グラフの「前年」系列の色（実物では区分によらずセージグリーン固定）
 // highlightAccent: 推移グラフの「当期」系列の色（実物では区分ごとに異なる差し色）
@@ -147,5 +148,5 @@ export const GOOGLE_REPORT_THEME: Record<
   { bg: string; accent: string; accentSoft: string; text: string; chartAccent: string; highlightAccent: string }
 > = {
   acquisition: { bg: "#F3F2ED", accent: "#93A87B", accentSoft: "#C6D2B4", text: "#4A5A3C", chartAccent: "#93A87B", highlightAccent: "#C4788A" },
-  recruitment: { bg: "#F2ECE3", accent: "#A9835F", accentSoft: "#DCC3A4", text: "#5C452E", chartAccent: "#93A87B", highlightAccent: "#F5A83C" },
+  recruitment: { bg: "#EAEAE4", accent: "#A28472", accentSoft: "#DCC3A4", text: "#5C452E", chartAccent: "#B4BA9C", highlightAccent: "#E0B04D" },
 };
