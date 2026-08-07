@@ -30,11 +30,11 @@ export default function GoogleReportStatCard({
         {icon}
       </div>
       <p className="text-lg font-bold text-charcoal-900 whitespace-pre-line leading-snug">{title}</p>
-      <div className="mt-1.5">
+      <div className="mt-1.5 whitespace-nowrap">
         <span className="text-4xl font-extrabold" style={{ color: valueColor ?? "#1a1a1a" }}>
           {value}
         </span>
-        <span className="text-sm font-bold ml-1 text-charcoal-700">{unit}</span>
+        <span className="text-sm font-bold ml-0.5 text-charcoal-700">{unit}</span>
       </div>
       {description && <p className="text-sm text-gray-400 mt-1 leading-relaxed">{description}</p>}
       {children && <div className="mt-1.5">{children}</div>}
