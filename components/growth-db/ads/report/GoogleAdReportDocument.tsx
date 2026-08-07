@@ -84,59 +84,58 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </div>
         </SectionCard>
 
-        <div className="mt-4">
-          <SectionCard>
-            <div className="flex divide-x divide-gray-100">
-              <GoogleReportStatCard
-                icon={<Eye size={20} strokeWidth={2} />}
-                title="表示回数"
-                value={formatNumber(report.impressions)}
-                unit="回"
-                description="Google上で広告が見られた回数"
-                accent={theme.accent}
-              />
-              <GoogleReportStatCard
-                icon={<MousePointerClick size={20} strokeWidth={2} />}
-                title="クリック数"
-                value={formatNumber(report.clicks)}
-                unit="回"
-                description="ホームページへ移動した回数"
-                accent={theme.accent}
-              />
-              <GoogleReportStatCard
-                icon={<Calendar size={20} strokeWidth={2} />}
-                title={`${buttonLabel}\nクリック数`}
-                value={formatAdaptiveNumber(report.conversions)}
-                unit="回"
-                accent={theme.accent}
-              >
-                {breakdown.length > 0 && (
-                  <div className="text-[11px] text-gray-500 leading-relaxed">
-                    <p className="font-semibold text-gray-600">内訳：</p>
-                    <p>
-                      {breakdown
-                        .map((b) => `${simplifyConversionActionName(b.name)} ${formatAdaptiveNumber(b.conversions)}回`)
-                        .join("／")}
-                    </p>
-                  </div>
-                )}
-              </GoogleReportStatCard>
-              <GoogleReportStatCard
-                icon={<Percent size={20} strokeWidth={2} />}
-                title={`${buttonLabel}を\n押した割合`}
-                value={report.cvr.toFixed(2)}
-                unit="%"
-                accent={theme.accent}
-                valueColor={theme.accent}
-              >
-                <div className="text-[11px] text-gray-400 leading-relaxed">
-                  {benchmark && <p>自社平均{benchmark.ownAverage}%</p>}
-                  <p>ココデザインでの目標: {AD_REPORT_TARGET_RATE}%</p>
-                  {benchmark?.nationalAverage !== undefined && <p>全国平均約{benchmark.nationalAverage}%</p>}
-                </div>
-              </GoogleReportStatCard>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+          <GoogleReportStatCard
+            icon={<Eye size={20} strokeWidth={2} />}
+            title="表示回数"
+            value={formatNumber(report.impressions)}
+            unit="回"
+            description="Google上で広告が見られた回数"
+            accent={theme.accent}
+            valueColor={theme.accent}
+          />
+          <GoogleReportStatCard
+            icon={<MousePointerClick size={20} strokeWidth={2} />}
+            title="クリック数"
+            value={formatNumber(report.clicks)}
+            unit="回"
+            description="ホームページへ移動した回数"
+            accent={theme.accent}
+            valueColor={theme.accent}
+          />
+          <GoogleReportStatCard
+            icon={<Calendar size={20} strokeWidth={2} />}
+            title={`${buttonLabel}\nクリック数`}
+            value={formatAdaptiveNumber(report.conversions)}
+            unit="回"
+            accent={theme.accent}
+            valueColor={theme.accent}
+          >
+            {breakdown.length > 0 && (
+              <div className="text-[11px] text-gray-500 leading-relaxed">
+                <p className="font-semibold text-gray-600">内訳：</p>
+                <p>
+                  {breakdown
+                    .map((b) => `${simplifyConversionActionName(b.name)} ${formatAdaptiveNumber(b.conversions)}回`)
+                    .join("／")}
+                </p>
+              </div>
+            )}
+          </GoogleReportStatCard>
+          <GoogleReportStatCard
+            icon={<Percent size={20} strokeWidth={2} />}
+            title={`${buttonLabel}を\n押した割合`}
+            value={report.cvr.toFixed(2)}
+            unit="%"
+            accent={theme.accent}
+            valueColor={theme.accent}
+          >
+            <div className="text-[11px] text-gray-400 leading-relaxed">
+              {benchmark && <p>自社平均{benchmark.ownAverage}%</p>}
+              <p>ココデザインでの目標: {AD_REPORT_TARGET_RATE}%</p>
+              {benchmark?.nationalAverage !== undefined && <p>全国平均約{benchmark.nationalAverage}%</p>}
             </div>
-          </SectionCard>
+          </GoogleReportStatCard>
         </div>
 
         <div className="mt-4">
