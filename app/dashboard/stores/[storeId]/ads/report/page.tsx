@@ -92,10 +92,9 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
             el.style.minHeight = `${maxHeight}px`;
           }
         });
-        // 画面表示と印刷時のレンダリング差（フォントの微妙な高さの違い等）で
-        // ぴったりの高さだと1pxでも超えて次ページに中身がはみ出すことがあるため、
-        // 安全マージンを付けておく。
-        const printHeight = maxHeight + 24;
+        // 画面表示と印刷時のレンダリング差で1px単位で足りず中身がはみ出すことがある
+        // ため、視認できない程度の最小限のマージンだけ付けておく。
+        const printHeight = maxHeight + 3;
         printSizeStyle = document.createElement("style");
         printSizeStyle.textContent = `@media print { @page { size: 900px ${printHeight}px; margin: 0; } }`;
         document.head.appendChild(printSizeStyle);
