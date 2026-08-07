@@ -84,14 +84,14 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
                       )}
                     </div>
                   )}
-                  {!countInside && <p className="text-[10px] text-gray-400">（{formatAdaptiveNumber(r.conversions)}件）</p>}
-                  <p className="text-xs font-bold text-charcoal-900">{r.rate.toFixed(2)}%</p>
+                  {!countInside && <p className="text-[15px] text-gray-400">（{formatAdaptiveNumber(r.conversions)}件）</p>}
+                  <p className="text-[15px] font-bold text-charcoal-900">{r.rate.toFixed(2)}%</p>
                   <div
                     className="w-full max-w-[130px] rounded-t-md mt-1 flex items-end justify-center"
                     style={{ height: `${barHeight}px`, backgroundColor: accent }}
                   >
                     {countInside && (
-                      <p className="text-[10px] text-white font-semibold mb-1.5">（{formatAdaptiveNumber(r.conversions)}件）</p>
+                      <p className="text-[15px] text-white font-semibold mb-1.5">（{formatAdaptiveNumber(r.conversions)}件）</p>
                     )}
                   </div>
                 </div>
