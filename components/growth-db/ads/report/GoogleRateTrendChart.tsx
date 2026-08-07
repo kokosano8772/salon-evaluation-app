@@ -113,6 +113,7 @@ export default function GoogleRateTrendChart({
           <YAxis
             domain={[0, niceMax]}
             ticks={yTicks}
+            interval={0}
             tickFormatter={(v: number) => `${v}%`}
             tick={{ fontSize: 11, fill: "#999", fontFamily: "'Noto Sans JP', sans-serif" }}
             axisLine={false}
