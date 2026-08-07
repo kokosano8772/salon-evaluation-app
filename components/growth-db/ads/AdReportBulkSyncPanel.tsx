@@ -193,7 +193,7 @@ export default function AdReportBulkSyncPanel({
               type="text"
               value={campaignNameExclude}
               onChange={(e) => setCampaignNameExclude(e.target.value)}
-              placeholder="例: 求人（集客の店舗名が求人キャンペーン名に含まれる場合）"
+              placeholder="例: 求人、ディスプレイ（複数ある場合は「、」区切り）"
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#C4788A]"
             />
           </label>

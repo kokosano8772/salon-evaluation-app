@@ -432,12 +432,13 @@ export default function AdReportForm({
                 label="除外キーワード（任意）"
                 value={campaignNameExclude}
                 onChange={setCampaignNameExclude}
-                placeholder="例: 求人（集客のキャンペーン名が求人キャンペーン名の一部になっている場合に指定）"
+                placeholder="例: 求人、ディスプレイ（複数ある場合は「、」区切りで指定）"
               />
               <p className="text-xs text-gray-400 mt-1.5">
                 「集客」の店舗名が「求人」のキャンペーン名にそのまま含まれている（例: 集客「AmeLab」／求人「AmeLab（求人）」）場合、
                 絞り込みキーワードだけだと集客の同期に求人分まで混ざってしまいます。その場合はここに「求人」等、
                 求人キャンペーン名にだけ含まれる文字列を入力すると、そのキャンペーンを除外できます。
+                複数のキーワードを除外したい場合は「、」「／」「,」区切りで並べてください（例: 求人、ディスプレイ）。
               </p>
             </>
           )}

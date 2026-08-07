@@ -206,10 +206,17 @@ export class GoogleAdsClient implements AdPlatformClient {
     // 集客のキャンペーン名が求人キャンペーン名の部分文字列になっている店舗
     // （例: 集客「AmeLab」／求人「AmeLab（求人）」）だと、絞り込みキーワードだけでは
     // 集客の同期に求人分まで混ざってしまう。campaignNameExcludeが指定されていれば
-    // それを含むキャンペーンをGAQLレベルで除外する。
+    // それを含むキャンペーンをGAQLレベルで除外する。「、」「／」「/」「,」区切りで
+    // 複数キーワードを指定でき、いずれかを含むキャンペーンは除外される（AND条件で連結）。
+    const excludeKeywords = (campaignNameExclude ?? "")
+      .split(/[、／/,]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     const nameClauseParts: string[] = [];
     if (campaignNameFilter) nameClauseParts.push(`campaign.name LIKE '%${escapeGaqlLike(campaignNameFilter)}%'`);
-    if (campaignNameExclude) nameClauseParts.push(`NOT campaign.name LIKE '%${escapeGaqlLike(campaignNameExclude)}%'`);
+    for (const keyword of excludeKeywords) {
+      nameClauseParts.push(`campaign.name NOT LIKE '%${escapeGaqlLike(keyword)}%'`);
+    }
     const nameClause = nameClauseParts.join(" AND ");
 
     // キャンペーンの「存在確認」は日付条件の無いクエリで行う。日付・指標付きのクエリだと
