@@ -25,9 +25,12 @@ function simplifyConversionActionName(name: string): string {
   return match ? match[1].trim() : name;
 }
 
-function SectionCard({ children, pb }: { children: ReactNode; pb?: number }) {
+function SectionCard({ children, pb, pt }: { children: ReactNode; pb?: number; pt?: number }) {
+  const override: { paddingBottom?: number; paddingTop?: number } = {};
+  if (pb !== undefined) override.paddingBottom = pb;
+  if (pt !== undefined) override.paddingTop = pt;
   return (
-    <div className="bg-white rounded-2xl p-4" style={pb !== undefined ? { paddingBottom: pb } : undefined}>
+    <div className="bg-white rounded-2xl p-4" style={Object.keys(override).length > 0 ? override : undefined}>
       {children}
     </div>
   );
@@ -159,7 +162,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         </div>
 
         <div className="mt-4">
-          <SectionCard pb={8}>
+          <SectionCard pb={8} pt={8}>
             <SectionTitle accent={theme.accent}>{buttonLabel}を押した割合の推移</SectionTitle>
             <GoogleRateTrendChart
               previousCycle={trend.previousCycle}
@@ -175,7 +178,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
 
         {isRecruitment && (
           <div className="mt-4">
-            <SectionCard pb={8}>
+            <SectionCard pb={8} pt={8}>
               <SectionTitle accent={theme.accent}>クリック数の推移</SectionTitle>
               <GoogleClicksTrendChart
                 previousCycle={trend.previousCycle}
