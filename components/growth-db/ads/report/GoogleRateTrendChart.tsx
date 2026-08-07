@@ -72,6 +72,15 @@ export default function GoogleRateTrendChart({
     currentRate: currentCycle[i]?.rate,
   }));
 
+  // 実物PDFに合わせ、目盛りの最大値は10%刻みの「きりのいい数字」に丸める（年代別グラフと同じ方式）
+  const maxRate = Math.max(
+    ...merged.flatMap((p) => [p.previousRate ?? 0, p.currentRate ?? 0]),
+    target ?? 0,
+    1
+  );
+  const niceMax = Math.max(10, Math.ceil(maxRate / 10) * 10);
+  const yTicks = Array.from({ length: 6 }, (_, i) => Math.round((niceMax * i) / 5));
+
   return (
     <div>
       <div className="flex items-center justify-end gap-4 mb-1 text-xs text-gray-500">
@@ -102,6 +111,8 @@ export default function GoogleRateTrendChart({
             tickLine={false}
           />
           <YAxis
+            domain={[0, niceMax]}
+            ticks={yTicks}
             tickFormatter={(v: number) => `${v}%`}
             tick={{ fontSize: 11, fill: "#999", fontFamily: "'Noto Sans JP', sans-serif" }}
             axisLine={false}
