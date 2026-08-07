@@ -24,7 +24,7 @@ export default function GoogleReportStatCard({
   children,
 }: GoogleReportStatCardProps) {
   return (
-    <div className="flex-1 min-w-0 px-5 first:pl-0 last:pr-0 flex flex-col">
+    <div className="flex-1 min-w-0 px-5 first:pl-0 last:pr-0 flex flex-col items-center text-center">
       <div
         className="w-10 h-10 rounded-full flex items-center justify-center mb-2.5"
         style={{ backgroundColor: `${accent}26`, color: accent }}
@@ -33,7 +33,7 @@ export default function GoogleReportStatCard({
       </div>
       <p className="text-sm font-bold text-charcoal-900 whitespace-pre-line leading-snug">{title}</p>
       <div className="mt-1.5">
-        <span className="text-3xl font-extrabold" style={{ color: valueColor ?? "#1F2937" }}>
+        <span className="text-3xl font-extrabold" style={{ color: valueColor ?? "#1a1a1a" }}>
           {value}
         </span>
         <span className="text-sm font-bold ml-1 text-charcoal-700">{unit}</span>
