@@ -60,7 +60,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto"
         style={{ background: theme.bg }}
       >
-        <h1 className="text-5xl font-extrabold text-center text-charcoal-900">Google広告成果報告レポート</h1>
+        <h1 className="text-4xl font-extrabold text-center text-charcoal-900">Google広告成果報告レポート</h1>
         <p className="text-center text-lg text-charcoal-700 mt-2">
           {storeName}様{isRecruitment ? "（求人）" : ""} | {formatMonthLabel(report.yearMonth)}分
         </p>
