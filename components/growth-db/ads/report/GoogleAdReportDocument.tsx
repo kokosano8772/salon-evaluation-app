@@ -26,15 +26,15 @@ function simplifyConversionActionName(name: string): string {
 }
 
 function SectionCard({ children }: { children: ReactNode }) {
-  return <div className="bg-white rounded-2xl p-6">{children}</div>;
+  return <div className="bg-white rounded-2xl p-4">{children}</div>;
 }
 
 function SectionTitle({ accent, caption, children }: { accent: string; caption?: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2 mb-4">
-      <div className="flex items-center gap-2.5">
-        <span className="w-2 h-6 rounded-full" style={{ backgroundColor: accent }} />
-        <p className="text-2xl font-bold text-charcoal-900">{children}</p>
+    <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex items-center gap-2">
+        <span className="w-1.5 h-5 rounded-full" style={{ backgroundColor: accent }} />
+        <p className="text-xl font-bold text-charcoal-900">{children}</p>
       </div>
       {caption && <p className="text-xs text-gray-400">{caption}</p>}
     </div>
