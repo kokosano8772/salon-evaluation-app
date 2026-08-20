@@ -109,7 +109,7 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
                       )}
                     </div>
                   )}
-                  {!countInside && <p className="text-[15px] text-gray-400">（{formatAdaptiveNumber(r.conversions)}件）</p>}
+                  {!countInside && <p className="text-[15px] text-gray-400 mb-0.5">（{formatAdaptiveNumber(r.conversions)}件）</p>}
                   <p className="text-[15px] font-bold text-charcoal-900">{r.rate.toFixed(2)}%</p>
                   <div
                     className="w-full max-w-[130px] rounded-t-md mt-1 flex items-end justify-center"
@@ -126,7 +126,7 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
         </div>
       </div>
       <div className="flex mt-1.5">
-        <div className="pr-2 shrink-0" style={{ width: "1.5em" }} />
+        <div className="shrink-0" style={{ width: "2.2em" }} />
         <div className="flex-1 flex justify-between gap-3">
           {rows.map((r) => (
             <p key={r.ageGroup} className="flex-1 text-center text-[16px] text-gray-500">
