@@ -1,5 +1,5 @@
 import { AGE_GROUPS, AgeGroup, AgeGroupClicks, AgeGroupConversions } from "@/lib/growth-db/ad-report-types";
-import { formatAdaptiveNumber } from "@/lib/growth-db/format";
+import { formatAdaptiveNumber, niceAxisTicks } from "@/lib/growth-db/format";
 
 interface GoogleAgeRateChartProps {
   clicks: AgeGroupClicks[];
@@ -19,7 +19,6 @@ function ageGroupLabel(ageGroup: AgeGroup): string {
 }
 
 const CHART_HEIGHT = 112;
-const TICK_STEPS = 5;
 // バー内に件数ラベルを収められる高さの目安（それ未満はバーの上に出す）
 const INSIDE_LABEL_MIN_HEIGHT = 34;
 // バーの上に乗る「王冠+割合(%)ラベル」の高さぶんは、バー自体の伸びる範囲(BAR_AREA_HEIGHT)から
@@ -48,9 +47,8 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
   }
 
   const maxRate = Math.max(...rows.map((r) => r.rate), 1);
-  // 実物PDFに合わせ、目盛りの最大値は10%刻みの「きりのいい数字」に丸める
-  const niceMax = Math.max(10, Math.ceil(maxRate / 10) * 10);
-  const ticks = Array.from({ length: TICK_STEPS + 1 }, (_, i) => Math.round((niceMax * i) / TICK_STEPS));
+  // 目盛り間隔が1/2/5/10のいずれか(×10のべき乗)になる「きりのいい数字」に丸める
+  const { niceMax, ticks } = niceAxisTicks(maxRate);
 
   const bestRateGroup: AgeGroup | null = rows.reduce((best, r) => (r.rate > (best?.rate ?? -1) ? r : best), rows[0]).ageGroup;
   const bestConversionsGroup: AgeGroup | null = rows.reduce(

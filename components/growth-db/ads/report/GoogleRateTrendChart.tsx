@@ -2,7 +2,7 @@
 
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { YoyCyclePoint } from "@/lib/growth-db/ad-report-trend";
-import { formatMonthShortLabel } from "@/lib/growth-db/format";
+import { formatMonthShortLabel, niceAxisTicks } from "@/lib/growth-db/format";
 
 interface GoogleRateTrendChartProps {
   previousCycle: YoyCyclePoint[];
@@ -72,14 +72,13 @@ export default function GoogleRateTrendChart({
     currentRate: currentCycle[i]?.rate,
   }));
 
-  // 実物PDFに合わせ、目盛りの最大値は10%刻みの「きりのいい数字」に丸める（年代別グラフと同じ方式）
+  // 目盛り間隔が1/2/5/10のいずれか(×10のべき乗)になる「きりのいい数字」に丸める（年代別グラフと同じ方式）
   const maxRate = Math.max(
     ...merged.flatMap((p) => [p.previousRate ?? 0, p.currentRate ?? 0]),
     target ?? 0,
     1
   );
-  const niceMax = Math.max(10, Math.ceil(maxRate / 10) * 10);
-  const yTicks = Array.from({ length: 6 }, (_, i) => Math.round((niceMax * i) / 5));
+  const { niceMax, ticks: yTicks } = niceAxisTicks(maxRate);
 
   return (
     <div>

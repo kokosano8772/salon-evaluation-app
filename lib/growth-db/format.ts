@@ -18,6 +18,26 @@ export function formatAdaptiveNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
+// 割合グラフのY軸目盛りを「きりのいい間隔」で生成する（D3等で使われる標準的な
+// nice-number方式）。単純に最大値を5等分するだけだと、例えば最大値60%のとき
+// 12%刻み(0,12,24,36,48,60)のような半端な目盛りになってしまうため、
+// 間隔そのものを1・2・5・10のいずれか(×10のべき乗)に丸めてから目盛りを作る。
+export function niceAxisTicks(maxValue: number, targetTickCount = 6): { niceMax: number; ticks: number[] } {
+  const safeMax = Math.max(maxValue, 1);
+  const rawStep = safeMax / targetTickCount;
+  const exponent = Math.floor(Math.log10(rawStep));
+  const magnitude = Math.pow(10, exponent);
+  const residual = rawStep / magnitude;
+  const niceResidual = residual <= 1 ? 1 : residual <= 2 ? 2 : residual <= 5 ? 5 : 10;
+  const step = niceResidual * magnitude;
+  const niceMax = Math.ceil(safeMax / step) * step;
+  const ticks: number[] = [];
+  for (let v = 0; v <= niceMax + step / 2; v += step) {
+    ticks.push(Math.round(v * 100) / 100);
+  }
+  return { niceMax, ticks };
+}
+
 // "2024-03" -> "2024年3月"
 export function formatMonthLabel(yearMonth: string): string {
   const [year, month] = yearMonth.split("-");
