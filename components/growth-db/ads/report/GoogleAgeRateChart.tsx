@@ -76,7 +76,7 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
           {ticks.map((t) => (
             <div
               key={t}
-              className="absolute left-0 right-0 border-t border-gray-100"
+              className="absolute left-0 right-0 border-t border-gray-200"
               style={{ bottom: `${(((t / niceMax) * barAreaHeight) / CHART_HEIGHT) * 100}%` }}
             />
           ))}
