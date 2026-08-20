@@ -25,6 +25,41 @@ function simplifyConversionActionName(name: string): string {
   return match ? match[1].trim() : name;
 }
 
+// 「店舗名（グループ／チャネル）」形式のうち、括弧内の「グループ」部分（複数サロンを
+// 運営している店舗では支店名が入る等）を取り出す。この形式に一致しない名前はnullを返す。
+function parseConversionActionName(name: string): { group: string; channel: string } | null {
+  const match = name.match(/（([^／）]+)／([^）]+)）\s*$/);
+  if (!match) return null;
+  return { group: match[1].trim(), channel: match[2].trim() };
+}
+
+const CONVERSION_GROUP_COLORS = ["#6B8CAE", "#C98A9E", "#8A9B6E", "#B08968", "#9B8AB8"];
+
+interface ConversionGroup {
+  name: string;
+  items: { channel: string; conversions: number }[];
+}
+
+// 内訳を「グループ（支店名など）」でまとめられる場合はグループごとに分けて返す。
+// グループが1種類しかない（複数サロンを分けていない）場合は、まとめる意味が無いため
+// nullを返し、呼び出し側で従来通りのフラットな1行表示にフォールバックする。
+function groupConversionBreakdown(breakdown: { name: string; conversions: number }[]): ConversionGroup[] | null {
+  const parsed = breakdown.map((b) => ({ ...b, parsed: parseConversionActionName(b.name) }));
+  if (parsed.some((b) => !b.parsed)) return null;
+
+  const groups: ConversionGroup[] = [];
+  for (const b of parsed) {
+    const { group, channel } = b.parsed!;
+    let g = groups.find((x) => x.name === group);
+    if (!g) {
+      g = { name: group, items: [] };
+      groups.push(g);
+    }
+    g.items.push({ channel, conversions: b.conversions });
+  }
+  return groups.length > 1 ? groups : null;
+}
+
 function SectionCard({ children, pb, pt }: { children: ReactNode; pb?: number; pt?: number }) {
   const override: { paddingBottom?: number; paddingTop?: number } = {};
   if (pb !== undefined) override.paddingBottom = pb;
@@ -57,6 +92,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
   const benchmark = getBusinessCategoryBenchmark(businessCategory);
   const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
   const breakdown = report.conversionActionBreakdown ?? [];
+  const conversionGroups = groupConversionBreakdown(breakdown);
   const { summary, ownerSuggestion, agencyAction } = parseGoogleAdReportAiResult(report.aiResult ?? "");
   const confirmOptions = isRecruitment ? RECRUITMENT_CONFIRM_OPTIONS : ACQUISITION_CONFIRM_OPTIONS;
 
@@ -120,14 +156,27 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             accent={theme.accent}
             valueColor={theme.accent}
           >
-            {breakdown.length > 0 && (
-              <div className="text-xs text-gray-500 leading-relaxed">
-                <p className="font-semibold text-gray-600">内訳：</p>
-                <p>
-                  {/* TODO: デバッグ用に一時的に生のアクション名をそのまま表示（simplifyConversionActionNameは未使用化） */}
-                  {breakdown.map((b) => `[${b.name}] ${formatAdaptiveNumber(b.conversions)}回`).join("／")}
-                </p>
+            {conversionGroups ? (
+              <div className="text-xs leading-relaxed">
+                {conversionGroups.map((g, i) => (
+                  <p key={g.name} style={{ color: CONVERSION_GROUP_COLORS[i % CONVERSION_GROUP_COLORS.length] }}>
+                    <span className="font-semibold">{g.name}：</span>
+                    <br />
+                    {g.items.map((it) => `${it.channel} ${formatAdaptiveNumber(it.conversions)}回`).join("／")}
+                  </p>
+                ))}
               </div>
+            ) : (
+              breakdown.length > 0 && (
+                <div className="text-xs text-gray-500 leading-relaxed">
+                  <p className="font-semibold text-gray-600">内訳：</p>
+                  <p>
+                    {breakdown
+                      .map((b) => `${simplifyConversionActionName(b.name)} ${formatAdaptiveNumber(b.conversions)}回`)
+                      .join("／")}
+                  </p>
+                </div>
+              )
             )}
           </GoogleReportStatCard>
           <GoogleReportStatCard
