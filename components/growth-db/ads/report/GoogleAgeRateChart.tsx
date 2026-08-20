@@ -69,13 +69,21 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
   return (
     <div>
       <div className="flex" style={{ height: CHART_HEIGHT }}>
-        <div className="flex flex-col text-[10px] text-gray-400 pr-2 shrink-0 text-right" style={{ height: CHART_HEIGHT }}>
-          <div style={{ height: labelReserve }} />
-          <div className="flex-1 flex flex-col-reverse justify-between">
-            {ticks.map((t) => (
-              <span key={t}>{t}%</span>
-            ))}
-          </div>
+        <div className="relative text-[10px] text-gray-400 pr-2 shrink-0 text-right" style={{ height: CHART_HEIGHT, width: "2.2em" }}>
+          {/* 目盛り線と全く同じ計算式で位置を出し、transformで数値の中心を線に合わせる
+              （flexboxのjustify-betweenだとラベル自体の高さ分だけ線とズレていたため）。 */}
+          {ticks.map((t) => (
+            <span
+              key={t}
+              className="absolute right-0"
+              style={{
+                bottom: `${(((t / niceMax) * barAreaHeight) / CHART_HEIGHT) * 100}%`,
+                transform: "translateY(50%)",
+              }}
+            >
+              {t}%
+            </span>
+          ))}
         </div>
         <div className="relative flex-1">
           {ticks.map((t) => (
