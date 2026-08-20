@@ -18,13 +18,15 @@ function ageGroupLabel(ageGroup: AgeGroup): string {
   return AGE_GROUP_DISPLAY_LABEL[ageGroup] ?? (ageGroup === "65+" ? "65歳~" : `${ageGroup}歳`);
 }
 
-const CHART_HEIGHT = 112;
+// バーが伸びる範囲の高さは求人(王冠なし)・集客(王冠あり)で共通の固定値にする。
+// 王冠の有無で変えるのはCHART_HEIGHT（＝ラベル分を上乗せする量）の方にし、
+// 集客だけ目盛りが窮屈になって読み取りづらくなることがないようにする。
+const BAR_AREA_HEIGHT = 90;
 // バー内に件数ラベルを収められる高さの目安（それ未満はバーの上に出す）
 const INSIDE_LABEL_MIN_HEIGHT = 34;
-// バーの上に乗る「王冠+割合(%)ラベル」の高さぶんは、バー自体の伸びる範囲(BAR_AREA_HEIGHT)から
-// あらかじめ差し引いておく。これをしないと、割合が高いバー（特に王冠が付くバー）ではラベル分の
-// 高さがCHART_HEIGHTからはみ出し、Y軸目盛りとバーの対応がズレたり、割合が大きく違うバー同士が
-// 見た目上ほぼ同じ高さに見えてしまう不具合になる。
+// バーの上に乗る「王冠+割合(%)ラベル」の高さぶん。これをCHART_HEIGHTの計算に
+//含めないと、割合が高いバー（特に王冠が付くバー）ではラベル分の高さがはみ出し、
+// Y軸目盛りとバーの対応がズレる不具合になる。
 const LABEL_RESERVE_WITH_CROWN = 44;
 const LABEL_RESERVE_NO_CROWN = 26;
 
@@ -57,9 +59,12 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
   ).ageGroup;
 
   // 王冠が表示されうる場合は王冠+割合ラベル分、されない場合は割合ラベル分だけを
-  // 上部に確保し、残りをバーの伸びる範囲にする（バー＋ラベルがCHART_HEIGHTに収まるように）。
+  // ラベル用に確保する。バーの伸びる範囲(BAR_AREA_HEIGHT)は固定のまま、
+  // その分だけ全体の高さ(CHART_HEIGHT)を伸ばすことで、王冠の有無で目盛りの
+  // 間隔が変わってしまわないようにする。
   const labelReserve = showCrown ? LABEL_RESERVE_WITH_CROWN : LABEL_RESERVE_NO_CROWN;
-  const barAreaHeight = CHART_HEIGHT - labelReserve;
+  const barAreaHeight = BAR_AREA_HEIGHT;
+  const CHART_HEIGHT = barAreaHeight + labelReserve;
 
   return (
     <div>
