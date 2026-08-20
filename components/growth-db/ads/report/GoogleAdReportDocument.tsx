@@ -157,11 +157,10 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             valueColor={theme.accent}
           >
             {conversionGroups ? (
-              <div className="text-sm leading-relaxed">
+              <div className="text-xs leading-relaxed">
                 {conversionGroups.map((g, i) => (
                   <p key={g.name} style={{ color: CONVERSION_GROUP_COLORS[i % CONVERSION_GROUP_COLORS.length] }}>
                     <span className="font-semibold">{g.name}：</span>
-                    <br />
                     {g.items.map((it) => `${it.channel} ${formatAdaptiveNumber(it.conversions)}回`).join("／")}
                   </p>
                 ))}
