@@ -124,9 +124,8 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
               <div className="text-xs text-gray-500 leading-relaxed">
                 <p className="font-semibold text-gray-600">内訳：</p>
                 <p>
-                  {breakdown
-                    .map((b) => `${simplifyConversionActionName(b.name)} ${formatAdaptiveNumber(b.conversions)}回`)
-                    .join("／")}
+                  {/* TODO: デバッグ用に一時的に生のアクション名をそのまま表示（simplifyConversionActionNameは未使用化） */}
+                  {breakdown.map((b) => `[${b.name}] ${formatAdaptiveNumber(b.conversions)}回`).join("／")}
                 </p>
               </div>
             )}
