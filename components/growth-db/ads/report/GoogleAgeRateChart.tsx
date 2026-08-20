@@ -117,7 +117,7 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
           </div>
         </div>
       </div>
-      <div className="flex mt-1 border-t border-gray-100 pt-1.5">
+      <div className="flex mt-1.5">
         <div className="pr-2 shrink-0" style={{ width: "1.5em" }} />
         <div className="flex-1 flex justify-between gap-3">
           {rows.map((r) => (
