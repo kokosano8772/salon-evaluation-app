@@ -22,6 +22,12 @@ const CHART_HEIGHT = 112;
 const TICK_STEPS = 5;
 // バー内に件数ラベルを収められる高さの目安（それ未満はバーの上に出す）
 const INSIDE_LABEL_MIN_HEIGHT = 34;
+// バーの上に乗る「王冠+割合(%)ラベル」の高さぶんは、バー自体の伸びる範囲(BAR_AREA_HEIGHT)から
+// あらかじめ差し引いておく。これをしないと、割合が高いバー（特に王冠が付くバー）ではラベル分の
+// 高さがCHART_HEIGHTからはみ出し、Y軸目盛りとバーの対応がズレたり、割合が大きく違うバー同士が
+// 見た目上ほぼ同じ高さに見えてしまう不具合になる。
+const LABEL_RESERVE_WITH_CROWN = 44;
+const LABEL_RESERVE_NO_CROWN = 26;
 
 // 年代別クリック数・コンバージョン数から割合(%)を算出し、割合が最も高い年代・
 // コンバージョン数（＝ボタンクリック数）が最も多い年代に王冠マークを付ける
@@ -52,25 +58,33 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
     rows[0]
   ).ageGroup;
 
+  // 王冠が表示されうる場合は王冠+割合ラベル分、されない場合は割合ラベル分だけを
+  // 上部に確保し、残りをバーの伸びる範囲にする（バー＋ラベルがCHART_HEIGHTに収まるように）。
+  const labelReserve = showCrown ? LABEL_RESERVE_WITH_CROWN : LABEL_RESERVE_NO_CROWN;
+  const barAreaHeight = CHART_HEIGHT - labelReserve;
+
   return (
     <div>
       <div className="flex" style={{ height: CHART_HEIGHT }}>
-        <div className="flex flex-col-reverse justify-between text-[10px] text-gray-400 pr-2 shrink-0 text-right">
-          {ticks.map((t) => (
-            <span key={t}>{t}%</span>
-          ))}
+        <div className="flex flex-col text-[10px] text-gray-400 pr-2 shrink-0 text-right" style={{ height: CHART_HEIGHT }}>
+          <div style={{ height: labelReserve }} />
+          <div className="flex-1 flex flex-col-reverse justify-between">
+            {ticks.map((t) => (
+              <span key={t}>{t}%</span>
+            ))}
+          </div>
         </div>
         <div className="relative flex-1">
           {ticks.map((t) => (
             <div
               key={t}
               className="absolute left-0 right-0 border-t border-gray-100"
-              style={{ bottom: `${(t / niceMax) * 100}%` }}
+              style={{ bottom: `${(((t / niceMax) * barAreaHeight) / CHART_HEIGHT) * 100}%` }}
             />
           ))}
           <div className="absolute inset-0 flex items-end justify-between gap-3">
             {rows.map((r) => {
-              const barHeight = Math.max((r.rate / niceMax) * CHART_HEIGHT, 4);
+              const barHeight = Math.max((r.rate / niceMax) * barAreaHeight, 4);
               const countInside = barHeight >= INSIDE_LABEL_MIN_HEIGHT;
               return (
                 <div key={r.ageGroup} className="flex-1 flex flex-col items-center justify-end h-full">
