@@ -157,7 +157,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             valueColor={theme.accent}
           >
             {conversionGroups ? (
-              <div className="text-xs leading-relaxed">
+              <div className="text-sm leading-relaxed">
                 {conversionGroups.map((g, i) => (
                   <p key={g.name} style={{ color: CONVERSION_GROUP_COLORS[i % CONVERSION_GROUP_COLORS.length] }}>
                     <span className="font-semibold">{g.name}：</span>
@@ -187,7 +187,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             accent={theme.accent}
             valueColor={theme.accent}
           >
-            <div className="text-xs text-gray-400 leading-relaxed">
+            <div className="text-sm text-gray-400 leading-relaxed">
               {benchmark && (
                 <p>
                   {businessCategory}平均{benchmark.ownAverage}%
