@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Calendar, Eye, MousePointerClick, Percent, ThumbsUp } from "lucide-react";
 import { AdReport, GOOGLE_REPORT_THEME } from "@/lib/growth-db/ad-report-types";
-import { getBusinessCategoryBenchmark, AD_REPORT_TARGET_RATE } from "@/lib/growth-db/business-category-benchmarks";
+import { getBusinessCategoryBenchmark, AD_REPORT_TARGET_RATE, NATIONAL_AVERAGE_CVR } from "@/lib/growth-db/business-category-benchmarks";
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
 import { parseGoogleAdReportAiResult } from "@/lib/growth-db/parse-google-ad-report-ai-result";
 import { formatAdaptiveNumber, formatMonthLabel, formatMonthShortLabel, formatNumber } from "@/lib/growth-db/format";
@@ -188,9 +188,13 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             valueColor={theme.accent}
           >
             <div className="text-xs text-gray-400 leading-relaxed">
-              {benchmark && <p>自社平均{benchmark.ownAverage}%</p>}
-              <p>ココデザインでの目標: {AD_REPORT_TARGET_RATE}%</p>
-              {benchmark?.nationalAverage !== undefined && <p>全国平均約{benchmark.nationalAverage}%</p>}
+              {benchmark && (
+                <p>
+                  {businessCategory}平均{benchmark.ownAverage}%
+                </p>
+              )}
+              <p>ココデザインでの目標：{AD_REPORT_TARGET_RATE}%</p>
+              {benchmark && <p>全国美容院平均約{NATIONAL_AVERAGE_CVR}%</p>}
             </div>
           </GoogleReportStatCard>
         </div>

@@ -6,17 +6,19 @@
 export interface BusinessCategoryBenchmark {
   // 自社（ココデザイン）クライアントでの、その業種の平均値
   ownAverage: number;
-  // 全国平均値（分かっている業種のみ）
-  nationalAverage?: number;
 }
 
 export const BUSINESS_CATEGORY_BENCHMARKS: Record<string, BusinessCategoryBenchmark> = {
-  美容院: { ownAverage: 16.64, nationalAverage: 5 },
+  美容院: { ownAverage: 16.64 },
   メンズサロン: { ownAverage: 32.82 },
 };
 
 // 業種を問わず固定のココデザインでの目標値
 export const AD_REPORT_TARGET_RATE = 8;
+
+// 業種別の全国平均は公表データが乏しいため、公表されている美容院の全国平均値を
+// 業種を問わず参考値として表示する（実物PDFの表記に合わせる）。
+export const NATIONAL_AVERAGE_CVR = 5;
 
 export function getBusinessCategoryBenchmark(businessCategory: string): BusinessCategoryBenchmark | null {
   return BUSINESS_CATEGORY_BENCHMARKS[businessCategory] ?? null;
