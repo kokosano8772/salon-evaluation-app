@@ -282,11 +282,11 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
               {ownerSuggestion.pills.map((pill) => (
                 <div
                   key={pill}
-                  className="flex-1 flex items-center gap-2.5 rounded-xl border px-5 py-3.5"
+                  className="flex-1 flex items-center gap-3 rounded-xl border-2 px-6 py-4"
                   style={{ borderColor: theme.accentSoft }}
                 >
-                  <CheckCircle2 size={20} strokeWidth={2} style={{ color: theme.accent }} />
-                  <span className="text-base text-charcoal-800">{pill}</span>
+                  <CheckCircle2 size={24} strokeWidth={2} style={{ color: theme.accent }} />
+                  <span className="text-lg text-charcoal-800">{pill}</span>
                 </div>
               ))}
             </div>
@@ -306,11 +306,11 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
               {agencyAction.pills.map((pill) => (
                 <div
                   key={pill}
-                  className="flex-1 flex items-center gap-2.5 rounded-xl border px-5 py-3.5"
+                  className="flex-1 flex items-center gap-3 rounded-xl border-2 px-6 py-4"
                   style={{ borderColor: theme.accentSoft }}
                 >
-                  <CheckCircle2 size={20} strokeWidth={2} style={{ color: theme.accent }} />
-                  <span className="text-base text-charcoal-800">{pill}</span>
+                  <CheckCircle2 size={24} strokeWidth={2} style={{ color: theme.accent }} />
+                  <span className="text-lg text-charcoal-800">{pill}</span>
                 </div>
               ))}
             </div>
@@ -334,16 +334,16 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             {confirmOptions.map((opt, i) => (
               <div
                 key={opt}
-                className="flex-1 flex items-center gap-2.5 rounded-xl border px-5 py-3.5"
+                className="flex-1 flex items-center gap-3 rounded-xl border-2 px-6 py-4"
                 style={{ borderColor: theme.accentSoft }}
               >
                 <span
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
                   style={{ backgroundColor: theme.accent }}
                 >
                   {i + 1}
                 </span>
-                <span className="text-base text-charcoal-800">{opt}</span>
+                <span className="text-lg text-charcoal-800">{opt}</span>
               </div>
             ))}
           </div>
