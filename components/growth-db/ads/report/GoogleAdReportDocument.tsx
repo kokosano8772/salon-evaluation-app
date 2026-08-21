@@ -274,7 +274,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           {ownerSuggestion.headline && (
             <p className="text-3xl font-bold text-charcoal-900 mb-3">{ownerSuggestion.headline}</p>
           )}
-          <p className="text-xl text-charcoal-700 leading-relaxed whitespace-pre-wrap">
+          <p className="text-[18px] text-charcoal-700 leading-relaxed whitespace-pre-wrap">
             {ownerSuggestion.body || (!ownerSuggestion.headline && "AI分析はまだ生成されていません")}
           </p>
           {ownerSuggestion.pills.length > 0 && (
@@ -298,7 +298,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           {agencyAction.headline && (
             <p className="text-3xl font-bold text-charcoal-900 mb-3">{agencyAction.headline}</p>
           )}
-          <p className="text-xl text-charcoal-700 leading-relaxed whitespace-pre-wrap">
+          <p className="text-[18px] text-charcoal-700 leading-relaxed whitespace-pre-wrap">
             {agencyAction.body || (!agencyAction.headline && "AI分析はまだ生成されていません")}
           </p>
           {agencyAction.pills.length > 0 && (
@@ -322,7 +322,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           <p className="text-3xl font-bold text-charcoal-900 mb-3">
             {isRecruitment ? "実際の求人反応をぜひご共有ください。" : "実際のご予約数をぜひご共有ください。"}
           </p>
-          <p className="text-xl text-charcoal-700 leading-relaxed">
+          <p className="text-[18px] text-charcoal-700 leading-relaxed">
             {isRecruitment
               ? "LINE・Instagram・電話などから、求人に関するお問い合わせや応募がございましたら、ご共有いただけますと幸いです。また、応募者の方の反応など新しい情報がございましたらお伝えください。"
               : "電話やHPB・WEBでのご予約、ライン友達の増加など、アクションの変化などございましたら、お伝えいただけますと幸いです。また、ご来店いただいたお客様からの新しい情報などございましたらお伝えください。"}
