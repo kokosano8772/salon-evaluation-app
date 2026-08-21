@@ -289,7 +289,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1320px] max-w-none mx-auto flex flex-col justify-center space-y-8"
         style={{ background: theme.bg }}
       >
-        <SectionCard pt={24} pb={24} px={32}>
+        <SectionCard pt={42} pb={42} px={32}>
           <SectionTitle accent={theme.accent}>サロン様へのご提案</SectionTitle>
           {ownerSuggestion.headline && (
             <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">{ownerSuggestion.headline}</p>
@@ -313,7 +313,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           )}
         </SectionCard>
 
-        <SectionCard pt={24} pb={24} px={32}>
+        <SectionCard pt={42} pb={42} px={32}>
           <SectionTitle accent={theme.accent}>ココデザインが行う改善策</SectionTitle>
           {agencyAction.headline && (
             <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">{agencyAction.headline}</p>
@@ -337,7 +337,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           )}
         </SectionCard>
 
-        <SectionCard pt={24} pb={24} px={32}>
+        <SectionCard pt={42} pb={42} px={32}>
           <SectionTitle accent={theme.accent}>ご確認・ご返信のお願い</SectionTitle>
           <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">
             {isRecruitment ? "実際の求人反応をぜひご共有ください。" : "実際のご予約数をぜひご共有ください。"}
