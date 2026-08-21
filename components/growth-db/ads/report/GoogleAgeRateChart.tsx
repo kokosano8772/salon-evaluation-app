@@ -92,8 +92,8 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
           {ticks.map((t) => (
             <div
               key={t}
-              className="absolute left-0 right-0 border-t border-gray-200"
-              style={{ bottom: `${(((t / niceMax) * barAreaHeight) / CHART_HEIGHT) * 100}%` }}
+              className="absolute left-0 right-0 border-t"
+              style={{ borderColor: "#f0f0f0", bottom: `${(((t / niceMax) * barAreaHeight) / CHART_HEIGHT) * 100}%` }}
             />
           ))}
           <div className="absolute inset-0 flex items-end justify-between gap-3">
