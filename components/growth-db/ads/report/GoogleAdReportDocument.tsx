@@ -276,7 +276,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         <SectionCard pt={24} pb={24} px={32}>
           <SectionTitle accent={theme.accent}>サロン様へのご提案</SectionTitle>
           {ownerSuggestion.headline && (
-            <p className="text-3xl font-bold text-charcoal-900 mb-3">{ownerSuggestion.headline}</p>
+            <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">{ownerSuggestion.headline}</p>
           )}
           <p className="text-[17px] text-charcoal-700 leading-relaxed whitespace-pre-wrap">
             {ownerSuggestion.body || (!ownerSuggestion.headline && "AI分析はまだ生成されていません")}
@@ -300,7 +300,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         <SectionCard pt={24} pb={24} px={32}>
           <SectionTitle accent={theme.accent}>ココデザインが行う改善策</SectionTitle>
           {agencyAction.headline && (
-            <p className="text-3xl font-bold text-charcoal-900 mb-3">{agencyAction.headline}</p>
+            <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">{agencyAction.headline}</p>
           )}
           <p className="text-[17px] text-charcoal-700 leading-relaxed whitespace-pre-wrap">
             {agencyAction.body || (!agencyAction.headline && "AI分析はまだ生成されていません")}
@@ -323,7 +323,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
 
         <SectionCard pt={24} pb={24} px={32}>
           <SectionTitle accent={theme.accent}>ご確認・ご返信のお願い</SectionTitle>
-          <p className="text-3xl font-bold text-charcoal-900 mb-3">
+          <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">
             {isRecruitment ? "実際の求人反応をぜひご共有ください。" : "実際のご予約数をぜひご共有ください。"}
           </p>
           <p className="text-[17px] text-charcoal-700 leading-relaxed">
