@@ -271,24 +271,33 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
       >
         <SectionCard>
           <SectionTitle accent={theme.accent}>サロン様へのご提案</SectionTitle>
+          {ownerSuggestion.headline && (
+            <p className="text-lg font-bold text-charcoal-900 mb-2">{ownerSuggestion.headline}</p>
+          )}
           <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">
-            {ownerSuggestion || "AI分析はまだ生成されていません"}
+            {ownerSuggestion.body || (!ownerSuggestion.headline && "AI分析はまだ生成されていません")}
           </p>
         </SectionCard>
 
         <SectionCard>
           <SectionTitle accent={theme.accent}>ココデザインが行う改善策</SectionTitle>
+          {agencyAction.headline && (
+            <p className="text-lg font-bold text-charcoal-900 mb-2">{agencyAction.headline}</p>
+          )}
           <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">
-            {agencyAction || "AI分析はまだ生成されていません"}
+            {agencyAction.body || (!agencyAction.headline && "AI分析はまだ生成されていません")}
           </p>
         </SectionCard>
 
         <SectionCard>
           <SectionTitle accent={theme.accent}>ご確認・ご返信のお願い</SectionTitle>
+          <p className="text-lg font-bold text-charcoal-900 mb-2">
+            {isRecruitment ? "実際の求人反応をぜひご共有ください。" : "実際のご予約数をぜひご共有ください。"}
+          </p>
           <p className="text-sm text-charcoal-700 leading-relaxed">
             {isRecruitment
-              ? "LINE・Instagram・電話などから、求人に関するお問い合わせや応募がございましたら、ご共有いただけますと幸いです。"
-              : "電話やHPB・WEBでのご予約、ライン友達の増加など、アクションの変化などございましたら、お伝えいただけますと幸いです。"}
+              ? "LINE・Instagram・電話などから、求人に関するお問い合わせや応募がございましたら、ご共有いただけますと幸いです。また、応募者の方の反応など新しい情報がございましたらお伝えください。"
+              : "電話やHPB・WEBでのご予約、ライン友達の増加など、アクションの変化などございましたら、お伝えいただけますと幸いです。また、ご来店いただいたお客様からの新しい情報などございましたらお伝えください。"}
           </p>
           <p className="text-sm font-semibold mt-4 mb-2" style={{ color: theme.text }}>
             {isRecruitment ? "求人に関する反応はいかがでしたでしょうか？" : "実際にサロン様では前月と比べていかがでしたでしょうか？"}

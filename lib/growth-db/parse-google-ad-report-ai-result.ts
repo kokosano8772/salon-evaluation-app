@@ -2,19 +2,36 @@
 // build-google-ad-report-prompt.ts でAIに指示している見出しマーカーに対応。
 // - マーカーより前: 1ページ目冒頭の運用状況サマリー（1〜2文）
 // - "## 年代別の傾向": 【年代別】グラフ横に載せる一言（実物PDFの青文字部分）
-// - "## サロン様へのご提案": サロン側にやってほしいこと
-// - "## ココデザインが行う改善策": こちら側で行う改善策
+// - "## サロン様へのご提案": サロン側にやってほしいこと（1行目=太字見出し、2行目以降=本文）
+// - "## ココデザインが行う改善策": こちら側で行う改善策（1行目=太字見出し、2行目以降=本文）
+
+export interface GoogleAdReportSuggestionPart {
+  headline: string;
+  body: string;
+}
 
 export interface GoogleAdReportAiResultParts {
   summary: string;
   ageGroupInsight: string;
-  ownerSuggestion: string;
-  agencyAction: string;
+  ownerSuggestion: GoogleAdReportSuggestionPart;
+  agencyAction: GoogleAdReportSuggestionPart;
 }
 
 const AGE_GROUP_INSIGHT_MARKER = "## 年代別の傾向";
 const OWNER_SUGGESTION_MARKER = "## サロン様へのご提案";
 const AGENCY_ACTION_MARKER = "## ココデザインが行う改善策";
+
+// 実物PDFでは提案2パートとも「1行目に太字見出し・2行目以降に本文」という構成のため、
+// 新しいマーカーを増やさず、セクション内の最初の改行で見出しと本文を分ける。
+function splitHeadlineAndBody(section: string): GoogleAdReportSuggestionPart {
+  const trimmed = section.trim();
+  const newlineIdx = trimmed.indexOf("\n");
+  if (newlineIdx === -1) return { headline: trimmed, body: "" };
+  return {
+    headline: trimmed.slice(0, newlineIdx).trim(),
+    body: trimmed.slice(newlineIdx + 1).trim(),
+  };
+}
 
 export function parseGoogleAdReportAiResult(aiResult: string): GoogleAdReportAiResultParts {
   const ageGroupIdx = aiResult.indexOf(AGE_GROUP_INSIGHT_MARKER);
@@ -25,18 +42,18 @@ export function parseGoogleAdReportAiResult(aiResult: string): GoogleAdReportAiR
   const summary = aiResult.slice(0, summaryEnd).trim();
 
   let ageGroupInsight = "";
-  let ownerSuggestion = "";
-  let agencyAction = "";
+  let ownerSuggestion: GoogleAdReportSuggestionPart = { headline: "", body: "" };
+  let agencyAction: GoogleAdReportSuggestionPart = { headline: "", body: "" };
   if (ageGroupIdx !== -1) {
     const ageGroupEnd = ownerIdx !== -1 ? ownerIdx : agencyIdx !== -1 ? agencyIdx : aiResult.length;
     ageGroupInsight = aiResult.slice(ageGroupIdx + AGE_GROUP_INSIGHT_MARKER.length, ageGroupEnd).trim();
   }
   if (ownerIdx !== -1) {
     const ownerEnd = agencyIdx !== -1 ? agencyIdx : aiResult.length;
-    ownerSuggestion = aiResult.slice(ownerIdx + OWNER_SUGGESTION_MARKER.length, ownerEnd).trim();
+    ownerSuggestion = splitHeadlineAndBody(aiResult.slice(ownerIdx + OWNER_SUGGESTION_MARKER.length, ownerEnd));
   }
   if (agencyIdx !== -1) {
-    agencyAction = aiResult.slice(agencyIdx + AGENCY_ACTION_MARKER.length).trim();
+    agencyAction = splitHeadlineAndBody(aiResult.slice(agencyIdx + AGENCY_ACTION_MARKER.length));
   }
 
   return { summary, ageGroupInsight, ownerSuggestion, agencyAction };
