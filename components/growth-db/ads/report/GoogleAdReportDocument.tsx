@@ -60,10 +60,14 @@ function groupConversionBreakdown(breakdown: { name: string; conversions: number
   return groups.length > 1 ? groups : null;
 }
 
-function SectionCard({ children, pb, pt }: { children: ReactNode; pb?: number; pt?: number }) {
-  const override: { paddingBottom?: number; paddingTop?: number } = {};
+function SectionCard({ children, pb, pt, px }: { children: ReactNode; pb?: number; pt?: number; px?: number }) {
+  const override: { paddingBottom?: number; paddingTop?: number; paddingLeft?: number; paddingRight?: number } = {};
   if (pb !== undefined) override.paddingBottom = pb;
   if (pt !== undefined) override.paddingTop = pt;
+  if (px !== undefined) {
+    override.paddingLeft = px;
+    override.paddingRight = px;
+  }
   return (
     <div className="bg-white rounded-2xl p-3" style={Object.keys(override).length > 0 ? override : undefined}>
       {children}
@@ -269,7 +273,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1320px] max-w-none mx-auto flex flex-col justify-center space-y-8"
         style={{ background: theme.bg }}
       >
-        <SectionCard pt={24} pb={24}>
+        <SectionCard pt={24} pb={24} px={32}>
           <SectionTitle accent={theme.accent}>サロン様へのご提案</SectionTitle>
           {ownerSuggestion.headline && (
             <p className="text-3xl font-bold text-charcoal-900 mb-3">{ownerSuggestion.headline}</p>
@@ -293,7 +297,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           )}
         </SectionCard>
 
-        <SectionCard pt={24} pb={24}>
+        <SectionCard pt={24} pb={24} px={32}>
           <SectionTitle accent={theme.accent}>ココデザインが行う改善策</SectionTitle>
           {agencyAction.headline && (
             <p className="text-3xl font-bold text-charcoal-900 mb-3">{agencyAction.headline}</p>
@@ -317,7 +321,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           )}
         </SectionCard>
 
-        <SectionCard pt={24} pb={24}>
+        <SectionCard pt={24} pb={24} px={32}>
           <SectionTitle accent={theme.accent}>ご確認・ご返信のお願い</SectionTitle>
           <p className="text-3xl font-bold text-charcoal-900 mb-3">
             {isRecruitment ? "実際の求人反応をぜひご共有ください。" : "実際のご予約数をぜひご共有ください。"}
