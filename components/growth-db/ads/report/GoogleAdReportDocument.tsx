@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Calendar, Eye, MousePointerClick, Percent, ThumbsUp } from "lucide-react";
+import { Calendar, CheckCircle2, Eye, MousePointerClick, Percent, ThumbsUp } from "lucide-react";
 import { AdReport, GOOGLE_REPORT_THEME } from "@/lib/growth-db/ad-report-types";
 import { getBusinessCategoryBenchmark, AD_REPORT_TARGET_RATE, NATIONAL_AVERAGE_CVR } from "@/lib/growth-db/business-category-benchmarks";
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
@@ -277,6 +277,20 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">
             {ownerSuggestion.body || (!ownerSuggestion.headline && "AI分析はまだ生成されていません")}
           </p>
+          {ownerSuggestion.pills.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
+              {ownerSuggestion.pills.map((pill) => (
+                <div
+                  key={pill}
+                  className="flex-1 flex items-center gap-2 rounded-xl border px-4 py-3"
+                  style={{ borderColor: theme.accentSoft }}
+                >
+                  <CheckCircle2 size={18} strokeWidth={2} style={{ color: theme.accent }} />
+                  <span className="text-sm text-charcoal-800">{pill}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </SectionCard>
 
         <SectionCard>
@@ -287,6 +301,20 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">
             {agencyAction.body || (!agencyAction.headline && "AI分析はまだ生成されていません")}
           </p>
+          {agencyAction.pills.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
+              {agencyAction.pills.map((pill) => (
+                <div
+                  key={pill}
+                  className="flex-1 flex items-center gap-2 rounded-xl border px-4 py-3"
+                  style={{ borderColor: theme.accentSoft }}
+                >
+                  <CheckCircle2 size={18} strokeWidth={2} style={{ color: theme.accent }} />
+                  <span className="text-sm text-charcoal-800">{pill}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </SectionCard>
 
         <SectionCard>

@@ -120,7 +120,7 @@ export default function GoogleAdReportAIPanel({ storeId, report, history, monthl
             <p className="text-xs text-gray-400">
               AI分析を生成しなくても、ここに直接文章を書いて保存できます（"## 年代別の傾向" "## サロン様へのご提案"
               "## ココデザインが行う改善策" の見出しでレポート内の各欄に振り分けられます。ご提案・改善策の2つは、
-              見出しの次の行に太字見出し、その次の行以降に本文を書いてください）
+              見出しの次の行に太字見出し、その次に本文、最後に「- 」で始まる行を2つ書くとアクションのピル表示になります）
             </p>
           </div>
           <textarea
