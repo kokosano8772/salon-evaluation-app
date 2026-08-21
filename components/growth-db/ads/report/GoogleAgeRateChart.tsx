@@ -69,10 +69,11 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
   return (
     <div>
       <div className="flex" style={{ height: CHART_HEIGHT }}>
-        <div className="relative text-[10px] text-gray-400 shrink-0 text-right" style={{ height: CHART_HEIGHT, width: "2.2em" }}>
+        <div className="relative text-[10px] text-gray-400 shrink-0 text-right" style={{ height: CHART_HEIGHT, width: 40 }}>
           {/* 目盛り線と全く同じ計算式で位置を出し、transformで数値の中心を線に合わせる
               （flexboxのjustify-betweenだとラベル自体の高さ分だけ線とズレていたため）。
-              絶対配置の要素はpaddingを無視するため、グラフとの隙間はrightの値で直接確保する。 */}
+              絶対配置の要素はpaddingを無視するため、グラフとの隙間はrightの値で直接確保する。
+              幅40pxは推移グラフ2種のRecharts YAxis(width={"{40}"})と揃えている。 */}
           {ticks.map((t) => (
             <span
               key={t}
@@ -128,7 +129,7 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
         </div>
       </div>
       <div className="flex mt-1.5">
-        <div className="shrink-0" style={{ width: "2.2em" }} />
+        <div className="shrink-0" style={{ width: 40 }} />
         <div className="flex-1 flex justify-between gap-3">
           {rows.map((r) => (
             <p key={r.ageGroup} className="flex-1 text-center text-[16px] text-gray-500">
