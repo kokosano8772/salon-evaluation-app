@@ -147,6 +147,6 @@ export const GOOGLE_REPORT_THEME: Record<
   AdReportCategory,
   { bg: string; accent: string; accentSoft: string; text: string; chartAccent: string; highlightAccent: string }
 > = {
-  acquisition: { bg: "#F3F2ED", accent: "#93A87B", accentSoft: "#C6D2B4", text: "#4A5A3C", chartAccent: "#93A87B", highlightAccent: "#C4788A" },
-  recruitment: { bg: "#ECECE4", accent: "#A28472", accentSoft: "#DCC3A4", text: "#5C452E", chartAccent: "#B4BA9C", highlightAccent: "#E0B04D" },
+  acquisition: { bg: "#EDEFF3", accent: "#93A87B", accentSoft: "#C6D2B4", text: "#4A5A3C", chartAccent: "#93A87B", highlightAccent: "#C4788A" },
+  recruitment: { bg: "#F3F2ED", accent: "#A28472", accentSoft: "#DCC3A4", text: "#5C452E", chartAccent: "#B4BA9C", highlightAccent: "#E0B04D" },
 };
