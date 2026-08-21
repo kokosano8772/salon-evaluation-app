@@ -266,60 +266,60 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
 
       {/* ページ2 */}
       <div
-        className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto space-y-6"
+        className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto space-y-8"
         style={{ background: theme.bg }}
       >
-        <SectionCard>
+        <SectionCard pt={24} pb={24}>
           <SectionTitle accent={theme.accent}>サロン様へのご提案</SectionTitle>
           {ownerSuggestion.headline && (
-            <p className="text-3xl font-bold text-charcoal-900 mb-2">{ownerSuggestion.headline}</p>
+            <p className="text-3xl font-bold text-charcoal-900 mb-3">{ownerSuggestion.headline}</p>
           )}
           <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">
             {ownerSuggestion.body || (!ownerSuggestion.headline && "AI分析はまだ生成されていません")}
           </p>
           {ownerSuggestion.pills.length > 0 && (
-            <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 mt-5">
               {ownerSuggestion.pills.map((pill) => (
                 <div
                   key={pill}
-                  className="flex-1 flex items-center gap-2 rounded-xl border px-4 py-3"
+                  className="flex-1 flex items-center gap-2.5 rounded-xl border px-5 py-3.5"
                   style={{ borderColor: theme.accentSoft }}
                 >
-                  <CheckCircle2 size={18} strokeWidth={2} style={{ color: theme.accent }} />
-                  <span className="text-sm text-charcoal-800">{pill}</span>
+                  <CheckCircle2 size={20} strokeWidth={2} style={{ color: theme.accent }} />
+                  <span className="text-base text-charcoal-800">{pill}</span>
                 </div>
               ))}
             </div>
           )}
         </SectionCard>
 
-        <SectionCard>
+        <SectionCard pt={24} pb={24}>
           <SectionTitle accent={theme.accent}>ココデザインが行う改善策</SectionTitle>
           {agencyAction.headline && (
-            <p className="text-3xl font-bold text-charcoal-900 mb-2">{agencyAction.headline}</p>
+            <p className="text-3xl font-bold text-charcoal-900 mb-3">{agencyAction.headline}</p>
           )}
           <p className="text-sm text-charcoal-700 leading-relaxed whitespace-pre-wrap">
             {agencyAction.body || (!agencyAction.headline && "AI分析はまだ生成されていません")}
           </p>
           {agencyAction.pills.length > 0 && (
-            <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 mt-5">
               {agencyAction.pills.map((pill) => (
                 <div
                   key={pill}
-                  className="flex-1 flex items-center gap-2 rounded-xl border px-4 py-3"
+                  className="flex-1 flex items-center gap-2.5 rounded-xl border px-5 py-3.5"
                   style={{ borderColor: theme.accentSoft }}
                 >
-                  <CheckCircle2 size={18} strokeWidth={2} style={{ color: theme.accent }} />
-                  <span className="text-sm text-charcoal-800">{pill}</span>
+                  <CheckCircle2 size={20} strokeWidth={2} style={{ color: theme.accent }} />
+                  <span className="text-base text-charcoal-800">{pill}</span>
                 </div>
               ))}
             </div>
           )}
         </SectionCard>
 
-        <SectionCard>
+        <SectionCard pt={24} pb={24}>
           <SectionTitle accent={theme.accent}>ご確認・ご返信のお願い</SectionTitle>
-          <p className="text-3xl font-bold text-charcoal-900 mb-2">
+          <p className="text-3xl font-bold text-charcoal-900 mb-3">
             {isRecruitment ? "実際の求人反応をぜひご共有ください。" : "実際のご予約数をぜひご共有ください。"}
           </p>
           <p className="text-sm text-charcoal-700 leading-relaxed">
@@ -327,23 +327,23 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
               ? "LINE・Instagram・電話などから、求人に関するお問い合わせや応募がございましたら、ご共有いただけますと幸いです。また、応募者の方の反応など新しい情報がございましたらお伝えください。"
               : "電話やHPB・WEBでのご予約、ライン友達の増加など、アクションの変化などございましたら、お伝えいただけますと幸いです。また、ご来店いただいたお客様からの新しい情報などございましたらお伝えください。"}
           </p>
-          <p className="text-sm font-semibold mt-4 mb-2" style={{ color: theme.text }}>
+          <p className="text-base font-semibold mt-5 mb-3" style={{ color: theme.text }}>
             {isRecruitment ? "求人に関する反応はいかがでしたでしょうか？" : "実際にサロン様では前月と比べていかがでしたでしょうか？"}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             {confirmOptions.map((opt, i) => (
               <div
                 key={opt}
-                className="flex-1 flex items-center gap-2 rounded-xl border px-4 py-3"
+                className="flex-1 flex items-center gap-2.5 rounded-xl border px-5 py-3.5"
                 style={{ borderColor: theme.accentSoft }}
               >
                 <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
                   style={{ backgroundColor: theme.accent }}
                 >
                   {i + 1}
                 </span>
-                <span className="text-sm text-charcoal-800">{opt}</span>
+                <span className="text-base text-charcoal-800">{opt}</span>
               </div>
             ))}
           </div>
