@@ -207,10 +207,22 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             <SectionTitle accent={theme.accent} caption={`() = ${buttonLabel}クリック数`}>
               【年代別】{buttonLabel}を押した割合
             </SectionTitle>
-            {ageGroupInsight && (
-              <p className="text-sm font-semibold mb-2 break-words max-w-[340px]" style={{ color: "#5B7FA6" }}>
-                {ageGroupInsight}
-              </p>
+            {(ageGroupInsight || !isRecruitment) && (
+              <div className="flex items-start justify-between gap-4 mb-2">
+                {ageGroupInsight && (
+                  <p className="text-sm font-semibold break-words max-w-[340px]" style={{ color: "#5B7FA6" }}>
+                    {ageGroupInsight}
+                  </p>
+                )}
+                {!isRecruitment && (
+                  <div className="text-xs text-gray-500 leading-relaxed shrink-0 text-right space-y-0.5">
+                    <p>👑 = {buttonLabel}を押した割合が最も高い年代</p>
+                    <p>
+                      <span className="opacity-60">👑</span> = {buttonLabel}クリック数が最も多い年代
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
             <GoogleAgeRateChart
               clicks={report.ageGroupClicks ?? []}
