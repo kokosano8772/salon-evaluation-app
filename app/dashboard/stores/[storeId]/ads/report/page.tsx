@@ -7,6 +7,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AdReportDocument from "@/components/growth-db/ads/report/AdReportDocument";
 import GoogleAdReportDocument from "@/components/growth-db/ads/report/GoogleAdReportDocument";
 import AdReportAIPanel from "@/components/growth-db/ads/AdReportAIPanel";
+import GoogleAdReportAIPanel from "@/components/growth-db/ads/GoogleAdReportAIPanel";
 import { useMonthlyMetrics, useStore } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
 import { buildAgeGroupTrend, buildCtrTrend, buildYoyTrend } from "@/lib/growth-db/ad-report-trend";
@@ -214,14 +215,25 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
 
       {report ? (
         <>
-          <AdReportAIPanel
-            storeId={store.id}
-            platform={platform}
-            report={report}
-            history={adReports}
-            monthlyHistory={monthlyHistory}
-            onSaved={refreshAdReports}
-          />
+          {platform === "google" ? (
+            <GoogleAdReportAIPanel
+              storeId={store.id}
+              report={report}
+              history={adReports}
+              monthlyHistory={monthlyHistory}
+              trend={yoyTrend}
+              onSaved={refreshAdReports}
+            />
+          ) : (
+            <AdReportAIPanel
+              storeId={store.id}
+              platform={platform}
+              report={report}
+              history={adReports}
+              monthlyHistory={monthlyHistory}
+              onSaved={refreshAdReports}
+            />
+          )}
           <div className="overflow-x-auto">
             {platform === "google" ? (
               <GoogleAdReportDocument

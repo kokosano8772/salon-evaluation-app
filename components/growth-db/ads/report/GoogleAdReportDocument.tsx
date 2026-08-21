@@ -93,7 +93,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
   const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
   const breakdown = report.conversionActionBreakdown ?? [];
   const conversionGroups = groupConversionBreakdown(breakdown);
-  const { summary, ownerSuggestion, agencyAction } = parseGoogleAdReportAiResult(report.aiResult ?? "");
+  const { summary, ageGroupInsight, ownerSuggestion, agencyAction } = parseGoogleAdReportAiResult(report.aiResult ?? "");
   const confirmOptions = isRecruitment ? RECRUITMENT_CONFIRM_OPTIONS : ACQUISITION_CONFIRM_OPTIONS;
 
   return (
@@ -203,6 +203,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             <SectionTitle accent={theme.accent} caption={`() = ${buttonLabel}クリック数`}>
               【年代別】{buttonLabel}を押した割合
             </SectionTitle>
+            {ageGroupInsight && <p className="text-sm font-semibold mb-2" style={{ color: "#5B7FA6" }}>{ageGroupInsight}</p>}
             <GoogleAgeRateChart
               clicks={report.ageGroupClicks ?? []}
               conversions={report.ageGroupConversions ?? []}
