@@ -100,7 +100,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
     <div className="space-y-8">
       {/* ページ1 */}
       <div
-        className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto"
+        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1400px] max-w-none mx-auto flex flex-col justify-center"
         style={{ background: theme.bg }}
       >
         <h1 className="text-[42px] font-extrabold text-center text-charcoal-900">Google広告成果報告レポート</h1>
@@ -266,7 +266,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
 
       {/* ページ2 */}
       <div
-        className="ad-report-page rounded-3xl p-8 w-[900px] max-w-none mx-auto space-y-8"
+        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1400px] max-w-none mx-auto flex flex-col justify-center space-y-8"
         style={{ background: theme.bg }}
       >
         <SectionCard pt={24} pb={24}>
