@@ -23,10 +23,16 @@ const AGE_GROUP_INSIGHT_MARKER = "## 年代別の傾向";
 const OWNER_SUGGESTION_MARKER = "## サロン様へのご提案";
 const AGENCY_ACTION_MARKER = "## ココデザインが行う改善策";
 
+// このレポートはAIの生文字列をそのまま表示する（Markdownレンダラーを通さない）ため、
+// AIが強調のつもりで付けがちな「**太字**」のようなMarkdown記法をプレーンテキスト化する。
+function stripMarkdownEmphasis(text: string): string {
+  return text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1");
+}
+
 // 実物PDFでは提案2パートとも「1行目に太字見出し・本文・末尾に一言アクションピル2つ（-区切り）」
 // という構成のため、新しいマーカーを増やさず、セクション内の行構造だけで分ける。
 function splitHeadlineAndBody(section: string): GoogleAdReportSuggestionPart {
-  const trimmed = section.trim();
+  const trimmed = stripMarkdownEmphasis(section.trim());
   const newlineIdx = trimmed.indexOf("\n");
   if (newlineIdx === -1) return { headline: trimmed, body: "", pills: [] };
 
@@ -53,14 +59,14 @@ export function parseGoogleAdReportAiResult(aiResult: string): GoogleAdReportAiR
   const agencyIdx = aiResult.indexOf(AGENCY_ACTION_MARKER);
 
   const summaryEnd = ageGroupIdx !== -1 ? ageGroupIdx : ownerIdx !== -1 ? ownerIdx : aiResult.length;
-  const summary = aiResult.slice(0, summaryEnd).trim();
+  const summary = stripMarkdownEmphasis(aiResult.slice(0, summaryEnd).trim());
 
   let ageGroupInsight = "";
   let ownerSuggestion: GoogleAdReportSuggestionPart = { headline: "", body: "", pills: [] };
   let agencyAction: GoogleAdReportSuggestionPart = { headline: "", body: "", pills: [] };
   if (ageGroupIdx !== -1) {
     const ageGroupEnd = ownerIdx !== -1 ? ownerIdx : agencyIdx !== -1 ? agencyIdx : aiResult.length;
-    ageGroupInsight = aiResult.slice(ageGroupIdx + AGE_GROUP_INSIGHT_MARKER.length, ageGroupEnd).trim();
+    ageGroupInsight = stripMarkdownEmphasis(aiResult.slice(ageGroupIdx + AGE_GROUP_INSIGHT_MARKER.length, ageGroupEnd).trim());
   }
   if (ownerIdx !== -1) {
     const ownerEnd = agencyIdx !== -1 ? agencyIdx : aiResult.length;
