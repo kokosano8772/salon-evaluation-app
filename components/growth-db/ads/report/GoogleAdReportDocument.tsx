@@ -207,7 +207,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             <SectionTitle accent={theme.accent} caption={`() = ${buttonLabel}クリック数`}>
               【年代別】{buttonLabel}を押した割合
             </SectionTitle>
-            {ageGroupInsight && <p className="text-sm font-semibold mb-2" style={{ color: "#5B7FA6" }}>{ageGroupInsight}</p>}
+            {ageGroupInsight && <p className="text-sm font-semibold mb-2 break-words" style={{ color: "#5B7FA6" }}>{ageGroupInsight}</p>}
             <GoogleAgeRateChart
               clicks={report.ageGroupClicks ?? []}
               conversions={report.ageGroupConversions ?? []}
