@@ -65,7 +65,7 @@ function SectionCard({ children, pb, pt }: { children: ReactNode; pb?: number; p
   if (pb !== undefined) override.paddingBottom = pb;
   if (pt !== undefined) override.paddingTop = pt;
   return (
-    <div className="bg-white rounded-2xl p-4" style={Object.keys(override).length > 0 ? override : undefined}>
+    <div className="bg-white rounded-2xl p-3" style={Object.keys(override).length > 0 ? override : undefined}>
       {children}
     </div>
   );
@@ -100,7 +100,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
     <div className="space-y-8">
       {/* ページ1 */}
       <div
-        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1400px] max-w-none mx-auto flex flex-col justify-center"
+        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1320px] max-w-none mx-auto flex flex-col justify-center"
         style={{ background: theme.bg }}
       >
         <h1 className="text-[42px] font-extrabold text-center text-charcoal-900">Google広告成果報告レポート</h1>
@@ -108,7 +108,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           {storeName}様{isRecruitment ? "（求人）" : ""} | {formatMonthLabel(report.yearMonth)}分
         </p>
 
-        <div className="mt-4">
+        <div className="mt-3">
           <SectionCard>
             <div className="flex items-center gap-6 py-4">
               <div
@@ -129,7 +129,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </SectionCard>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-[0.85fr_0.85fr_1.15fr_1.15fr] gap-4 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-[0.85fr_0.85fr_1.15fr_1.15fr] gap-4 mt-3">
           <GoogleReportStatCard
             icon={<Eye size={24} strokeWidth={2} />}
             title="表示回数"
@@ -198,7 +198,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </GoogleReportStatCard>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3">
           <SectionCard>
             <SectionTitle accent={theme.accent} caption={`() = ${buttonLabel}クリック数`}>
               【年代別】{buttonLabel}を押した割合
@@ -213,7 +213,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </SectionCard>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3">
           <SectionCard pb={8}>
             <SectionTitle accent={theme.accent}>{buttonLabel}を押した割合の推移</SectionTitle>
             <GoogleRateTrendChart
@@ -229,7 +229,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         </div>
 
         {isRecruitment && (
-          <div className="mt-4">
+          <div className="mt-3">
             <SectionCard pb={8}>
               <SectionTitle accent={theme.accent}>クリック数の推移</SectionTitle>
               <GoogleClicksTrendChart
@@ -245,7 +245,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         )}
 
         {!isRecruitment && report.searchTerms && report.searchTerms.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-3">
             <SectionCard>
               <SectionTitle accent={theme.accent}>クリックが多かった検索語句</SectionTitle>
               <p className="text-sm text-gray-400 mb-3">広告からホームページに来るきっかけになった検索語句（サロン名での検索は除外）</p>
@@ -266,7 +266,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
 
       {/* ページ2 */}
       <div
-        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1400px] max-w-none mx-auto flex flex-col justify-center space-y-8"
+        className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1320px] max-w-none mx-auto flex flex-col justify-center space-y-8"
         style={{ background: theme.bg }}
       >
         <SectionCard pt={24} pb={24}>
@@ -349,7 +349,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
           </div>
         </SectionCard>
 
-        <p className="text-center text-xs text-gray-400">KOKODESIGN</p>
+        <p className="text-center text-sm text-gray-400 mt-8">KOKODESIGN</p>
       </div>
     </div>
   );

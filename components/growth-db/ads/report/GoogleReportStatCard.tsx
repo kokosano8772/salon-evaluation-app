@@ -22,7 +22,7 @@ export default function GoogleReportStatCard({
   children,
 }: GoogleReportStatCardProps) {
   return (
-    <div className="bg-white rounded-2xl p-5 h-full flex flex-col items-center text-center">
+    <div className="bg-white rounded-2xl p-4 h-full flex flex-col items-center text-center">
       <div
         className="w-14 h-14 rounded-full flex items-center justify-center mb-2"
         style={{ backgroundColor: `${accent}68`, color: "#fff" }}
