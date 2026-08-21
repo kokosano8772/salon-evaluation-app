@@ -113,7 +113,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         </p>
 
         <div className="mt-3">
-          <SectionCard>
+          <SectionCard px={32}>
             <div className="flex items-center gap-6 py-4">
               <div
                 className="w-24 h-24 rounded-full flex items-center justify-center shrink-0"
@@ -203,7 +203,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         </div>
 
         <div className="mt-3">
-          <SectionCard>
+          <SectionCard px={32}>
             <SectionTitle accent={theme.accent} caption={`() = ${buttonLabel}クリック数`}>
               【年代別】{buttonLabel}を押した割合
             </SectionTitle>
@@ -218,7 +218,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         </div>
 
         <div className="mt-3">
-          <SectionCard pb={8}>
+          <SectionCard pb={8} px={32}>
             <SectionTitle accent={theme.accent}>{buttonLabel}を押した割合の推移</SectionTitle>
             <GoogleRateTrendChart
               previousCycle={trend.previousCycle}
@@ -234,7 +234,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
 
         {isRecruitment && (
           <div className="mt-3">
-            <SectionCard pb={8}>
+            <SectionCard pb={8} px={32}>
               <SectionTitle accent={theme.accent}>クリック数の推移</SectionTitle>
               <GoogleClicksTrendChart
                 previousCycle={trend.previousCycle}
@@ -250,7 +250,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
 
         {!isRecruitment && report.searchTerms && report.searchTerms.length > 0 && (
           <div className="mt-3">
-            <SectionCard>
+            <SectionCard px={32}>
               <SectionTitle accent={theme.accent}>クリックが多かった検索語句</SectionTitle>
               <p className="text-sm text-gray-400 mb-3">広告からホームページに来るきっかけになった検索語句（サロン名での検索は除外）</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
