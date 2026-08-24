@@ -6,7 +6,7 @@ import * as repo from "@/lib/growth-db/ad-report-repository";
 import { AdReport } from "@/lib/growth-db/ad-report-types";
 import { compareAdReports, compareGrowthMetrics, findPreviousAdReport } from "@/lib/growth-db/ad-report-analysis";
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
-import { MonthlyMetrics } from "@/lib/growth-db/types";
+import { MonthlyMetrics, NamedUrl } from "@/lib/growth-db/types";
 
 // Google広告レポート専用のAI分析パネル。Meta用のAdReportAIPanel.tsxとは完全に分離しており、
 // そちらの挙動には一切影響しない（compareAdReports/compareGrowthMetrics/findPreviousAdReportは
@@ -17,9 +17,9 @@ interface GoogleAdReportAIPanelProps {
   history: AdReport[];
   monthlyHistory: MonthlyMetrics[];
   trend: YoyTrend;
-  homepageUrl?: string;
-  hotpepperUrl?: string;
-  recruitmentLpUrl?: string;
+  homepageUrls?: NamedUrl[];
+  hotpepperUrls?: NamedUrl[];
+  recruitmentLpUrls?: NamedUrl[];
   onSaved: (aiResult: string) => void;
 }
 
@@ -32,9 +32,9 @@ export default function GoogleAdReportAIPanel({
   history,
   monthlyHistory,
   trend,
-  homepageUrl,
-  hotpepperUrl,
-  recruitmentLpUrl,
+  homepageUrls,
+  hotpepperUrls,
+  recruitmentLpUrls,
   onSaved,
 }: GoogleAdReportAIPanelProps) {
   const [status, setStatus] = useState<Status>(report.aiResult ? "done" : "idle");
@@ -62,7 +62,7 @@ export default function GoogleAdReportAIPanel({
       const res = await fetch("/api/growth-db/google-ad-report-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ report, comparison, growthComparison, trend, homepageUrl, hotpepperUrl, recruitmentLpUrl }),
+        body: JSON.stringify({ report, comparison, growthComparison, trend, homepageUrls, hotpepperUrls, recruitmentLpUrls }),
       });
 
       if (!res.ok) {
@@ -88,7 +88,7 @@ export default function GoogleAdReportAIPanel({
       setErrorMsg(err instanceof Error ? err.message : "不明なエラー");
       setStatus("error");
     }
-  }, [storeId, report, history, monthlyHistory, trend, homepageUrl, hotpepperUrl, recruitmentLpUrl, onSaved]);
+  }, [storeId, report, history, monthlyHistory, trend, homepageUrls, hotpepperUrls, recruitmentLpUrls, onSaved]);
 
   const saveEdit = useCallback(async () => {
     setEditStatus("saving");

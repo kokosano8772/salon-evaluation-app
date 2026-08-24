@@ -4,6 +4,7 @@ import { streamGoogleAdReportAnalysis } from "@/lib/ai/generateGoogleAdReportAna
 import { AdReportComparison, GrowthLinkComparison } from "@/lib/growth-db/ad-report-analysis";
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
 import { AdReport } from "@/lib/growth-db/ad-report-types";
+import { NamedUrl } from "@/lib/growth-db/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -13,9 +14,9 @@ interface AnalyzeRequestBody {
   comparison: AdReportComparison;
   growthComparison: GrowthLinkComparison;
   trend: YoyTrend;
-  homepageUrl?: string;
-  hotpepperUrl?: string;
-  recruitmentLpUrl?: string;
+  homepageUrls?: NamedUrl[];
+  hotpepperUrls?: NamedUrl[];
+  recruitmentLpUrls?: NamedUrl[];
 }
 
 // /dashboard配下と同じくSupabase Authでログインしたスタッフのみ呼び出せる。
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });
   }
 
-  const { report, comparison, growthComparison, trend, homepageUrl, hotpepperUrl, recruitmentLpUrl } = body;
+  const { report, comparison, growthComparison, trend, homepageUrls, hotpepperUrls, recruitmentLpUrls } = body;
   if (!report || !comparison || !growthComparison || !trend) {
     return NextResponse.json({ error: "report/comparison/growthComparison/trend は必須です" }, { status: 400 });
   }
@@ -48,9 +49,9 @@ export async function POST(request: Request) {
       comparison,
       growthComparison,
       trend,
-      homepageUrl,
-      hotpepperUrl,
-      recruitmentLpUrl
+      homepageUrls,
+      hotpepperUrls,
+      recruitmentLpUrls
     );
 
     const encoder = new TextEncoder();

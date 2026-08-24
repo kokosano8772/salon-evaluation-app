@@ -22,9 +22,9 @@ const INITIAL_VALUE: BasicInfoValue = {
   tradeArea: "",
   storeFormat: "",
   businessCategory: "",
-  homepageUrl: "",
-  hotpepperUrl: "",
-  recruitmentLpUrl: "",
+  homepageUrls: [],
+  hotpepperUrls: [],
+  recruitmentLpUrls: [],
   googleAdsActive: false,
   metaAdsActive: false,
 };

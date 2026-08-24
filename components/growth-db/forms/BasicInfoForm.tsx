@@ -3,6 +3,7 @@ import TextField from "./TextField";
 import NullableNumberField from "./NullableNumberField";
 import SelectField from "./SelectField";
 import CheckboxField from "./CheckboxField";
+import NamedUrlListField from "./NamedUrlListField";
 import {
   TARGET_CUSTOMER_OPTIONS,
   TRADE_AREA_OPTIONS,
@@ -66,23 +67,24 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
         options={BUSINESS_CATEGORY_OPTIONS}
         placeholder="未設定"
       />
-      <TextField
+      <NamedUrlListField
         label="ホームページURL"
-        value={value.homepageUrl}
-        onChange={(v) => set("homepageUrl", v)}
-        placeholder="https://..."
+        description="複数支店の場合は支店ごとに追加してください（単一店舗は1行でOK）"
+        value={value.homepageUrls}
+        onChange={(v) => set("homepageUrls", v)}
       />
-      <TextField
+      <NamedUrlListField
         label="ホットペッパービューティーURL"
-        value={value.hotpepperUrl}
-        onChange={(v) => set("hotpepperUrl", v)}
-        placeholder="https://beauty.hotpepper.jp/..."
+        description="支店ごとにページが分かれている場合は支店ごとに追加してください"
+        value={value.hotpepperUrls}
+        onChange={(v) => set("hotpepperUrls", v)}
+        urlPlaceholder="https://beauty.hotpepper.jp/..."
       />
-      <TextField
+      <NamedUrlListField
         label="求人LP URL"
-        value={value.recruitmentLpUrl}
-        onChange={(v) => set("recruitmentLpUrl", v)}
-        placeholder="https://..."
+        description="求人専用のランディングページ。支店ごとに分かれている場合は支店ごとに追加してください"
+        value={value.recruitmentLpUrls}
+        onChange={(v) => set("recruitmentLpUrls", v)}
       />
       <div className="sm:col-span-2 flex flex-wrap gap-x-6">
         <CheckboxField label="Google広告を実施中" checked={value.googleAdsActive} onChange={(v) => set("googleAdsActive", v)} />

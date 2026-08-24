@@ -175,6 +175,15 @@ export type MonthlyMetricsDomainKey =
 
 // 基本情報：変動しにくい店舗レベルの項目。スタッフ数・客単価など月次で動く値は
 // MonthlyMetrics.basicSnapshot に月次ミラーを持たせ、こちらは「現在値」として扱う。
+// 支店名付きのURL1件。複数支店を運営するサロンでは、支店ごとに別ページ
+// （HPBは支店別、ホームページも支店別サブページのことがある）になるため、
+// 単一URLではなく名前付きの配列で持つ。単一店舗の場合はnameを空でもよい。
+export interface NamedUrl {
+  id: string;
+  name: string;
+  url: string;
+}
+
 export interface Store {
   id: string;
   name: string;
@@ -193,11 +202,11 @@ export interface Store {
   storeFormat: string;
   // Google広告レポートの業種別ベンチマーク表示に使う。未設定は空文字。
   businessCategory: string;
-  // Google広告レポートAI分析でurl_contextツールに読み込ませる、実際のページURL。未設定は空文字。
-  // homepageUrl/hotpepperUrlは集客カテゴリ、recruitmentLpUrlは求人カテゴリのレポートで使う。
-  homepageUrl: string;
-  hotpepperUrl: string;
-  recruitmentLpUrl: string;
+  // Google広告レポートAI分析でurl_contextツールに読み込ませる、実際のページURL(複数支店対応)。
+  // homepageUrls/hotpepperUrlsは集客カテゴリ、recruitmentLpUrlsは求人カテゴリのレポートで使う。
+  homepageUrls: NamedUrl[];
+  hotpepperUrls: NamedUrl[];
+  recruitmentLpUrls: NamedUrl[];
   // 広告運用の有無（一覧の絞り込み用）。ad_reportsの実績データとは独立した手動フラグ。
   googleAdsActive: boolean;
   metaAdsActive: boolean;

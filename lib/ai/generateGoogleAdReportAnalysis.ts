@@ -7,6 +7,7 @@ import { buildGoogleAdReportAnalysisPrompt } from "@/lib/growth-db/build-google-
 import { AdReport } from "@/lib/growth-db/ad-report-types";
 import { AdReportComparison, GrowthLinkComparison } from "@/lib/growth-db/ad-report-analysis";
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
+import { NamedUrl } from "@/lib/growth-db/types";
 
 const SYSTEM_INSTRUCTION =
   "あなたは美容室の広告運用を担当する専門コンサルタントです。" +
@@ -18,23 +19,23 @@ export async function streamGoogleAdReportAnalysis(
   comparison: AdReportComparison,
   growthComparison: GrowthLinkComparison,
   trend: YoyTrend,
-  homepageUrl?: string,
-  hotpepperUrl?: string,
-  recruitmentLpUrl?: string
+  homepageUrls: NamedUrl[] = [],
+  hotpepperUrls: NamedUrl[] = [],
+  recruitmentLpUrls: NamedUrl[] = []
 ) {
   const model = getGeminiModel({
     plainText: true,
     systemInstruction: SYSTEM_INSTRUCTION,
-    useUrlContext: Boolean(homepageUrl || hotpepperUrl || recruitmentLpUrl),
+    useUrlContext: homepageUrls.length > 0 || hotpepperUrls.length > 0 || recruitmentLpUrls.length > 0,
   });
   const prompt = buildGoogleAdReportAnalysisPrompt(
     report,
     comparison,
     growthComparison,
     trend,
-    homepageUrl,
-    hotpepperUrl,
-    recruitmentLpUrl
+    homepageUrls,
+    hotpepperUrls,
+    recruitmentLpUrls
   );
   return model.generateContentStream(prompt);
 }

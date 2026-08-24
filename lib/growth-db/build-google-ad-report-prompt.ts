@@ -8,7 +8,16 @@
 import { AdReport, AgeGroup, AGE_GROUPS } from "./ad-report-types";
 import { AdReportComparison, GrowthLinkComparison, MetricComparison } from "./ad-report-analysis";
 import { YoyTrend } from "./ad-report-trend";
+import { NamedUrl } from "./types";
 import { formatMonthLabel, formatNumber, formatPercent, formatYen } from "./format";
+
+// 支店名付きURLの配列を「- 種別（支店名）: URL」形式の行に変換する。
+// 支店名が空（単一店舗）の場合は「- 種別: URL」とする。
+function formatNamedUrlLines(typeLabel: string, urls: NamedUrl[]): string[] {
+  return urls
+    .filter((u) => u.url.trim())
+    .map((u) => (u.name.trim() ? `- ${typeLabel}（${u.name.trim()}）: ${u.url.trim()}` : `- ${typeLabel}: ${u.url.trim()}`));
+}
 
 function formatChange(comparison: MetricComparison, format: "yen" | "number" | "percent"): string {
   const value = format === "yen" ? formatYen(comparison.current) : format === "percent" ? formatPercent(comparison.current) : formatNumber(comparison.current);
@@ -39,9 +48,9 @@ export function buildGoogleAdReportAnalysisPrompt(
   comparison: AdReportComparison,
   growthComparison: GrowthLinkComparison,
   trend: YoyTrend,
-  homepageUrl?: string,
-  hotpepperUrl?: string,
-  recruitmentLpUrl?: string
+  homepageUrls: NamedUrl[] = [],
+  hotpepperUrls: NamedUrl[] = [],
+  recruitmentLpUrls: NamedUrl[] = []
 ): string {
   const isRecruitment = report.category === "recruitment";
   const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
@@ -112,20 +121,16 @@ export function buildGoogleAdReportAnalysisPrompt(
   }
 
   // 求人カテゴリは求人LP（募集要項専用ページ）を、集客カテゴリはホームページ・HPBを見る。
-  // ページの性質が違うため、カテゴリを跨いで混ぜて渡さない。
-  const storeUrls = isRecruitment
-    ? recruitmentLpUrl
-      ? [{ name: "求人LP", url: recruitmentLpUrl }]
-      : []
-    : [
-        ...(homepageUrl ? [{ name: "ホームページ", url: homepageUrl }] : []),
-        ...(hotpepperUrl ? [{ name: "ホットペッパービューティー", url: hotpepperUrl }] : []),
-      ];
-  const hasStorePage = storeUrls.length > 0;
+  // ページの性質が違うため、カテゴリを跨いで混ぜて渡さない。複数支店の場合はURLも複数になる。
+  const storeUrlLines = isRecruitment
+    ? formatNamedUrlLines("求人LP", recruitmentLpUrls)
+    : [...formatNamedUrlLines("ホームページ", homepageUrls), ...formatNamedUrlLines("ホットペッパービューティー", hotpepperUrls)];
+  const hasStorePage = storeUrlLines.length > 0;
+  const hasMultipleBranches = storeUrlLines.length > 1;
   if (hasStorePage) {
     lines.push("");
     lines.push(isRecruitment ? "## サロン様の求人LP" : "## サロン様のホームページ・HPBページ");
-    for (const u of storeUrls) lines.push(`- ${u.name}: ${u.url}`);
+    lines.push(...storeUrlLines);
   }
 
   lines.push("");
@@ -174,15 +179,18 @@ export function buildGoogleAdReportAnalysisPrompt(
       "本文の後に1行空けて、この提案に関連する具体的なアクションを2つ、それぞれ「- 」で始めて1行ずつ書く。" +
       "各アクションは10〜14字程度の体言止め（例:「- 変更後メニューの予約状況確認」「- 今後の掲載内容の見直し」）。" +
       (hasStorePage
-        ? isRecruitment
-          ? "上記に求人LPのURLが渡されている場合は、まずその実際のページ内容（募集職種・給与・勤務時間・応募資格・待遇などの募集要項、応募導線）を確認すること。" +
-            "具体的で検証可能な問題（情報が古い・不足している、応募ボタンや連絡先が分かりにくいなど）が見つかれば、それを根拠にした提案を優先して書くこと" +
-            "（例:「求人LPの給与欄が実際の待遇と異なるようです」）。" +
-            "明確な問題が見つからない場合は、通常通り広告データ（年代別・クリック数など）を根拠にすること。"
-          : "上記にホームページ・HPBのURLが渡されている場合は、まずその実際のページ内容（予約導線・メニュー説明・料金表記など）を確認すること。" +
-            "具体的で検証可能な問題（リンク切れ、HPとHPBの内容の不一致、情報不足など）が見つかれば、それを根拠にした提案を優先して書くこと" +
-            "（どちらのページを直すべきかも明記する。例:「『カット＋白髪染め』のHPB予約リンクが別メニューになっているようです」）。" +
-            "明確な問題が見つからない場合は、通常通り広告データ（年代別・検索語句など）を根拠にすること。"
+        ? (isRecruitment
+            ? "上記に求人LPのURLが渡されている場合は、まずその実際のページ内容（募集職種・給与・勤務時間・応募資格・待遇などの募集要項、応募導線）を確認すること。" +
+              "具体的で検証可能な問題（情報が古い・不足している、応募ボタンや連絡先が分かりにくいなど）が見つかれば、それを根拠にした提案を優先して書くこと" +
+              "（例:「求人LPの給与欄が実際の待遇と異なるようです」）。" +
+              "明確な問題が見つからない場合は、通常通り広告データ（年代別・クリック数など）を根拠にすること。"
+            : "上記にホームページ・HPBのURLが渡されている場合は、まずその実際のページ内容（予約導線・メニュー説明・料金表記など）を確認すること。" +
+              "具体的で検証可能な問題（リンク切れ、HPとHPBの内容の不一致、情報不足など）が見つかれば、それを根拠にした提案を優先して書くこと" +
+              "（どちらのページを直すべきかも明記する。例:「『カット＋白髪染め』のHPB予約リンクが別メニューになっているようです」）。" +
+              "明確な問題が見つからない場合は、通常通り広告データ（年代別・検索語句など）を根拠にすること。") +
+          (hasMultipleBranches
+            ? "上記のURLには支店名がラベルとして付いています。複数支店のうちどの支店の話かを本文中に必ず明記すること（例:「梅が丘店の」のように支店名を含める）。"
+            : "")
         : "")
   );
   lines.push("");
