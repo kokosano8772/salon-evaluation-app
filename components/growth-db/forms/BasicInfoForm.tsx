@@ -78,6 +78,12 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
         onChange={(v) => set("hotpepperUrl", v)}
         placeholder="https://beauty.hotpepper.jp/..."
       />
+      <TextField
+        label="求人LP URL"
+        value={value.recruitmentLpUrl}
+        onChange={(v) => set("recruitmentLpUrl", v)}
+        placeholder="https://..."
+      />
       <div className="sm:col-span-2 flex flex-wrap gap-x-6">
         <CheckboxField label="Google広告を実施中" checked={value.googleAdsActive} onChange={(v) => set("googleAdsActive", v)} />
         <CheckboxField label="インスタ広告（Meta広告）を実施中" checked={value.metaAdsActive} onChange={(v) => set("metaAdsActive", v)} />

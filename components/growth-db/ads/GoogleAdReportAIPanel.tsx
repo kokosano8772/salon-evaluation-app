@@ -19,6 +19,7 @@ interface GoogleAdReportAIPanelProps {
   trend: YoyTrend;
   homepageUrl?: string;
   hotpepperUrl?: string;
+  recruitmentLpUrl?: string;
   onSaved: (aiResult: string) => void;
 }
 
@@ -33,6 +34,7 @@ export default function GoogleAdReportAIPanel({
   trend,
   homepageUrl,
   hotpepperUrl,
+  recruitmentLpUrl,
   onSaved,
 }: GoogleAdReportAIPanelProps) {
   const [status, setStatus] = useState<Status>(report.aiResult ? "done" : "idle");
@@ -60,7 +62,7 @@ export default function GoogleAdReportAIPanel({
       const res = await fetch("/api/growth-db/google-ad-report-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ report, comparison, growthComparison, trend, homepageUrl, hotpepperUrl }),
+        body: JSON.stringify({ report, comparison, growthComparison, trend, homepageUrl, hotpepperUrl, recruitmentLpUrl }),
       });
 
       if (!res.ok) {
@@ -86,7 +88,7 @@ export default function GoogleAdReportAIPanel({
       setErrorMsg(err instanceof Error ? err.message : "不明なエラー");
       setStatus("error");
     }
-  }, [storeId, report, history, monthlyHistory, trend, homepageUrl, hotpepperUrl, onSaved]);
+  }, [storeId, report, history, monthlyHistory, trend, homepageUrl, hotpepperUrl, recruitmentLpUrl, onSaved]);
 
   const saveEdit = useCallback(async () => {
     setEditStatus("saving");

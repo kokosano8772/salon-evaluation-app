@@ -26,6 +26,7 @@ export interface Database {
           business_category: string;
           homepage_url: string;
           hotpepper_url: string;
+          recruitment_lp_url: string;
           google_ads_active: boolean;
           meta_ads_active: boolean;
           ad_sync_defaults: unknown;

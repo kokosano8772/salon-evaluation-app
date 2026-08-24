@@ -35,6 +35,7 @@ export function mapStoreRow(row: StoreRow): Store {
     businessCategory: row.business_category,
     homepageUrl: row.homepage_url,
     hotpepperUrl: row.hotpepper_url,
+    recruitmentLpUrl: row.recruitment_lp_url,
     googleAdsActive: row.google_ads_active,
     metaAdsActive: row.meta_ads_active,
     createdAt: row.created_at,
@@ -60,6 +61,7 @@ function storeToRow(store: Partial<Store>): Partial<StoreRow> {
   if (store.businessCategory !== undefined) row.business_category = store.businessCategory;
   if (store.homepageUrl !== undefined) row.homepage_url = store.homepageUrl;
   if (store.hotpepperUrl !== undefined) row.hotpepper_url = store.hotpepperUrl;
+  if (store.recruitmentLpUrl !== undefined) row.recruitment_lp_url = store.recruitmentLpUrl;
   if (store.googleAdsActive !== undefined) row.google_ads_active = store.googleAdsActive;
   if (store.metaAdsActive !== undefined) row.meta_ads_active = store.metaAdsActive;
   return row;

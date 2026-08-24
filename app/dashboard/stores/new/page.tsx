@@ -24,6 +24,7 @@ const INITIAL_VALUE: BasicInfoValue = {
   businessCategory: "",
   homepageUrl: "",
   hotpepperUrl: "",
+  recruitmentLpUrl: "",
   googleAdsActive: false,
   metaAdsActive: false,
 };

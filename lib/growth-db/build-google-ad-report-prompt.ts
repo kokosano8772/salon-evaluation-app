@@ -40,7 +40,8 @@ export function buildGoogleAdReportAnalysisPrompt(
   growthComparison: GrowthLinkComparison,
   trend: YoyTrend,
   homepageUrl?: string,
-  hotpepperUrl?: string
+  hotpepperUrl?: string,
+  recruitmentLpUrl?: string
 ): string {
   const isRecruitment = report.category === "recruitment";
   const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
@@ -110,12 +111,21 @@ export function buildGoogleAdReportAnalysisPrompt(
     if (growthComparison.existingCustomers) lines.push(`- 既存客数: ${formatChange(growthComparison.existingCustomers, "number")}`);
   }
 
-  const hasStorePage = Boolean(homepageUrl || hotpepperUrl);
+  // 求人カテゴリは求人LP（募集要項専用ページ）を、集客カテゴリはホームページ・HPBを見る。
+  // ページの性質が違うため、カテゴリを跨いで混ぜて渡さない。
+  const storeUrls = isRecruitment
+    ? recruitmentLpUrl
+      ? [{ name: "求人LP", url: recruitmentLpUrl }]
+      : []
+    : [
+        ...(homepageUrl ? [{ name: "ホームページ", url: homepageUrl }] : []),
+        ...(hotpepperUrl ? [{ name: "ホットペッパービューティー", url: hotpepperUrl }] : []),
+      ];
+  const hasStorePage = storeUrls.length > 0;
   if (hasStorePage) {
     lines.push("");
-    lines.push("## サロン様のホームページ・HPBページ");
-    if (homepageUrl) lines.push(`- ホームページ: ${homepageUrl}`);
-    if (hotpepperUrl) lines.push(`- ホットペッパービューティー: ${hotpepperUrl}`);
+    lines.push(isRecruitment ? "## サロン様の求人LP" : "## サロン様のホームページ・HPBページ");
+    for (const u of storeUrls) lines.push(`- ${u.name}: ${u.url}`);
   }
 
   lines.push("");
@@ -164,10 +174,15 @@ export function buildGoogleAdReportAnalysisPrompt(
       "本文の後に1行空けて、この提案に関連する具体的なアクションを2つ、それぞれ「- 」で始めて1行ずつ書く。" +
       "各アクションは10〜14字程度の体言止め（例:「- 変更後メニューの予約状況確認」「- 今後の掲載内容の見直し」）。" +
       (hasStorePage
-        ? "上記にホームページ・HPBのURLが渡されている場合は、まずその実際のページ内容（予約導線・メニュー説明・料金表記など）を確認すること。" +
-          "具体的で検証可能な問題（リンク切れ、HPとHPBの内容の不一致、情報不足など）が見つかれば、それを根拠にした提案を優先して書くこと" +
-          "（どちらのページを直すべきかも明記する。例:「『カット＋白髪染め』のHPB予約リンクが別メニューになっているようです」）。" +
-          "明確な問題が見つからない場合は、通常通り広告データ（年代別・検索語句など）を根拠にすること。"
+        ? isRecruitment
+          ? "上記に求人LPのURLが渡されている場合は、まずその実際のページ内容（募集職種・給与・勤務時間・応募資格・待遇などの募集要項、応募導線）を確認すること。" +
+            "具体的で検証可能な問題（情報が古い・不足している、応募ボタンや連絡先が分かりにくいなど）が見つかれば、それを根拠にした提案を優先して書くこと" +
+            "（例:「求人LPの給与欄が実際の待遇と異なるようです」）。" +
+            "明確な問題が見つからない場合は、通常通り広告データ（年代別・クリック数など）を根拠にすること。"
+          : "上記にホームページ・HPBのURLが渡されている場合は、まずその実際のページ内容（予約導線・メニュー説明・料金表記など）を確認すること。" +
+            "具体的で検証可能な問題（リンク切れ、HPとHPBの内容の不一致、情報不足など）が見つかれば、それを根拠にした提案を優先して書くこと" +
+            "（どちらのページを直すべきかも明記する。例:「『カット＋白髪染め』のHPB予約リンクが別メニューになっているようです」）。" +
+            "明確な問題が見つからない場合は、通常通り広告データ（年代別・検索語句など）を根拠にすること。"
         : "")
   );
   lines.push("");

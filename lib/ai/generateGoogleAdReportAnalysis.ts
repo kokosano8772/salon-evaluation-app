@@ -19,13 +19,22 @@ export async function streamGoogleAdReportAnalysis(
   growthComparison: GrowthLinkComparison,
   trend: YoyTrend,
   homepageUrl?: string,
-  hotpepperUrl?: string
+  hotpepperUrl?: string,
+  recruitmentLpUrl?: string
 ) {
   const model = getGeminiModel({
     plainText: true,
     systemInstruction: SYSTEM_INSTRUCTION,
-    useUrlContext: Boolean(homepageUrl || hotpepperUrl),
+    useUrlContext: Boolean(homepageUrl || hotpepperUrl || recruitmentLpUrl),
   });
-  const prompt = buildGoogleAdReportAnalysisPrompt(report, comparison, growthComparison, trend, homepageUrl, hotpepperUrl);
+  const prompt = buildGoogleAdReportAnalysisPrompt(
+    report,
+    comparison,
+    growthComparison,
+    trend,
+    homepageUrl,
+    hotpepperUrl,
+    recruitmentLpUrl
+  );
   return model.generateContentStream(prompt);
 }
