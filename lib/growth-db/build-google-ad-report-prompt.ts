@@ -38,7 +38,9 @@ export function buildGoogleAdReportAnalysisPrompt(
   report: AdReport,
   comparison: AdReportComparison,
   growthComparison: GrowthLinkComparison,
-  trend: YoyTrend
+  trend: YoyTrend,
+  homepageUrl?: string,
+  hotpepperUrl?: string
 ): string {
   const isRecruitment = report.category === "recruitment";
   const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
@@ -108,6 +110,14 @@ export function buildGoogleAdReportAnalysisPrompt(
     if (growthComparison.existingCustomers) lines.push(`- 既存客数: ${formatChange(growthComparison.existingCustomers, "number")}`);
   }
 
+  const hasStorePage = Boolean(homepageUrl || hotpepperUrl);
+  if (hasStorePage) {
+    lines.push("");
+    lines.push("## サロン様のホームページ・HPBページ");
+    if (homepageUrl) lines.push(`- ホームページ: ${homepageUrl}`);
+    if (hotpepperUrl) lines.push(`- ホットペッパービューティー: ${hotpepperUrl}`);
+  }
+
   lines.push("");
   lines.push("---");
   lines.push("");
@@ -152,7 +162,13 @@ export function buildGoogleAdReportAnalysisPrompt(
       "（例:「反応の良い〇〇歳向けの訴求を強化する」「〇〇という検索語句に合わせたページ内容を充実させる」）。" +
       "文末は「〜はいかがでしょうか」「〜をおすすめいたします」のような依頼・提案調にすること。" +
       "本文の後に1行空けて、この提案に関連する具体的なアクションを2つ、それぞれ「- 」で始めて1行ずつ書く。" +
-      "各アクションは10〜14字程度の体言止め（例:「- 変更後メニューの予約状況確認」「- 今後の掲載内容の見直し」）。"
+      "各アクションは10〜14字程度の体言止め（例:「- 変更後メニューの予約状況確認」「- 今後の掲載内容の見直し」）。" +
+      (hasStorePage
+        ? "上記にホームページ・HPBのURLが渡されている場合は、まずその実際のページ内容（予約導線・メニュー説明・料金表記など）を確認すること。" +
+          "具体的で検証可能な問題（リンク切れ、HPとHPBの内容の不一致、情報不足など）が見つかれば、それを根拠にした提案を優先して書くこと" +
+          "（どちらのページを直すべきかも明記する。例:「『カット＋白髪染め』のHPB予約リンクが別メニューになっているようです」）。" +
+          "明確な問題が見つからない場合は、通常通り広告データ（年代別・検索語句など）を根拠にすること。"
+        : "")
   );
   lines.push("");
   lines.push(

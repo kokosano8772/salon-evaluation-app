@@ -222,6 +222,8 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
               history={adReports}
               monthlyHistory={monthlyHistory}
               trend={yoyTrend}
+              homepageUrl={store.homepageUrl}
+              hotpepperUrl={store.hotpepperUrl}
               onSaved={refreshAdReports}
             />
           ) : (

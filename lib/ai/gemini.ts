@@ -16,6 +16,15 @@ export interface GeminiModelOptions {
   // Gemini 2.5系ではgoogleSearchツールとresponseMimeType(JSON強制)は併用不可のため、
   // 有効にした場合はplainText相当（JSON強制なし）で動作する。
   useGoogleSearch?: boolean;
+  // 指定したURLの実際のページ内容（HTML/テキスト）を取得して読ませる（url_contextツール）。
+  useUrlContext?: boolean;
+}
+
+function buildTools(options?: GeminiModelOptions): Record<string, object>[] | undefined {
+  const tools: Record<string, object>[] = [];
+  if (options?.useGoogleSearch) tools.push({ googleSearch: {} });
+  if (options?.useUrlContext) tools.push({ urlContext: {} });
+  return tools.length > 0 ? tools : undefined;
 }
 
 function getClient(): GoogleGenAI {
@@ -33,7 +42,7 @@ export function getGeminiModel(options?: GeminiModelOptions) {
   const config = {
     systemInstruction: options?.systemInstruction,
     responseMimeType: forceJson ? "application/json" : undefined,
-    tools: options?.useGoogleSearch ? [{ googleSearch: {} }] : undefined,
+    tools: buildTools(options),
   };
 
   return {

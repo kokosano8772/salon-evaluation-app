@@ -24,6 +24,8 @@ export interface Database {
           trade_area: string;
           store_format: string;
           business_category: string;
+          homepage_url: string;
+          hotpepper_url: string;
           google_ads_active: boolean;
           meta_ads_active: boolean;
           ad_sync_defaults: unknown;

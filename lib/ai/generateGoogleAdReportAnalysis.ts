@@ -17,9 +17,15 @@ export async function streamGoogleAdReportAnalysis(
   report: AdReport,
   comparison: AdReportComparison,
   growthComparison: GrowthLinkComparison,
-  trend: YoyTrend
+  trend: YoyTrend,
+  homepageUrl?: string,
+  hotpepperUrl?: string
 ) {
-  const model = getGeminiModel({ plainText: true, systemInstruction: SYSTEM_INSTRUCTION });
-  const prompt = buildGoogleAdReportAnalysisPrompt(report, comparison, growthComparison, trend);
+  const model = getGeminiModel({
+    plainText: true,
+    systemInstruction: SYSTEM_INSTRUCTION,
+    useUrlContext: Boolean(homepageUrl || hotpepperUrl),
+  });
+  const prompt = buildGoogleAdReportAnalysisPrompt(report, comparison, growthComparison, trend, homepageUrl, hotpepperUrl);
   return model.generateContentStream(prompt);
 }

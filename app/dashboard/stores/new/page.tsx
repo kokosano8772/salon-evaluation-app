@@ -22,6 +22,8 @@ const INITIAL_VALUE: BasicInfoValue = {
   tradeArea: "",
   storeFormat: "",
   businessCategory: "",
+  homepageUrl: "",
+  hotpepperUrl: "",
   googleAdsActive: false,
   metaAdsActive: false,
 };

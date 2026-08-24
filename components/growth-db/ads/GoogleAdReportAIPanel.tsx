@@ -17,13 +17,24 @@ interface GoogleAdReportAIPanelProps {
   history: AdReport[];
   monthlyHistory: MonthlyMetrics[];
   trend: YoyTrend;
+  homepageUrl?: string;
+  hotpepperUrl?: string;
   onSaved: (aiResult: string) => void;
 }
 
 type Status = "idle" | "streaming" | "saving" | "done" | "error";
 type EditStatus = "idle" | "saving" | "saved";
 
-export default function GoogleAdReportAIPanel({ storeId, report, history, monthlyHistory, trend, onSaved }: GoogleAdReportAIPanelProps) {
+export default function GoogleAdReportAIPanel({
+  storeId,
+  report,
+  history,
+  monthlyHistory,
+  trend,
+  homepageUrl,
+  hotpepperUrl,
+  onSaved,
+}: GoogleAdReportAIPanelProps) {
   const [status, setStatus] = useState<Status>(report.aiResult ? "done" : "idle");
   const [streamText, setStreamText] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -49,7 +60,7 @@ export default function GoogleAdReportAIPanel({ storeId, report, history, monthl
       const res = await fetch("/api/growth-db/google-ad-report-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ report, comparison, growthComparison, trend }),
+        body: JSON.stringify({ report, comparison, growthComparison, trend, homepageUrl, hotpepperUrl }),
       });
 
       if (!res.ok) {
@@ -75,7 +86,7 @@ export default function GoogleAdReportAIPanel({ storeId, report, history, monthl
       setErrorMsg(err instanceof Error ? err.message : "不明なエラー");
       setStatus("error");
     }
-  }, [storeId, report, history, monthlyHistory, trend, onSaved]);
+  }, [storeId, report, history, monthlyHistory, trend, homepageUrl, hotpepperUrl, onSaved]);
 
   const saveEdit = useCallback(async () => {
     setEditStatus("saving");

@@ -66,6 +66,18 @@ export default function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
         options={BUSINESS_CATEGORY_OPTIONS}
         placeholder="未設定"
       />
+      <TextField
+        label="ホームページURL"
+        value={value.homepageUrl}
+        onChange={(v) => set("homepageUrl", v)}
+        placeholder="https://..."
+      />
+      <TextField
+        label="ホットペッパービューティーURL"
+        value={value.hotpepperUrl}
+        onChange={(v) => set("hotpepperUrl", v)}
+        placeholder="https://beauty.hotpepper.jp/..."
+      />
       <div className="sm:col-span-2 flex flex-wrap gap-x-6">
         <CheckboxField label="Google広告を実施中" checked={value.googleAdsActive} onChange={(v) => set("googleAdsActive", v)} />
         <CheckboxField label="インスタ広告（Meta広告）を実施中" checked={value.metaAdsActive} onChange={(v) => set("metaAdsActive", v)} />

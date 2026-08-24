@@ -193,6 +193,9 @@ export interface Store {
   storeFormat: string;
   // Google広告レポートの業種別ベンチマーク表示に使う。未設定は空文字。
   businessCategory: string;
+  // Google広告レポートAI分析でurl_contextツールに読み込ませる、実際のページURL。未設定は空文字。
+  homepageUrl: string;
+  hotpepperUrl: string;
   // 広告運用の有無（一覧の絞り込み用）。ad_reportsの実績データとは独立した手動フラグ。
   googleAdsActive: boolean;
   metaAdsActive: boolean;

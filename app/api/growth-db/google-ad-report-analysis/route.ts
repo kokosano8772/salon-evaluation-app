@@ -13,6 +13,8 @@ interface AnalyzeRequestBody {
   comparison: AdReportComparison;
   growthComparison: GrowthLinkComparison;
   trend: YoyTrend;
+  homepageUrl?: string;
+  hotpepperUrl?: string;
 }
 
 // /dashboard配下と同じくSupabase Authでログインしたスタッフのみ呼び出せる。
@@ -34,13 +36,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });
   }
 
-  const { report, comparison, growthComparison, trend } = body;
+  const { report, comparison, growthComparison, trend, homepageUrl, hotpepperUrl } = body;
   if (!report || !comparison || !growthComparison || !trend) {
     return NextResponse.json({ error: "report/comparison/growthComparison/trend は必須です" }, { status: 400 });
   }
 
   try {
-    const result = await streamGoogleAdReportAnalysis(report, comparison, growthComparison, trend);
+    const result = await streamGoogleAdReportAnalysis(report, comparison, growthComparison, trend, homepageUrl, hotpepperUrl);
 
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
