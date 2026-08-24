@@ -215,10 +215,12 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
                   </p>
                 )}
                 {!isRecruitment && (
-                  <div className="text-xs text-gray-500 leading-relaxed shrink-0 text-right space-y-0.5">
-                    <p>👑 = {buttonLabel}を押した割合が最も高い年代</p>
-                    <p>
-                      <span className="opacity-60">👑</span> = {buttonLabel}クリック数が最も多い年代
+                  <div className="text-xs text-gray-500 leading-relaxed shrink-0 space-y-0.5">
+                    <p className="flex items-center justify-end gap-1">
+                      <img src="/ad-report/crown-gold.png" alt="" className="h-3.5 w-auto" /> = {buttonLabel}を押した割合が最も高い年代
+                    </p>
+                    <p className="flex items-center justify-end gap-1">
+                      <img src="/ad-report/crown-silver.png" alt="" className="h-3.5 w-auto" /> = {buttonLabel}クリック数が最も多い年代
                     </p>
                   </div>
                 )}
@@ -272,7 +274,7 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {report.searchTerms.slice(0, 3).map((s, i) => (
                   <div key={s.term} className="flex items-center gap-2 rounded-xl border px-4 py-3" style={{ borderColor: theme.accentSoft }}>
-                    <span className="text-lg">{["🥇", "🥈", "🥉"][i]}</span>
+                    <img src={["/ad-report/medal-1.png", "/ad-report/medal-2.png", "/ad-report/medal-3.png"][i]} alt={`${i + 1}位`} className="h-6 w-auto shrink-0" />
                     <span className="text-sm font-semibold text-charcoal-800">{s.term}</span>
                   </div>
                 ))}

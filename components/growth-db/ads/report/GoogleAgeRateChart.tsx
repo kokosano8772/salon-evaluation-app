@@ -103,12 +103,17 @@ export default function GoogleAgeRateChart({ clicks, conversions, accent, showCr
               return (
                 <div key={r.ageGroup} className="flex-1 flex flex-col items-center justify-end h-full">
                   {showCrown && (bestRateGroup === r.ageGroup || (bestConversionsGroup === r.ageGroup && bestConversionsGroup !== bestRateGroup)) && (
-                    <div className="flex gap-0.5 mb-0.5 h-4">
-                      {bestRateGroup === r.ageGroup && <span title="割合が最も高い年代">👑</span>}
+                    <div className="flex gap-0.5 mb-0.5 h-4 items-center">
+                      {bestRateGroup === r.ageGroup && (
+                        <img src="/ad-report/crown-gold.png" alt="割合が最も高い年代" title="割合が最も高い年代" className="h-4 w-auto" />
+                      )}
                       {bestConversionsGroup === r.ageGroup && bestConversionsGroup !== bestRateGroup && (
-                        <span className="opacity-60" title="ボタンクリック数が最も多い年代">
-                          👑
-                        </span>
+                        <img
+                          src="/ad-report/crown-silver.png"
+                          alt="ボタンクリック数が最も多い年代"
+                          title="ボタンクリック数が最も多い年代"
+                          className="h-4 w-auto"
+                        />
                       )}
                     </div>
                   )}
