@@ -122,11 +122,15 @@ export function buildGoogleAdReportAnalysisPrompt(
 
   // 求人カテゴリは求人LP（募集要項専用ページ）を、集客カテゴリはホームページ・HPBを見る。
   // ページの性質が違うため、カテゴリを跨いで混ぜて渡さない。複数支店の場合はURLも複数になる。
+  const relevantUrls = isRecruitment ? recruitmentLpUrls : [...homepageUrls, ...hotpepperUrls];
   const storeUrlLines = isRecruitment
     ? formatNamedUrlLines("求人LP", recruitmentLpUrls)
     : [...formatNamedUrlLines("ホームページ", homepageUrls), ...formatNamedUrlLines("ホットペッパービューティー", hotpepperUrls)];
   const hasStorePage = storeUrlLines.length > 0;
-  const hasMultipleBranches = storeUrlLines.length > 1;
+  // 「複数支店」は行数（ホームページ+HPBで単一店舗でも2行になる）ではなく、
+  // 実際に異なる支店名が2つ以上使われているかで判定する。
+  const branchNames = new Set(relevantUrls.map((u) => u.name.trim()).filter(Boolean));
+  const hasMultipleBranches = branchNames.size > 1;
   if (hasStorePage) {
     lines.push("");
     lines.push(isRecruitment ? "## サロン様の求人LP" : "## サロン様のホームページ・HPBページ");
