@@ -249,6 +249,7 @@ export interface LinkedDiagnosisResult {
     percentage: number;
     color: string;
   }[];
+  answers: Record<string, number>;
   completedAt: string;
   status: "pending" | "reviewed";
   createdAt: string;

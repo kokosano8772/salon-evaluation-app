@@ -96,6 +96,7 @@ function mapDiagnosisResultRow(row: DiagnosisResultRow): LinkedDiagnosisResult {
     totalScore: row.total_score,
     rank: row.rank,
     categoryScores: row.category_scores as LinkedDiagnosisResult["categoryScores"],
+    answers: (row.answers ?? {}) as LinkedDiagnosisResult["answers"],
     completedAt: row.completed_at,
     status: row.status,
     createdAt: row.created_at,
