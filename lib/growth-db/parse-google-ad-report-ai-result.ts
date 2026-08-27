@@ -33,20 +33,23 @@ function stripMarkdownEmphasis(text: string): string {
   return text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1");
 }
 
-// マーカーが「その行に単独で存在する」場合だけを本物の構成マーカーとして検出する。
-// url_context有効時、AIが確認作業の説明の中でプロンプトの指示文をそのまま引用し、
+// マーカーの「直後」が行末（またはテキスト末尾）である場合だけを本物の構成マーカーとして
+// 検出する。url_context有効時、AIが確認作業の説明の中でプロンプトの指示文をそのまま引用し、
 // 文中に "## 運用状況" のような文字列が混ざることがある（例:「"## 運用状況" の見出しで
 // 書き始めること: Yes」）。単純なindexOf/文字列一致だとこの引用箇所を本物のマーカーと
-// 誤認識してしまうため、行頭〜行末に他の文字が無いことを条件にする。
-// 該当行が複数見つかった場合は、AIの下書き・検討過程より後に来る可能性が高い
+// 誤認識してしまうため、マーカーの直後に他の文字が無いことを条件にする。
+// 直前側は改行を要求しない（AIが検討過程の最後の文の末尾に改行を入れ忘れ、そのまま
+// マーカーを続けて書いてしまうことがあり、改行必須にすると本物のマーカーまで
+// 見逃してしまう不具合が実際に発生したため）。
+// 該当箇所が複数見つかった場合は、AIの下書き・検討過程より後に来る可能性が高い
 // 最後の一致を採用する。
 function findMarkerLine(text: string, marker: string): { start: number; end: number } | null {
   const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(`(?:^|\\n)[ \\t]*(${escaped})[ \\t]*(?:\\n|$)`, "gm");
+  const re = new RegExp(`${escaped}[ \\t]*(?:\\n|$)`, "g");
   let match: RegExpExecArray | null;
   let last: { start: number; end: number } | null = null;
   while ((match = re.exec(text)) !== null) {
-    const start = match.index + match[0].indexOf(match[1]);
+    const start = match.index;
     last = { start, end: start + marker.length };
     if (re.lastIndex === match.index) re.lastIndex++;
   }
