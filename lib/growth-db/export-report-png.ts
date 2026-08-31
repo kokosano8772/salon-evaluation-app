@@ -4,6 +4,12 @@ export async function exportAdReportPagesAsPng(fileNamePrefix: string): Promise<
   // dynamic import — SSR非対応ライブラリのため実行時のみ読み込む
   const { default: html2canvas } = await import("html2canvas");
 
+  // Webフォントの読み込みが完了する前にキャプチャすると、フォールバックフォントの行の高さで
+  // 描画されてしまい、フォント切り替わり後の実際のレイアウトとズレることがあるため待つ。
+  if (typeof document.fonts?.ready?.then === "function") {
+    await document.fonts.ready;
+  }
+
   const pages = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
   if (pages.length === 0) return;
 
