@@ -33,6 +33,14 @@ function stripMarkdownEmphasis(text: string): string {
   return text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1");
 }
 
+// ストリーミング中のライブプレビュー表示用。"## 運用状況"マーカーが見つかるまでは
+// 空文字を返す（url_context有効時、AIが確認作業の説明を前置きとして書いてしまうことがあり、
+// それをそのままプレビューに流すとユーザーには意味の無い英語混じりの文章がちらつくだけになるため）。
+export function stripLeadingNoise(text: string): string {
+  const marker = findMarkerLine(text, SUMMARY_MARKER);
+  return marker ? text.slice(marker.end).trim() : "";
+}
+
 // マーカーの「直後」が行末（またはテキスト末尾）である場合だけを本物の構成マーカーとして
 // 検出する。url_context有効時、AIが確認作業の説明の中でプロンプトの指示文をそのまま引用し、
 // 文中に "## 運用状況" のような文字列が混ざることがある（例:「"## 運用状況" の見出しで

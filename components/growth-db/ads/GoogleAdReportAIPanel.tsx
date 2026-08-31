@@ -7,6 +7,7 @@ import { AdReport } from "@/lib/growth-db/ad-report-types";
 import { compareAdReports, compareGrowthMetrics, findPreviousAdReport } from "@/lib/growth-db/ad-report-analysis";
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
 import { MonthlyMetrics, NamedUrl } from "@/lib/growth-db/types";
+import { stripLeadingNoise } from "@/lib/growth-db/parse-google-ad-report-ai-result";
 
 // Google広告レポート専用のAI分析パネル。Meta用のAdReportAIPanel.tsxとは完全に分離しており、
 // そちらの挙動には一切影響しない（compareAdReports/compareGrowthMetrics/findPreviousAdReportは
@@ -121,9 +122,9 @@ export default function GoogleAdReportAIPanel({
 
       {status === "error" && <p className="text-xs text-red-500 mt-3">{errorMsg}</p>}
 
-      {status === "streaming" && streamText && (
+      {status === "streaming" && stripLeadingNoise(streamText) && (
         <div className="mt-3 max-h-40 overflow-y-auto rounded-xl bg-gray-50 p-3">
-          <p className="text-xs text-gray-500 whitespace-pre-wrap">{streamText}</p>
+          <p className="text-xs text-gray-500 whitespace-pre-wrap">{stripLeadingNoise(streamText)}</p>
         </div>
       )}
 
