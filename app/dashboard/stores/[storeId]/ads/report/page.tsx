@@ -2,7 +2,7 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Download, Printer } from "lucide-react";
+import { ChevronDown, Download, Image, Loader2, Printer } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AdReportDocument from "@/components/growth-db/ads/report/AdReportDocument";
 import GoogleAdReportDocument from "@/components/growth-db/ads/report/GoogleAdReportDocument";
@@ -30,6 +30,7 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   const { data: monthlyHistory } = useMonthlyMetrics(storeId);
 
   const [selectedMonth, setSelectedMonth] = useState<string | undefined>(initial.month);
+  const [pngSaving, setPngSaving] = useState(false);
   const [platform, setPlatform] = useState<AdPlatform>(
     initial.platform === "google" || initial.platform === "meta" ? initial.platform : "meta"
   );
@@ -114,6 +115,17 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
     window.print();
   };
 
+  const handleSavePng = async () => {
+    if (pngSaving) return;
+    setPngSaving(true);
+    try {
+      const { exportAdReportPagesAsPng } = await import("@/lib/growth-db/export-report-png");
+      await exportAdReportPagesAsPng(`${store.name}-広告レポート-${selectedMonth.replace("-", "")}`);
+    } finally {
+      setPngSaving(false);
+    }
+  };
+
   return (
     <div>
       <div className="ad-report-print-hide">
@@ -162,6 +174,14 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
               >
                 <Download size={15} strokeWidth={2} />
                 PDFで保存
+              </button>
+              <button
+                onClick={handleSavePng}
+                disabled={pngSaving}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                {pngSaving ? <Loader2 size={15} className="animate-spin" /> : <Image size={15} strokeWidth={2} />}
+                PNG保存
               </button>
               <Link
                 href={`/dashboard/stores/${store.id}/ads`}
