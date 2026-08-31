@@ -45,7 +45,7 @@ export default function AnnualCtrChart({ data }: { data: CtrTrendPoint[] }) {
         />
         <Tooltip content={<CustomTooltip />} />
         <Line
-          type="monotone"
+          type="linear"
           dataKey="ctr"
           stroke={AD_REPORT_ACCENT_COLOR}
           strokeWidth={2}

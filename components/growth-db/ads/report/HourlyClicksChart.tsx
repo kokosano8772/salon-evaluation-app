@@ -101,7 +101,7 @@ export default function HourlyClicksChart({ data }: { data: HourlyClicks[] }) {
           />
         ))}
         <Line
-          type="monotone"
+          type="linear"
           dataKey="clicks"
           stroke={AD_REPORT_ACCENT_COLOR}
           strokeWidth={2}
