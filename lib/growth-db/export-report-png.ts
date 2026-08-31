@@ -4,8 +4,17 @@ export async function exportAdReportPagesAsPng(fileNamePrefix: string): Promise<
   // dynamic import — SSR非対応ライブラリのため実行時のみ読み込む
   const { default: html2canvas } = await import("html2canvas");
 
-  // Webフォントの読み込みが完了する前にキャプチャすると、フォールバックフォントの行の高さで
-  // 描画されてしまい、フォント切り替わり後の実際のレイアウトとズレることがあるため待つ。
+  // Webフォント(Noto Sans JP)はapp/layout.tsxでGoogle Fontsの外部スタイルシートから
+  // display=swap で読み込んでいるため、まだ一度もこのウェイトが使われていないページでは
+  // document.fonts.ready を待つだけでは不十分（フォントの読み込みが「まだ開始すらしていない」
+  // 状態だと、待つべき読み込みが無いままreadyが解決してしまう）。実際に使っているウェイトを
+  // 明示的にloadしてから、改めてreadyを待つことで、フォールバックフォントの行の高さのまま
+  // キャプチャしてしまい後から本物のフォントに差し替わって文章がズレる不具合を防ぐ。
+  if (typeof document.fonts?.load === "function") {
+    await Promise.all(
+      [300, 400, 500, 600, 700].map((weight) => document.fonts.load(`${weight} 16px "Noto Sans JP"`).catch(() => {}))
+    );
+  }
   if (typeof document.fonts?.ready?.then === "function") {
     await document.fonts.ready;
   }
