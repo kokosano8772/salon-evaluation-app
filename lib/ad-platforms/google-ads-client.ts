@@ -54,9 +54,14 @@ function monthRange(yearMonth: string): { since: string; until: string } {
   return { since: `${yearMonth}-01`, until: `${yearMonth}-${String(lastDay).padStart(2, "0")}` };
 }
 
-// GAQLのLIKE句で特殊な意味を持つ文字（[ ] % _）をエスケープする
+// GAQLのLIKE句で特殊な意味を持つ文字（[ ] % _）をエスケープする。
+// 店舗名にアポストロフィ（例: "B's"）が含まれるケースが実際にあり、GAQLの文字列は
+// シングルクォートかダブルクォートのどちらでも書けるため（例: 'text' / "text"）、
+// 呼び出し側ではダブルクォートで囲むことでアポストロフィをエスケープ不要にしている。
+// ダブルクォート自体が値に含まれる場合はGAQLにエスケープ構文の定義が無いため、
+// クエリを壊さないよう安全側で除去する。
 function escapeGaqlLike(value: string): string {
-  return value.replace(/[[\]%_]/g, (c) => `[${c}]`);
+  return value.replace(/"/g, "").replace(/[[\]%_]/g, (c) => `[${c}]`);
 }
 
 // アクセストークンはリクエストのたびに取り直さず、有効期限内は使い回す
@@ -218,9 +223,9 @@ export class GoogleAdsClient implements AdPlatformClient {
       .map((s) => s.trim())
       .filter(Boolean);
     const nameClauseParts: string[] = [];
-    if (campaignNameFilter) nameClauseParts.push(`campaign.name LIKE '%${escapeGaqlLike(campaignNameFilter)}%'`);
+    if (campaignNameFilter) nameClauseParts.push(`campaign.name LIKE "%${escapeGaqlLike(campaignNameFilter)}%"`);
     for (const keyword of excludeKeywords) {
-      nameClauseParts.push(`campaign.name NOT LIKE '%${escapeGaqlLike(keyword)}%'`);
+      nameClauseParts.push(`campaign.name NOT LIKE "%${escapeGaqlLike(keyword)}%"`);
     }
     const nameClause = nameClauseParts.join(" AND ");
 
