@@ -398,9 +398,10 @@ export default function GoogleAdReportDocument({
         ) : (
           <button
             onClick={startEditPage1}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-charcoal-700 border border-gray-200 hover:bg-gray-50"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+            style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
           >
-            <Pencil size={13} strokeWidth={2} />
+            <Pencil size={15} strokeWidth={2} />
             編集
           </button>
         )}
@@ -604,9 +605,10 @@ export default function GoogleAdReportDocument({
         ) : (
           <button
             onClick={startEditPage2}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-charcoal-700 border border-gray-200 hover:bg-gray-50"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+            style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
           >
-            <Pencil size={13} strokeWidth={2} />
+            <Pencil size={15} strokeWidth={2} />
             編集
           </button>
         )}
