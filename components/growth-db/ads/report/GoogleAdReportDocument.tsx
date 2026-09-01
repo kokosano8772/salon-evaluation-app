@@ -374,7 +374,9 @@ export default function GoogleAdReportDocument({
         <p className="text-center text-sm text-gray-400 mt-8">KOKODESIGN</p>
       </div>
 
-      <div className="ad-report-print-hide flex justify-center -mt-4">
+      {/* 親のspace-y-8によるmargin-topは:not()セレクタ込みで詳細度が高く、
+          Tailwindの-mt-Nユーティリティでは上書きできないため、インラインstyleで直接指定する。 */}
+      <div className="ad-report-print-hide flex justify-center" style={{ marginTop: 10 }}>
         {editingPage1 ? (
           <div className="flex items-center gap-2">
             <button
@@ -402,7 +404,7 @@ export default function GoogleAdReportDocument({
             style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
           >
             <Pencil size={15} strokeWidth={2} />
-            編集
+            編集する
           </button>
         )}
       </div>
@@ -581,7 +583,9 @@ export default function GoogleAdReportDocument({
         <p className="text-center text-sm text-gray-400 mt-8">KOKODESIGN</p>
       </div>
 
-      <div className="ad-report-print-hide flex justify-center -mt-4">
+      {/* 親のspace-y-8によるmargin-topは:not()セレクタ込みで詳細度が高く、
+          Tailwindの-mt-Nユーティリティでは上書きできないため、インラインstyleで直接指定する。 */}
+      <div className="ad-report-print-hide flex justify-center" style={{ marginTop: 10 }}>
         {editingPage2 ? (
           <div className="flex items-center gap-2">
             <button
@@ -609,7 +613,7 @@ export default function GoogleAdReportDocument({
             style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
           >
             <Pencil size={15} strokeWidth={2} />
-            編集
+            編集する
           </button>
         )}
       </div>
