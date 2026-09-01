@@ -171,7 +171,7 @@ export default function GoogleAdReportDocument({
     <div className="space-y-8">
       {/* ページ1 */}
       <div
-        className="ad-report-page rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1320px] max-w-none mx-auto flex flex-col justify-center"
+        className="ad-report-page rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center"
         style={{ background: theme.bg }}
       >
         <h1 className="text-[42px] font-extrabold text-center text-charcoal-900">Google広告成果報告レポート</h1>
@@ -376,7 +376,7 @@ export default function GoogleAdReportDocument({
 
       {/* 親のspace-y-8によるmargin-topは:not()セレクタ込みで詳細度が高く、
           Tailwindの-mt-Nユーティリティでは上書きできないため、インラインstyleで直接指定する。 */}
-      <div className="ad-report-print-hide flex justify-center" style={{ marginTop: 10 }}>
+      <div className="ad-report-print-hide flex justify-center" style={{ marginTop: 20 }}>
         {editingPage1 ? (
           <div className="flex items-center gap-2">
             <button
@@ -411,7 +411,7 @@ export default function GoogleAdReportDocument({
 
       {/* ページ2 */}
       <div
-        className="ad-report-page rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1320px] max-w-none mx-auto flex flex-col justify-center space-y-8"
+        className="ad-report-page rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center space-y-8"
         style={{ background: theme.bg }}
       >
         <SectionCard pt={42} pb={42} px={32}>
@@ -585,7 +585,7 @@ export default function GoogleAdReportDocument({
 
       {/* 親のspace-y-8によるmargin-topは:not()セレクタ込みで詳細度が高く、
           Tailwindの-mt-Nユーティリティでは上書きできないため、インラインstyleで直接指定する。 */}
-      <div className="ad-report-print-hide flex justify-center" style={{ marginTop: 10 }}>
+      <div className="ad-report-print-hide flex justify-center" style={{ marginTop: 20 }}>
         {editingPage2 ? (
           <div className="flex items-center gap-2">
             <button
