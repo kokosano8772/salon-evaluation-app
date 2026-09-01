@@ -370,12 +370,12 @@ export default function GoogleAdReportDocument({
             {(editingPage1 || ageGroupInsight || !isRecruitment) && (
               <div className="flex items-start justify-between gap-4 mb-2">
                 {editingPage1 ? (
-                  <input
-                    type="text"
+                  <textarea
                     value={page1Draft.ageGroupInsight}
                     onChange={(e) => setPage1Draft((d) => ({ ...d, ageGroupInsight: e.target.value }))}
+                    rows={2}
                     placeholder="年代別の傾向コメント"
-                    className="text-sm font-semibold max-w-[340px] w-full bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-1 focus:outline-none"
+                    className="text-sm font-semibold max-w-[340px] w-full bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-1 focus:outline-none resize-y"
                     style={{ color: "#5B7FA6" }}
                   />
                 ) : (
