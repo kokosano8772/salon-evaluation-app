@@ -189,6 +189,14 @@ export default function GoogleAdReportDocument({
   const { status, summary, ageGroupInsight, ownerSuggestion, agencyAction } = parseGoogleAdReportAiResult(report.aiResult ?? "");
   const confirmOptions = isRecruitment ? RECRUITMENT_CONFIRM_OPTIONS : ACQUISITION_CONFIRM_OPTIONS;
 
+  // 前サイクル（比較対象となる1年前の実績）がまだ1件も無い＝開始から1周年を
+  // 迎えていない店舗の場合、進行中サイクル1本だけが「新しい方の色」で表示され
+  // 画面全体がその色一色になってしまい、他の月と比べて不自然に目立って見える。
+  // この場合だけ、進行中サイクルの色を「前サイクル用の色」に差し替えて、
+  // 1周年後に本当の前サイクルとして表示される時と同じ見た目に揃える。
+  const hasPreviousCycleData = trend.previousCycle.some((p) => p.rate !== null || p.clicks !== null);
+  const trendCurrentColor = hasPreviousCycleData ? theme.highlightAccent : theme.chartAccent;
+
   // レポート内の各ページ下にある「編集」ボタンから、その場でAI生成文章を修正できるようにする。
   // ページ1（summary/ageGroupInsight）とページ2（ownerSuggestion/agencyAction）を別々に
   // draft管理し、片方の保存操作がもう片方の未保存の入力内容を巻き込まないようにする。
@@ -416,7 +424,7 @@ export default function GoogleAdReportDocument({
               currentLabel={trend.currentCycleLabel}
               target={isRecruitment ? undefined : AD_REPORT_TARGET_RATE}
               previousColor={theme.chartAccent}
-              currentColor={theme.highlightAccent}
+              currentColor={trendCurrentColor}
             />
           </SectionCard>
         </div>
@@ -431,7 +439,7 @@ export default function GoogleAdReportDocument({
                 previousLabel={trend.previousCycleLabel}
                 currentLabel={trend.currentCycleLabel}
                 previousColor={theme.chartAccent}
-                currentColor={theme.highlightAccent}
+                currentColor={trendCurrentColor}
               />
             </SectionCard>
           </div>
