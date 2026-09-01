@@ -1,15 +1,33 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { Calendar, Check, CheckCircle2, Eye, Loader2, MousePointerClick, Pencil, Percent, ThumbsUp, X } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Images,
+  List,
+  Loader2,
+  MousePointerClick,
+  Pencil,
+  Percent,
+  Settings,
+  ThumbsUp,
+  X,
+} from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
 import { AdReport, GOOGLE_REPORT_THEME } from "@/lib/growth-db/ad-report-types";
 import { getBusinessCategoryBenchmark, AD_REPORT_TARGET_RATE, NATIONAL_AVERAGE_CVR } from "@/lib/growth-db/business-category-benchmarks";
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
 import {
   buildGoogleAdReportAiResultString,
+  GoogleAdReportPill,
   GoogleAdReportSuggestionPart,
   parseGoogleAdReportAiResult,
+  PILL_ICON_KEYS,
+  PillIconKey,
 } from "@/lib/growth-db/parse-google-ad-report-ai-result";
 import { formatAdaptiveNumber, formatMonthLabel, formatMonthShortLabel, formatNumber } from "@/lib/growth-db/format";
 import GoogleReportStatCard from "./GoogleReportStatCard";
@@ -97,10 +115,60 @@ function SectionTitle({ accent, caption, children }: { accent: string; caption?:
   );
 }
 
+const PILL_ICON_COMPONENTS: Record<PillIconKey, typeof CheckCircle2> = {
+  check: CheckCircle2,
+  gear: Settings,
+  clock: Clock,
+  photo: Images,
+  list: List,
+};
+
+// レポート内編集モードで、ピル1つ分の「アイコン選択(5種から選択式)＋文言入力」をまとめた入力欄。
+// サロン様へのご提案・ココデザインが行う改善策、それぞれのピル最大2つ分で共通利用する。
+function PillEditor({
+  pill,
+  accent,
+  onChange,
+}: {
+  pill: GoogleAdReportPill;
+  accent: string;
+  onChange: (pill: GoogleAdReportPill) => void;
+}) {
+  return (
+    <div className="flex-1 rounded-xl border-[3px] border-dashed border-gray-300 px-4 py-3">
+      <div className="flex items-center gap-1 mb-2">
+        {PILL_ICON_KEYS.map((key) => {
+          const Icon = PILL_ICON_COMPONENTS[key];
+          const selected = pill.icon === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange({ ...pill, icon: key })}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100"
+              style={selected ? { backgroundColor: accent, color: "white" } : undefined}
+            >
+              <Icon size={14} strokeWidth={2} />
+            </button>
+          );
+        })}
+      </div>
+      <input
+        type="text"
+        value={pill.text}
+        onChange={(e) => onChange({ ...pill, text: e.target.value })}
+        placeholder="ピルの文言（任意）"
+        className="w-full text-lg text-charcoal-800 bg-transparent focus:outline-none"
+      />
+    </div>
+  );
+}
+
 const RECRUITMENT_CONFIRM_OPTIONS = ["応募・面接につながった", "問い合わせのみあった", "特に反応はなかった"];
 const ACQUISITION_CONFIRM_OPTIONS = ["忙しかった", "ほどほどだった", "暇だった"];
 
 const EMPTY_SUGGESTION: GoogleAdReportSuggestionPart = { headline: "", body: "", pills: [] };
+const DEFAULT_PILL: GoogleAdReportPill = { icon: "check", text: "" };
 
 export default function GoogleAdReportDocument({
   storeId,
@@ -438,19 +506,17 @@ export default function GoogleAdReportDocument({
               />
               <div className="flex flex-col sm:flex-row gap-3 mt-5">
                 {[0, 1].map((i) => (
-                  <input
+                  <PillEditor
                     key={i}
-                    type="text"
-                    value={page2Draft.ownerSuggestion.pills[i] ?? ""}
-                    onChange={(e) =>
+                    pill={page2Draft.ownerSuggestion.pills[i] ?? DEFAULT_PILL}
+                    accent={theme.accent}
+                    onChange={(pill) =>
                       setPage2Draft((d) => {
-                        const pills = [d.ownerSuggestion.pills[0] ?? "", d.ownerSuggestion.pills[1] ?? ""];
-                        pills[i] = e.target.value;
+                        const pills = [d.ownerSuggestion.pills[0] ?? DEFAULT_PILL, d.ownerSuggestion.pills[1] ?? DEFAULT_PILL];
+                        pills[i] = pill;
                         return { ...d, ownerSuggestion: { ...d.ownerSuggestion, pills } };
                       })
                     }
-                    placeholder={`ピル${i + 1}（任意）`}
-                    className="flex-1 text-lg text-charcoal-800 rounded-xl border-[3px] border-dashed border-gray-300 px-6 py-4 focus:outline-none"
                   />
                 ))}
               </div>
@@ -465,16 +531,19 @@ export default function GoogleAdReportDocument({
               </p>
               {ownerSuggestion.pills.length > 0 && (
                 <div className="flex flex-col sm:flex-row gap-3 mt-5">
-                  {ownerSuggestion.pills.map((pill) => (
-                    <div
-                      key={pill}
-                      className="flex-1 flex items-center gap-3 rounded-xl border-[3px] px-6 py-4"
-                      style={{ borderColor: theme.accent }}
-                    >
-                      <CheckCircle2 size={24} strokeWidth={2} style={{ color: theme.accent }} />
-                      <span className="text-lg text-charcoal-800">{pill}</span>
-                    </div>
-                  ))}
+                  {ownerSuggestion.pills.map((pill, i) => {
+                    const Icon = PILL_ICON_COMPONENTS[pill.icon];
+                    return (
+                      <div
+                        key={i}
+                        className="flex-1 flex items-center gap-3 rounded-xl border-[3px] px-6 py-4"
+                        style={{ borderColor: theme.accent }}
+                      >
+                        <Icon size={24} strokeWidth={2} style={{ color: theme.accent }} />
+                        <span className="text-lg text-charcoal-800">{pill.text}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -505,19 +574,17 @@ export default function GoogleAdReportDocument({
               />
               <div className="flex flex-col sm:flex-row gap-3 mt-5">
                 {[0, 1].map((i) => (
-                  <input
+                  <PillEditor
                     key={i}
-                    type="text"
-                    value={page2Draft.agencyAction.pills[i] ?? ""}
-                    onChange={(e) =>
+                    pill={page2Draft.agencyAction.pills[i] ?? DEFAULT_PILL}
+                    accent={theme.accent}
+                    onChange={(pill) =>
                       setPage2Draft((d) => {
-                        const pills = [d.agencyAction.pills[0] ?? "", d.agencyAction.pills[1] ?? ""];
-                        pills[i] = e.target.value;
+                        const pills = [d.agencyAction.pills[0] ?? DEFAULT_PILL, d.agencyAction.pills[1] ?? DEFAULT_PILL];
+                        pills[i] = pill;
                         return { ...d, agencyAction: { ...d.agencyAction, pills } };
                       })
                     }
-                    placeholder={`ピル${i + 1}（任意）`}
-                    className="flex-1 text-lg text-charcoal-800 rounded-xl border-[3px] border-dashed border-gray-300 px-6 py-4 focus:outline-none"
                   />
                 ))}
               </div>
@@ -532,16 +599,19 @@ export default function GoogleAdReportDocument({
               </p>
               {agencyAction.pills.length > 0 && (
                 <div className="flex flex-col sm:flex-row gap-3 mt-5">
-                  {agencyAction.pills.map((pill) => (
-                    <div
-                      key={pill}
-                      className="flex-1 flex items-center gap-3 rounded-xl border-[3px] px-6 py-4"
-                      style={{ borderColor: theme.accent }}
-                    >
-                      <CheckCircle2 size={24} strokeWidth={2} style={{ color: theme.accent }} />
-                      <span className="text-lg text-charcoal-800">{pill}</span>
-                    </div>
-                  ))}
+                  {agencyAction.pills.map((pill, i) => {
+                    const Icon = PILL_ICON_COMPONENTS[pill.icon];
+                    return (
+                      <div
+                        key={i}
+                        className="flex-1 flex items-center gap-3 rounded-xl border-[3px] px-6 py-4"
+                        style={{ borderColor: theme.accent }}
+                      >
+                        <Icon size={24} strokeWidth={2} style={{ color: theme.accent }} />
+                        <span className="text-lg text-charcoal-800">{pill.text}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>

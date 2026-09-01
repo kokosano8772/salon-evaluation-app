@@ -9,10 +9,20 @@
 //   （1行目=太字見出し、本文、末尾に "- " で始まる行が2つ=アクションの一言ピル2つ）
 // - "## ココデザインが行う改善策": こちら側で行う改善策（同上の構成）
 
+// ピルに表示するアイコンの種類。参考レポート（ベース）で実際に使われている
+// 歯車・時計・写真・項目リストのマークに、既存のチェックマークを加えた5種類から選ぶ。
+export const PILL_ICON_KEYS = ["check", "gear", "clock", "photo", "list"] as const;
+export type PillIconKey = (typeof PILL_ICON_KEYS)[number];
+
+export interface GoogleAdReportPill {
+  icon: PillIconKey;
+  text: string;
+}
+
 export interface GoogleAdReportSuggestionPart {
   headline: string;
   body: string;
-  pills: string[]; // 実物PDFにある「◯◯の確認」のような一言アクションピル（最大2つ）
+  pills: GoogleAdReportPill[]; // 実物PDFにある「◯◯の確認」のような一言アクションピル（最大2つ）
 }
 
 export interface GoogleAdReportAiResultParts {
@@ -64,6 +74,11 @@ function findMarkerLine(text: string, marker: string): { start: number; end: num
   return last;
 }
 
+// ピル行の先頭にオプションで付く "[gear]" のようなアイコン指定タグ。
+// AIが生成する行にはこのタグが付かない（従来通りチェックマーク扱い＝後方互換）ため、
+// レポート内編集UIでユーザーがアイコンを選んだ場合のみ付与される。
+const PILL_ICON_TAG_RE = new RegExp(`^\\[(${PILL_ICON_KEYS.join("|")})\\]\\s*`);
+
 // 実物PDFでは提案2パートとも「1行目に太字見出し・本文・末尾に一言アクションピル2つ（-区切り）」
 // という構成のため、新しいマーカーを増やさず、セクション内の行構造だけで分ける。
 function splitHeadlineAndBody(section: string): GoogleAdReportSuggestionPart {
@@ -75,11 +90,15 @@ function splitHeadlineAndBody(section: string): GoogleAdReportSuggestionPart {
   const rest = trimmed.slice(newlineIdx + 1).trim();
 
   const lines = rest.split("\n").map((l) => l.trim());
-  const pills: string[] = [];
+  const pills: GoogleAdReportPill[] = [];
   const bodyLines: string[] = [];
   for (const line of lines) {
     if (/^[-・]\s*/.test(line) && pills.length < 2) {
-      pills.push(line.replace(/^[-・]\s*/, "").trim());
+      const rest = line.replace(/^[-・]\s*/, "").trim();
+      const tagMatch = rest.match(PILL_ICON_TAG_RE);
+      const icon: PillIconKey = tagMatch ? (tagMatch[1] as PillIconKey) : "check";
+      const text = tagMatch ? rest.slice(tagMatch[0].length).trim() : rest;
+      pills.push({ icon, text });
     } else if (line) {
       bodyLines.push(line);
     }
@@ -92,10 +111,12 @@ function splitHeadlineAndBody(section: string): GoogleAdReportSuggestionPart {
 // 構造化された編集内容を元のマーカー付き文字列に戻してDBへ保存するために使う。
 // splitHeadlineAndBody（1行目=見出し、以降本文、末尾の「- 」始まりの行=ピル最大2つ）と
 // 正確に対になる形で組み立てる。中身が空でもマーカー自体は必ず出力する。
-function joinSection(headline: string, body: string, pills: string[]): string {
+function joinSection(headline: string, body: string, pills: GoogleAdReportPill[]): string {
   const lines = [headline.trim()];
   if (body.trim()) lines.push(body.trim());
-  pills.filter((p) => p.trim()).forEach((p) => lines.push(`- ${p.trim()}`));
+  pills
+    .filter((p) => p.text.trim())
+    .forEach((p) => lines.push(`- [${p.icon}] ${p.text.trim()}`));
   return lines.join("\n");
 }
 
