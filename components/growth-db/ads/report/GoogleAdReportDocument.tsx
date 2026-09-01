@@ -23,6 +23,7 @@ import { getBusinessCategoryBenchmark, AD_REPORT_TARGET_RATE, NATIONAL_AVERAGE_C
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
 import {
   buildGoogleAdReportAiResultString,
+  DEFAULT_STATUS,
   GoogleAdReportPill,
   GoogleAdReportSuggestionPart,
   parseGoogleAdReportAiResult,
@@ -185,7 +186,7 @@ export default function GoogleAdReportDocument({
   const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
   const breakdown = report.conversionActionBreakdown ?? [];
   const conversionGroups = groupConversionBreakdown(breakdown);
-  const { summary, ageGroupInsight, ownerSuggestion, agencyAction } = parseGoogleAdReportAiResult(report.aiResult ?? "");
+  const { status, summary, ageGroupInsight, ownerSuggestion, agencyAction } = parseGoogleAdReportAiResult(report.aiResult ?? "");
   const confirmOptions = isRecruitment ? RECRUITMENT_CONFIRM_OPTIONS : ACQUISITION_CONFIRM_OPTIONS;
 
   // レポート内の各ページ下にある「編集」ボタンから、その場でAI生成文章を修正できるようにする。
@@ -193,7 +194,7 @@ export default function GoogleAdReportDocument({
   // draft管理し、片方の保存操作がもう片方の未保存の入力内容を巻き込まないようにする。
   const [editingPage1, setEditingPage1] = useState(false);
   const [editingPage2, setEditingPage2] = useState(false);
-  const [page1Draft, setPage1Draft] = useState({ summary: "", ageGroupInsight: "" });
+  const [page1Draft, setPage1Draft] = useState({ status: "", summary: "", ageGroupInsight: "" });
   const [page2Draft, setPage2Draft] = useState<{ ownerSuggestion: GoogleAdReportSuggestionPart; agencyAction: GoogleAdReportSuggestionPart }>({
     ownerSuggestion: EMPTY_SUGGESTION,
     agencyAction: EMPTY_SUGGESTION,
@@ -206,7 +207,7 @@ export default function GoogleAdReportDocument({
   }, [editingPage1, editingPage2, onEditingChange]);
 
   const startEditPage1 = () => {
-    setPage1Draft({ summary, ageGroupInsight });
+    setPage1Draft({ status, summary, ageGroupInsight });
     setEditingPage1(true);
   };
 
@@ -256,10 +257,24 @@ export default function GoogleAdReportDocument({
               >
                 <ThumbsUp size={42} strokeWidth={2} />
               </div>
-              <div>
-                <p className="text-3xl font-extrabold" style={{ color: theme.text }}>
-                  {formatMonthShortLabel(report.yearMonth)}の運用状況：◎好調
-                </p>
+              <div className="flex-1">
+                {editingPage1 ? (
+                  <div className="flex items-center gap-1.5 text-3xl font-extrabold" style={{ color: theme.text }}>
+                    <span className="shrink-0">{formatMonthShortLabel(report.yearMonth)}の運用状況：</span>
+                    <input
+                      type="text"
+                      value={page1Draft.status}
+                      onChange={(e) => setPage1Draft((d) => ({ ...d, status: e.target.value }))}
+                      placeholder={DEFAULT_STATUS}
+                      className="text-3xl font-extrabold bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none w-36"
+                      style={{ color: theme.text }}
+                    />
+                  </div>
+                ) : (
+                  <p className="text-3xl font-extrabold" style={{ color: theme.text }}>
+                    {formatMonthShortLabel(report.yearMonth)}の運用状況：{status}
+                  </p>
+                )}
                 {editingPage1 ? (
                   <textarea
                     value={page1Draft.summary}

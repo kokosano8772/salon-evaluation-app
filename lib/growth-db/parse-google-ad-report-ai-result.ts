@@ -26,12 +26,18 @@ export interface GoogleAdReportSuggestionPart {
 }
 
 export interface GoogleAdReportAiResultParts {
+  status: string; // 1ページ目「○月の運用状況：◎好調」の「◎好調」部分。AIは生成せず、レポート内編集でのみ変更する
   summary: string;
   ageGroupInsight: string;
   ownerSuggestion: GoogleAdReportSuggestionPart;
   agencyAction: GoogleAdReportSuggestionPart;
 }
 
+// "◎好調"の判定基準は未確定のため、AIには生成させずレポート内編集のみで
+// 手動で変更できるようにしている。マーカーが無い場合はこの値を使う。
+export const DEFAULT_STATUS = "◎好調";
+
+const STATUS_MARKER = "## ステータス";
 const SUMMARY_MARKER = "## 運用状況";
 const AGE_GROUP_INSIGHT_MARKER = "## 年代別の傾向";
 const OWNER_SUGGESTION_MARKER = "## サロン様へのご提案";
@@ -122,6 +128,9 @@ function joinSection(headline: string, body: string, pills: GoogleAdReportPill[]
 
 export function buildGoogleAdReportAiResultString(parts: GoogleAdReportAiResultParts): string {
   return [
+    STATUS_MARKER,
+    parts.status.trim() || DEFAULT_STATUS,
+    "",
     SUMMARY_MARKER,
     parts.summary.trim(),
     "",
@@ -137,10 +146,18 @@ export function buildGoogleAdReportAiResultString(parts: GoogleAdReportAiResultP
 }
 
 export function parseGoogleAdReportAiResult(aiResult: string): GoogleAdReportAiResultParts {
+  const statusMarker = findMarkerLine(aiResult, STATUS_MARKER);
   const summaryMarker = findMarkerLine(aiResult, SUMMARY_MARKER);
   const ageGroupMarker = findMarkerLine(aiResult, AGE_GROUP_INSIGHT_MARKER);
   const ownerMarker = findMarkerLine(aiResult, OWNER_SUGGESTION_MARKER);
   const agencyMarker = findMarkerLine(aiResult, AGENCY_ACTION_MARKER);
+
+  // "## ステータス"マーカーはAIが生成することは無く、レポート内編集で保存された場合のみ
+  // 存在する。無ければ従来通りの固定表示"◎好調"を使う（後方互換）。
+  const statusEnd = summaryMarker?.start ?? ageGroupMarker?.start ?? ownerMarker?.start ?? agencyMarker?.start ?? aiResult.length;
+  const status = statusMarker
+    ? stripMarkdownEmphasis(aiResult.slice(statusMarker.end, statusEnd).trim()) || DEFAULT_STATUS
+    : DEFAULT_STATUS;
 
   const summaryEnd = ageGroupMarker?.start ?? ownerMarker?.start ?? aiResult.length;
   // "## 運用状況"マーカーがあれば、それより前のテキスト（AIが稀に書いてしまう確認作業の
@@ -164,5 +181,5 @@ export function parseGoogleAdReportAiResult(aiResult: string): GoogleAdReportAiR
     agencyAction = splitHeadlineAndBody(aiResult.slice(agencyMarker.end));
   }
 
-  return { summary, ageGroupInsight, ownerSuggestion, agencyAction };
+  return { status, summary, ageGroupInsight, ownerSuggestion, agencyAction };
 }
