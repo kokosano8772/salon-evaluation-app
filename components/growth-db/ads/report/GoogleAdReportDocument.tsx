@@ -279,7 +279,7 @@ export default function GoogleAdReportDocument({
                   <textarea
                     value={page1Draft.summary}
                     onChange={(e) => setPage1Draft((d) => ({ ...d, summary: e.target.value }))}
-                    rows={3}
+                    rows={2}
                     placeholder="運用状況の一言"
                     className="text-lg text-charcoal-700 mt-2 leading-relaxed w-full bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-1 focus:outline-none resize-y"
                   />
