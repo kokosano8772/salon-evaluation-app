@@ -140,7 +140,12 @@ input[type="number"] {
     margin: 0 !important;
     page-break-after: always;
   }
-  .ad-report-page:last-child {
+  /* Google広告レポートはページ2の後ろにレポート内編集用のボタン(ad-report-print-hide)を
+     兄弟要素として挟んでいるため、ページ2は実際のDOM上では:last-childではなくなっている。
+     :last-childだけに頼ると2枚目にも誤ってpage-break-after:alwaysが残り、
+     中身の無い3枚目のページが生成されてしまうため、明示的なクラスでも指定する。 */
+  .ad-report-page:last-child,
+  .ad-report-page-last {
     page-break-after: auto;
   }
 }

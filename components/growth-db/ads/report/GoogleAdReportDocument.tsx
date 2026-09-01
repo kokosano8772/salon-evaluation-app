@@ -479,7 +479,7 @@ export default function GoogleAdReportDocument({
 
       {/* ページ2 */}
       <div
-        className="ad-report-page rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center space-y-8"
+        className="ad-report-page ad-report-page-last rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center space-y-8"
         style={{ background: theme.bg }}
       >
         <SectionCard pt={42} pb={42} px={32}>
