@@ -120,8 +120,13 @@ async function searchGoogleAds<T>(customerId: string, query: string): Promise<T[
 }
 
 interface CampaignExistenceRow {
-  campaign?: { id?: string; name?: string };
+  campaign?: { id?: string; name?: string; startDateTime?: string };
 }
+
+// 一括同期で「開始月より前」を範囲に含めてしまった場合に、実績の無い月へ
+// ゼロ値のレコードを作ってしまわないよう、呼び出し側（sync route）で
+// 通常のエラーと区別してスキップ扱いにするための専用エラー。
+export class CampaignNotStartedError extends Error {}
 
 interface CampaignMetricsRow {
   campaign?: { id?: string; name?: string };
@@ -222,11 +227,24 @@ export class GoogleAdsClient implements AdPlatformClient {
     // キャンペーンの「存在確認」は日付条件の無いクエリで行う。日付・指標付きのクエリだと
     // その期間に実績（配信）が無いキャンペーンが結果に含まれず、「存在しない」と誤判定
     // されてしまうため（Meta連携で同種の不具合が起きたのと同じ理由）。
+    // 開始日時（campaign.start_date_time）も一緒に取得し、後段で開始前の月をスキップする
+    // 判定に使う。このフィールドはAPI v23でcampaign.start_dateから置き換わったもので、
+    // 万一取得できない場合（APIバージョン差異等）でも既存の同期機能自体は壊さないよう、
+    // 失敗時はこのフィールド無しのクエリにフォールバックする（開始日チェックだけ働かなくなる）。
     const nameCondition = nameClause ? ` WHERE ${nameClause}` : "";
-    const existingCampaigns = await searchGoogleAds<CampaignExistenceRow>(
-      accountId,
-      `SELECT campaign.id, campaign.name FROM campaign${nameCondition}`
-    );
+    let existingCampaigns: CampaignExistenceRow[];
+    try {
+      existingCampaigns = await searchGoogleAds<CampaignExistenceRow>(
+        accountId,
+        `SELECT campaign.id, campaign.name, campaign.start_date_time FROM campaign${nameCondition}`
+      );
+    } catch (err) {
+      console.error("campaign.start_date_time付きのクエリに失敗したため、開始日チェック無しで再試行します", err);
+      existingCampaigns = await searchGoogleAds<CampaignExistenceRow>(
+        accountId,
+        `SELECT campaign.id, campaign.name FROM campaign${nameCondition}`
+      );
+    }
 
     if (campaignNameFilter && existingCampaigns.length === 0) {
       const allCampaigns = await searchGoogleAds<CampaignExistenceRow>(accountId, "SELECT campaign.id, campaign.name FROM campaign");
@@ -235,6 +253,24 @@ export class GoogleAdsClient implements AdPlatformClient {
         `キーワード「${campaignNameFilter}」に一致するキャンペーンが見つかりませんでした。` +
           (names ? `このアカウントのキャンペーン名: ${names}` : "このアカウントにはキャンペーンがありません。")
       );
+    }
+
+    // 一括同期（複数月まとめて）で、対象キャンペーンがまだ開始していない月まで範囲に
+    // 含めてしまうと、実績が無いだけなのに「表示回数0・クリック数0…」という本物のゼロ値
+    // レコードが保存されてしまい、グラフ上で「稼働していたが結果が0だった月」と区別が
+    // つかなくなる。該当キャンペーン群の最も早い開始日より対象月が完全に前であれば、
+    // ここで打ち切ってレコード自体を作らせない。
+    // start_date_timeは"YYYY-MM-DD HH:mm:ss"形式で返るため、日付部分だけ取り出して比較する。
+    const startDates = existingCampaigns
+      .map((c) => c.campaign?.startDateTime?.slice(0, 10))
+      .filter((d): d is string => !!d);
+    if (startDates.length > 0) {
+      const earliestStartDate = startDates.sort()[0]; // "YYYY-MM-DD"は文字列比較でも日付順になる
+      if (until < earliestStartDate) {
+        throw new CampaignNotStartedError(
+          `対象キャンペーンの開始日（${earliestStartDate}）より前の月のため、データがありません`
+        );
+      }
     }
 
     const metricsRows = await searchGoogleAds<CampaignMetricsRow>(

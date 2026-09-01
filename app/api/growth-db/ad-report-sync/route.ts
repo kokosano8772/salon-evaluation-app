@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MetaAdsClient } from "@/lib/ad-platforms/meta-ads-client";
-import { GoogleAdsClient } from "@/lib/ad-platforms/google-ads-client";
+import { CampaignNotStartedError, GoogleAdsClient } from "@/lib/ad-platforms/google-ads-client";
 import { AdPlatform } from "@/lib/growth-db/ad-report-types";
 
 export const runtime = "nodejs";
@@ -45,6 +45,11 @@ export async function POST(request: Request) {
     const data = await client.fetchMonthlyReport(accountId, yearMonth, campaignNameFilter, campaignNameExclude);
     return NextResponse.json({ data });
   } catch (error) {
+    // キャンペーン開始前の月は失敗ではなく「保存すべきデータが無い」だけなので、
+    // 通常のエラー（502）とは区別して返す。呼び出し側でレコードを作らずスキップできるようにする。
+    if (error instanceof CampaignNotStartedError) {
+      return NextResponse.json({ skipped: true, message: error.message });
+    }
     const message = error instanceof Error ? error.message : "不明なエラー";
     return NextResponse.json({ error: message }, { status: 502 });
   }

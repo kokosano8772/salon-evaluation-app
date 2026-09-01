@@ -17,7 +17,7 @@ interface AdReportBulkSyncPanelProps {
 
 interface MonthResult {
   yearMonth: string;
-  status: "pending" | "syncing" | "success" | "error";
+  status: "pending" | "syncing" | "success" | "skipped" | "error";
   message?: string;
   campaignCount?: number;
 }
@@ -99,6 +99,16 @@ export default function AdReportBulkSyncPanel({
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+
+        // キャンペーン開始前の月はレコードを作らずスキップする
+        // （実績が無いだけの月をゼロ値のレコードとして保存すると、グラフ上で
+        // 「稼働していたが結果が0だった月」と区別がつかなくなるため）。
+        if (json.skipped) {
+          setResults((prev) =>
+            prev.map((r) => (r.yearMonth === yearMonth ? { ...r, status: "skipped", message: json.message } : r))
+          );
+          continue;
+        }
 
         await repo.upsertAdReport(storeId, yearMonth, platform, { ...json.data, accountId }, category);
         succeededOnce = true;
@@ -223,6 +233,7 @@ export default function AdReportBulkSyncPanel({
                   完了（キャンペーン{r.campaignCount}件）
                 </span>
               )}
+              {r.status === "skipped" && <span className="text-gray-400">スキップ（キャンペーン開始前）</span>}
               {r.status === "error" && (
                 <span className="flex items-center gap-1 text-red-500">
                   <X size={12} />

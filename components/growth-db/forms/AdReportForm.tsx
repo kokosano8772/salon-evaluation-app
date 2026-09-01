@@ -362,6 +362,12 @@ export default function AdReportForm({
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
 
+      // キャンペーン開始前の月は取得できるデータが無いだけなので、
+      // 「同期完了（キャンペーン0件）」のような紛らわしい表示にせず、理由を明示する。
+      if (json.skipped) {
+        throw new Error(json.message);
+      }
+
       const data = json.data as Partial<AdReportDraft>;
       setDraft((prev) => (prev ? { ...prev, ...data } : prev));
       setSyncedCampaignCount(data.campaigns?.length ?? 0);
