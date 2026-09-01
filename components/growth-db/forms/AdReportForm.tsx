@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
 import { getAdSyncDefault, saveAdSyncDefault } from "@/lib/growth-db/ad-sync-defaults";
+import { formatMonthLabel } from "@/lib/growth-db/format";
 import {
   AD_PLATFORM_LABEL,
   AGE_GROUPS,
@@ -150,7 +151,10 @@ export default function AdReportForm({
   onSaved,
 }: AdReportFormProps) {
   const [draft, setDraft] = useState<AdReportDraft | null>(null);
+  // この月に既存の保存済みレコードがある場合のみidを持つ（削除ボタンの表示・対象特定に使う）。
+  const [existingReportId, setExistingReportId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [deleteState, setDeleteState] = useState<"idle" | "deleting">("idle");
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [syncError, setSyncError] = useState("");
   const [syncedCampaignCount, setSyncedCampaignCount] = useState(0);
@@ -187,8 +191,10 @@ export default function AdReportForm({
       });
 
     setDraft(null);
+    setExistingReportId(null);
     repo.getAdReport(storeId, yearMonth, platform, category).then((existing) => {
       if (cancelled) return;
+      setExistingReportId(existing?.id ?? null);
       if (existing) {
         const {
           accountId,
@@ -337,6 +343,19 @@ export default function AdReportForm({
     setSaveState("saved");
     onSaved?.();
     setTimeout(() => setSaveState("idle"), 2000);
+  };
+
+  // 一括同期でキャンペーン開始前の月まで誤って取り込んでしまった場合などに、
+  // その月のレコードを丸ごと削除するための機能。取り消せない操作のため確認ダイアログを挟む。
+  const handleDelete = async () => {
+    if (!existingReportId) return;
+    if (!window.confirm(`${formatMonthLabel(yearMonth)}分のデータを削除します。よろしいですか？この操作は取り消せません。`)) return;
+    setDeleteState("deleting");
+    await repo.deleteAdReport(existingReportId);
+    setExistingReportId(null);
+    setDraft(emptyDraft());
+    setDeleteState("idle");
+    onSaved?.();
   };
 
   const handleSync = async () => {
@@ -716,7 +735,19 @@ export default function AdReportForm({
         </>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 md:left-64 z-40 bg-white/90 backdrop-blur border-t border-gray-100 px-5 md:px-10 py-4 flex justify-end">
+      <div className="fixed bottom-0 left-0 right-0 md:left-64 z-40 bg-white/90 backdrop-blur border-t border-gray-100 px-5 md:px-10 py-4 flex items-center justify-between">
+        {existingReportId ? (
+          <button
+            onClick={handleDelete}
+            disabled={deleteState === "deleting"}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 disabled:opacity-60"
+          >
+            {deleteState === "deleting" ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            この月のデータを削除
+          </button>
+        ) : (
+          <div />
+        )}
         <button
           onClick={handleSave}
           disabled={saveState === "saving"}
