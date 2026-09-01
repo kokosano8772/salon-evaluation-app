@@ -1,9 +1,16 @@
-import { ReactNode } from "react";
-import { Calendar, CheckCircle2, Eye, MousePointerClick, Percent, ThumbsUp } from "lucide-react";
+"use client";
+
+import { ReactNode, useEffect, useState } from "react";
+import { Calendar, Check, CheckCircle2, Eye, Loader2, MousePointerClick, Pencil, Percent, ThumbsUp, X } from "lucide-react";
+import * as repo from "@/lib/growth-db/ad-report-repository";
 import { AdReport, GOOGLE_REPORT_THEME } from "@/lib/growth-db/ad-report-types";
 import { getBusinessCategoryBenchmark, AD_REPORT_TARGET_RATE, NATIONAL_AVERAGE_CVR } from "@/lib/growth-db/business-category-benchmarks";
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
-import { parseGoogleAdReportAiResult } from "@/lib/growth-db/parse-google-ad-report-ai-result";
+import {
+  buildGoogleAdReportAiResultString,
+  GoogleAdReportSuggestionPart,
+  parseGoogleAdReportAiResult,
+} from "@/lib/growth-db/parse-google-ad-report-ai-result";
 import { formatAdaptiveNumber, formatMonthLabel, formatMonthShortLabel, formatNumber } from "@/lib/growth-db/format";
 import GoogleReportStatCard from "./GoogleReportStatCard";
 import GoogleAgeRateChart from "./GoogleAgeRateChart";
@@ -11,10 +18,13 @@ import GoogleRateTrendChart from "./GoogleRateTrendChart";
 import GoogleClicksTrendChart from "./GoogleClicksTrendChart";
 
 interface GoogleAdReportDocumentProps {
+  storeId: string;
   storeName: string;
   businessCategory: string;
   report: AdReport;
   trend: YoyTrend;
+  onSaved: (aiResult: string) => void;
+  onEditingChange?: (isEditing: boolean) => void;
 }
 
 // 実際のコンバージョンアクション名は「店舗名（用途／チャネル）」のように長くなりがちなため、
@@ -90,7 +100,17 @@ function SectionTitle({ accent, caption, children }: { accent: string; caption?:
 const RECRUITMENT_CONFIRM_OPTIONS = ["応募・面接につながった", "問い合わせのみあった", "特に反応はなかった"];
 const ACQUISITION_CONFIRM_OPTIONS = ["忙しかった", "ほどほどだった", "暇だった"];
 
-export default function GoogleAdReportDocument({ storeName, businessCategory, report, trend }: GoogleAdReportDocumentProps) {
+const EMPTY_SUGGESTION: GoogleAdReportSuggestionPart = { headline: "", body: "", pills: [] };
+
+export default function GoogleAdReportDocument({
+  storeId,
+  storeName,
+  businessCategory,
+  report,
+  trend,
+  onSaved,
+  onEditingChange,
+}: GoogleAdReportDocumentProps) {
   const isRecruitment = report.category === "recruitment";
   const theme = GOOGLE_REPORT_THEME[report.category];
   const benchmark = getBusinessCategoryBenchmark(businessCategory);
@@ -99,6 +119,53 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
   const conversionGroups = groupConversionBreakdown(breakdown);
   const { summary, ageGroupInsight, ownerSuggestion, agencyAction } = parseGoogleAdReportAiResult(report.aiResult ?? "");
   const confirmOptions = isRecruitment ? RECRUITMENT_CONFIRM_OPTIONS : ACQUISITION_CONFIRM_OPTIONS;
+
+  // レポート内の各ページ下にある「編集」ボタンから、その場でAI生成文章を修正できるようにする。
+  // ページ1（summary/ageGroupInsight）とページ2（ownerSuggestion/agencyAction）を別々に
+  // draft管理し、片方の保存操作がもう片方の未保存の入力内容を巻き込まないようにする。
+  const [editingPage1, setEditingPage1] = useState(false);
+  const [editingPage2, setEditingPage2] = useState(false);
+  const [page1Draft, setPage1Draft] = useState({ summary: "", ageGroupInsight: "" });
+  const [page2Draft, setPage2Draft] = useState<{ ownerSuggestion: GoogleAdReportSuggestionPart; agencyAction: GoogleAdReportSuggestionPart }>({
+    ownerSuggestion: EMPTY_SUGGESTION,
+    agencyAction: EMPTY_SUGGESTION,
+  });
+  const [savingPage1, setSavingPage1] = useState(false);
+  const [savingPage2, setSavingPage2] = useState(false);
+
+  useEffect(() => {
+    onEditingChange?.(editingPage1 || editingPage2);
+  }, [editingPage1, editingPage2, onEditingChange]);
+
+  const startEditPage1 = () => {
+    setPage1Draft({ summary, ageGroupInsight });
+    setEditingPage1(true);
+  };
+
+  const savePage1 = async () => {
+    setSavingPage1(true);
+    const merged = { ...parseGoogleAdReportAiResult(report.aiResult ?? ""), ...page1Draft };
+    const newAiResult = buildGoogleAdReportAiResultString(merged);
+    await repo.upsertAdReport(storeId, report.yearMonth, "google", { aiResult: newAiResult }, report.category);
+    setSavingPage1(false);
+    setEditingPage1(false);
+    onSaved(newAiResult);
+  };
+
+  const startEditPage2 = () => {
+    setPage2Draft({ ownerSuggestion, agencyAction });
+    setEditingPage2(true);
+  };
+
+  const savePage2 = async () => {
+    setSavingPage2(true);
+    const merged = { ...parseGoogleAdReportAiResult(report.aiResult ?? ""), ...page2Draft };
+    const newAiResult = buildGoogleAdReportAiResultString(merged);
+    await repo.upsertAdReport(storeId, report.yearMonth, "google", { aiResult: newAiResult }, report.category);
+    setSavingPage2(false);
+    setEditingPage2(false);
+    onSaved(newAiResult);
+  };
 
   return (
     <div className="space-y-8">
@@ -125,9 +192,19 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
                 <p className="text-3xl font-extrabold" style={{ color: theme.text }}>
                   {formatMonthShortLabel(report.yearMonth)}の運用状況：◎好調
                 </p>
-                <p className="text-lg text-charcoal-700 mt-2 leading-relaxed whitespace-pre-wrap">
-                  {summary || "AI分析はまだ生成されていません"}
-                </p>
+                {editingPage1 ? (
+                  <textarea
+                    value={page1Draft.summary}
+                    onChange={(e) => setPage1Draft((d) => ({ ...d, summary: e.target.value }))}
+                    rows={3}
+                    placeholder="運用状況の一言"
+                    className="text-lg text-charcoal-700 mt-2 leading-relaxed w-full bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-1 focus:outline-none resize-y"
+                  />
+                ) : (
+                  <p className="text-lg text-charcoal-700 mt-2 leading-relaxed whitespace-pre-wrap">
+                    {summary || "AI分析はまだ生成されていません"}
+                  </p>
+                )}
               </div>
             </div>
           </SectionCard>
@@ -207,12 +284,23 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
             <SectionTitle accent={theme.accent} caption={`() = ${buttonLabel}クリック数`}>
               【年代別】{buttonLabel}を押した割合
             </SectionTitle>
-            {(ageGroupInsight || !isRecruitment) && (
+            {(editingPage1 || ageGroupInsight || !isRecruitment) && (
               <div className="flex items-start justify-between gap-4 mb-2">
-                {ageGroupInsight && (
-                  <p className="text-sm font-semibold break-words max-w-[340px]" style={{ color: "#5B7FA6" }}>
-                    {ageGroupInsight}
-                  </p>
+                {editingPage1 ? (
+                  <input
+                    type="text"
+                    value={page1Draft.ageGroupInsight}
+                    onChange={(e) => setPage1Draft((d) => ({ ...d, ageGroupInsight: e.target.value }))}
+                    placeholder="年代別の傾向コメント"
+                    className="text-sm font-semibold max-w-[340px] w-full bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-1 focus:outline-none"
+                    style={{ color: "#5B7FA6" }}
+                  />
+                ) : (
+                  ageGroupInsight && (
+                    <p className="text-sm font-semibold break-words max-w-[340px]" style={{ color: "#5B7FA6" }}>
+                      {ageGroupInsight}
+                    </p>
+                  )
                 )}
                 {!isRecruitment && (
                   <div className="text-xs text-gray-500 leading-relaxed shrink-0 space-y-0.5">
@@ -286,6 +374,38 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         <p className="text-center text-sm text-gray-400 mt-8">KOKODESIGN</p>
       </div>
 
+      <div className="ad-report-print-hide flex justify-center -mt-4">
+        {editingPage1 ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setEditingPage1(false)}
+              disabled={savingPage1}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-charcoal-700 border border-gray-200 hover:bg-gray-50 disabled:opacity-60"
+            >
+              <X size={13} strokeWidth={2} />
+              キャンセル
+            </button>
+            <button
+              onClick={savePage1}
+              disabled={savingPage1}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+            >
+              {savingPage1 ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} strokeWidth={2} />}
+              保存
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={startEditPage1}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-charcoal-700 border border-gray-200 hover:bg-gray-50"
+          >
+            <Pencil size={13} strokeWidth={2} />
+            編集
+          </button>
+        )}
+      </div>
+
       {/* ページ2 */}
       <div
         className="ad-report-page rounded-3xl p-8 w-[900px] min-h-[1320px] max-w-none mx-auto flex flex-col justify-center space-y-8"
@@ -293,49 +413,135 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
       >
         <SectionCard pt={42} pb={42} px={32}>
           <SectionTitle accent={theme.accent}>サロン様へのご提案</SectionTitle>
-          {ownerSuggestion.headline && (
-            <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">{ownerSuggestion.headline}</p>
-          )}
-          <p className="text-[17px] text-charcoal-700 leading-relaxed whitespace-pre-wrap">
-            {ownerSuggestion.body || (!ownerSuggestion.headline && "AI分析はまだ生成されていません")}
-          </p>
-          {ownerSuggestion.pills.length > 0 && (
-            <div className="flex flex-col sm:flex-row gap-3 mt-5">
-              {ownerSuggestion.pills.map((pill) => (
-                <div
-                  key={pill}
-                  className="flex-1 flex items-center gap-3 rounded-xl border-[3px] px-6 py-4"
-                  style={{ borderColor: theme.accent }}
-                >
-                  <CheckCircle2 size={24} strokeWidth={2} style={{ color: theme.accent }} />
-                  <span className="text-lg text-charcoal-800">{pill}</span>
+          {editingPage2 ? (
+            <>
+              <input
+                type="text"
+                value={page2Draft.ownerSuggestion.headline}
+                onChange={(e) =>
+                  setPage2Draft((d) => ({ ...d, ownerSuggestion: { ...d.ownerSuggestion, headline: e.target.value } }))
+                }
+                placeholder="見出し"
+                className="text-3xl font-bold text-charcoal-900 mt-2 mb-3 w-full bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-1 focus:outline-none"
+              />
+              <textarea
+                value={page2Draft.ownerSuggestion.body}
+                onChange={(e) =>
+                  setPage2Draft((d) => ({ ...d, ownerSuggestion: { ...d.ownerSuggestion, body: e.target.value } }))
+                }
+                rows={4}
+                placeholder="本文"
+                className="text-[17px] text-charcoal-700 leading-relaxed w-full bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-1 focus:outline-none resize-y"
+              />
+              <div className="flex flex-col sm:flex-row gap-3 mt-5">
+                {[0, 1].map((i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    value={page2Draft.ownerSuggestion.pills[i] ?? ""}
+                    onChange={(e) =>
+                      setPage2Draft((d) => {
+                        const pills = [d.ownerSuggestion.pills[0] ?? "", d.ownerSuggestion.pills[1] ?? ""];
+                        pills[i] = e.target.value;
+                        return { ...d, ownerSuggestion: { ...d.ownerSuggestion, pills } };
+                      })
+                    }
+                    placeholder={`ピル${i + 1}（任意）`}
+                    className="flex-1 text-lg text-charcoal-800 rounded-xl border-[3px] border-dashed border-gray-300 px-6 py-4 focus:outline-none"
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              {ownerSuggestion.headline && (
+                <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">{ownerSuggestion.headline}</p>
+              )}
+              <p className="text-[17px] text-charcoal-700 leading-relaxed whitespace-pre-wrap">
+                {ownerSuggestion.body || (!ownerSuggestion.headline && "AI分析はまだ生成されていません")}
+              </p>
+              {ownerSuggestion.pills.length > 0 && (
+                <div className="flex flex-col sm:flex-row gap-3 mt-5">
+                  {ownerSuggestion.pills.map((pill) => (
+                    <div
+                      key={pill}
+                      className="flex-1 flex items-center gap-3 rounded-xl border-[3px] px-6 py-4"
+                      style={{ borderColor: theme.accent }}
+                    >
+                      <CheckCircle2 size={24} strokeWidth={2} style={{ color: theme.accent }} />
+                      <span className="text-lg text-charcoal-800">{pill}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </SectionCard>
 
         <SectionCard pt={42} pb={42} px={32}>
           <SectionTitle accent={theme.accent}>ココデザインが行う改善策</SectionTitle>
-          {agencyAction.headline && (
-            <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">{agencyAction.headline}</p>
-          )}
-          <p className="text-[17px] text-charcoal-700 leading-relaxed whitespace-pre-wrap">
-            {agencyAction.body || (!agencyAction.headline && "AI分析はまだ生成されていません")}
-          </p>
-          {agencyAction.pills.length > 0 && (
-            <div className="flex flex-col sm:flex-row gap-3 mt-5">
-              {agencyAction.pills.map((pill) => (
-                <div
-                  key={pill}
-                  className="flex-1 flex items-center gap-3 rounded-xl border-[3px] px-6 py-4"
-                  style={{ borderColor: theme.accent }}
-                >
-                  <CheckCircle2 size={24} strokeWidth={2} style={{ color: theme.accent }} />
-                  <span className="text-lg text-charcoal-800">{pill}</span>
+          {editingPage2 ? (
+            <>
+              <input
+                type="text"
+                value={page2Draft.agencyAction.headline}
+                onChange={(e) =>
+                  setPage2Draft((d) => ({ ...d, agencyAction: { ...d.agencyAction, headline: e.target.value } }))
+                }
+                placeholder="見出し"
+                className="text-3xl font-bold text-charcoal-900 mt-2 mb-3 w-full bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-1 focus:outline-none"
+              />
+              <textarea
+                value={page2Draft.agencyAction.body}
+                onChange={(e) =>
+                  setPage2Draft((d) => ({ ...d, agencyAction: { ...d.agencyAction, body: e.target.value } }))
+                }
+                rows={4}
+                placeholder="本文"
+                className="text-[17px] text-charcoal-700 leading-relaxed w-full bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-1 focus:outline-none resize-y"
+              />
+              <div className="flex flex-col sm:flex-row gap-3 mt-5">
+                {[0, 1].map((i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    value={page2Draft.agencyAction.pills[i] ?? ""}
+                    onChange={(e) =>
+                      setPage2Draft((d) => {
+                        const pills = [d.agencyAction.pills[0] ?? "", d.agencyAction.pills[1] ?? ""];
+                        pills[i] = e.target.value;
+                        return { ...d, agencyAction: { ...d.agencyAction, pills } };
+                      })
+                    }
+                    placeholder={`ピル${i + 1}（任意）`}
+                    className="flex-1 text-lg text-charcoal-800 rounded-xl border-[3px] border-dashed border-gray-300 px-6 py-4 focus:outline-none"
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              {agencyAction.headline && (
+                <p className="text-3xl font-bold text-charcoal-900 mt-2 mb-3">{agencyAction.headline}</p>
+              )}
+              <p className="text-[17px] text-charcoal-700 leading-relaxed whitespace-pre-wrap">
+                {agencyAction.body || (!agencyAction.headline && "AI分析はまだ生成されていません")}
+              </p>
+              {agencyAction.pills.length > 0 && (
+                <div className="flex flex-col sm:flex-row gap-3 mt-5">
+                  {agencyAction.pills.map((pill) => (
+                    <div
+                      key={pill}
+                      className="flex-1 flex items-center gap-3 rounded-xl border-[3px] px-6 py-4"
+                      style={{ borderColor: theme.accent }}
+                    >
+                      <CheckCircle2 size={24} strokeWidth={2} style={{ color: theme.accent }} />
+                      <span className="text-lg text-charcoal-800">{pill}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </SectionCard>
 
@@ -372,6 +578,38 @@ export default function GoogleAdReportDocument({ storeName, businessCategory, re
         </SectionCard>
 
         <p className="text-center text-sm text-gray-400 mt-8">KOKODESIGN</p>
+      </div>
+
+      <div className="ad-report-print-hide flex justify-center -mt-4">
+        {editingPage2 ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setEditingPage2(false)}
+              disabled={savingPage2}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-charcoal-700 border border-gray-200 hover:bg-gray-50 disabled:opacity-60"
+            >
+              <X size={13} strokeWidth={2} />
+              キャンセル
+            </button>
+            <button
+              onClick={savePage2}
+              disabled={savingPage2}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+            >
+              {savingPage2 ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} strokeWidth={2} />}
+              保存
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={startEditPage2}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-charcoal-700 border border-gray-200 hover:bg-gray-50"
+          >
+            <Pencil size={13} strokeWidth={2} />
+            編集
+          </button>
+        )}
       </div>
     </div>
   );

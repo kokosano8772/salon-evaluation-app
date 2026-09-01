@@ -88,6 +88,33 @@ function splitHeadlineAndBody(section: string): GoogleAdReportSuggestionPart {
   return { headline, body: bodyLines.join("\n").trim(), pills };
 }
 
+// parseGoogleAdReportAiResult()の逆変換。レポート内の各ページに置く直接編集UIが、
+// 構造化された編集内容を元のマーカー付き文字列に戻してDBへ保存するために使う。
+// splitHeadlineAndBody（1行目=見出し、以降本文、末尾の「- 」始まりの行=ピル最大2つ）と
+// 正確に対になる形で組み立てる。中身が空でもマーカー自体は必ず出力する。
+function joinSection(headline: string, body: string, pills: string[]): string {
+  const lines = [headline.trim()];
+  if (body.trim()) lines.push(body.trim());
+  pills.filter((p) => p.trim()).forEach((p) => lines.push(`- ${p.trim()}`));
+  return lines.join("\n");
+}
+
+export function buildGoogleAdReportAiResultString(parts: GoogleAdReportAiResultParts): string {
+  return [
+    SUMMARY_MARKER,
+    parts.summary.trim(),
+    "",
+    AGE_GROUP_INSIGHT_MARKER,
+    parts.ageGroupInsight.trim(),
+    "",
+    OWNER_SUGGESTION_MARKER,
+    joinSection(parts.ownerSuggestion.headline, parts.ownerSuggestion.body, parts.ownerSuggestion.pills),
+    "",
+    AGENCY_ACTION_MARKER,
+    joinSection(parts.agencyAction.headline, parts.agencyAction.body, parts.agencyAction.pills),
+  ].join("\n");
+}
+
 export function parseGoogleAdReportAiResult(aiResult: string): GoogleAdReportAiResultParts {
   const summaryMarker = findMarkerLine(aiResult, SUMMARY_MARKER);
   const ageGroupMarker = findMarkerLine(aiResult, AGE_GROUP_INSIGHT_MARKER);

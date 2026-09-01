@@ -31,6 +31,7 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
 
   const [selectedMonth, setSelectedMonth] = useState<string | undefined>(initial.month);
   const [pngSaving, setPngSaving] = useState(false);
+  const [reportEditing, setReportEditing] = useState(false);
   const [platform, setPlatform] = useState<AdPlatform>(
     initial.platform === "google" || initial.platform === "meta" ? initial.platform : "meta"
   );
@@ -163,21 +164,26 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
               </div>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
+                disabled={reportEditing}
+                title={reportEditing ? "編集を完了してから保存してください" : undefined}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50 disabled:opacity-60"
               >
                 <Printer size={15} strokeWidth={2} />
                 印刷
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
+                disabled={reportEditing}
+                title={reportEditing ? "編集を完了してから保存してください" : undefined}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50 disabled:opacity-60"
               >
                 <Download size={15} strokeWidth={2} />
                 PDFで保存
               </button>
               <button
                 onClick={handleSavePng}
-                disabled={pngSaving}
+                disabled={pngSaving || reportEditing}
+                title={reportEditing ? "編集を完了してから保存してください" : undefined}
                 className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50 disabled:opacity-60"
               >
                 {pngSaving ? <Loader2 size={15} className="animate-spin" /> : <Image size={15} strokeWidth={2} />}
@@ -260,10 +266,13 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
           <div className="overflow-x-auto">
             {platform === "google" ? (
               <GoogleAdReportDocument
+                storeId={store.id}
                 storeName={store.name}
                 businessCategory={store.businessCategory}
                 report={report}
                 trend={yoyTrend}
+                onSaved={refreshAdReports}
+                onEditingChange={setReportEditing}
               />
             ) : (
               <AdReportDocument storeName={store.name} report={report} ctrTrend={ctrTrend} ageGroupTrend={ageGroupTrend} />
