@@ -35,6 +35,57 @@ function getClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey });
 }
 
+// Geminiが「503 UNAVAILABLE（混雑中）」や「429 RESOURCE_EXHAUSTED（レート制限）」を
+// 返すことがあるが、公式ドキュメント通りどちらも数秒で解消することが多い一時的な
+// エラーのため、利用者にエラーを見せる前に軽くリトライする。無料枠を使い切った
+// という意味ではない（それとは別のエラーコード）。
+const RETRYABLE_CODES = ["503", "429"];
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1500;
+
+function extractErrorCode(message: string): string | null {
+  const match = message.match(/"code"\s*:\s*"?(\d+)"?/);
+  return match ? match[1] : null;
+}
+
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const code = err instanceof Error ? extractErrorCode(err.message) : null;
+      if (attempt === MAX_RETRIES || !code || !RETRYABLE_CODES.includes(code)) {
+        throw new Error(cleanErrorMessage(lastErr));
+      }
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    }
+  }
+  throw new Error(cleanErrorMessage(lastErr));
+}
+
+// @google/genai のエラーはmessage自体に生のAPIエラーJSON文字列がそのまま
+// 入っていることがあり（例: 503時に `{"error":{"code":503,"message":"...","status":"UNAVAILABLE"}}`
+// のような文字列がそのままmessageになる）、画面にそのまま出すと読みにくい。
+// 実際のメッセージ部分だけを取り出し、混雑時は分かりやすい日本語を添える。
+function cleanErrorMessage(err: unknown): string {
+  if (!(err instanceof Error)) return "不明なエラー";
+  try {
+    const parsed = JSON.parse(err.message);
+    const inner = parsed?.error?.message;
+    if (typeof inner === "string") {
+      if (parsed?.error?.status === "UNAVAILABLE") {
+        return `Geminiが現在混雑しています。しばらく待ってから再試行してください。（${inner}）`;
+      }
+      return inner;
+    }
+  } catch {
+    // JSON文字列でなければ元のメッセージのまま使う
+  }
+  return err.message;
+}
+
 export function getGeminiModel(options?: GeminiModelOptions) {
   const ai = getClient();
   const forceJson = !options?.plainText && !options?.useGoogleSearch;
@@ -47,12 +98,12 @@ export function getGeminiModel(options?: GeminiModelOptions) {
 
   return {
     async generateContent(prompt: string) {
-      const response = await ai.models.generateContent({ model: MODEL_NAME, contents: prompt, config });
+      const response = await withRetry(() => ai.models.generateContent({ model: MODEL_NAME, contents: prompt, config }));
       const text = response.text ?? "";
       return { response: { text: () => text } };
     },
     async generateContentStream(prompt: string) {
-      const stream = await ai.models.generateContentStream({ model: MODEL_NAME, contents: prompt, config });
+      const stream = await withRetry(() => ai.models.generateContentStream({ model: MODEL_NAME, contents: prompt, config }));
       async function* textChunks() {
         for await (const chunk of stream) {
           const text = chunk.text ?? "";
