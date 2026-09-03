@@ -35,17 +35,30 @@ function getClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey });
 }
 
-// Geminiが「503 UNAVAILABLE（混雑中）」や「429 RESOURCE_EXHAUSTED（レート制限）」を
-// 返すことがあるが、公式ドキュメント通りどちらも数秒で解消することが多い一時的な
-// エラーのため、利用者にエラーを見せる前に軽くリトライする。無料枠を使い切った
-// という意味ではない（それとは別のエラーコード）。
-const RETRYABLE_CODES = ["503", "429"];
+// Geminiが「503 UNAVAILABLE（混雑中）」や「429 RESOURCE_EXHAUSTED（分単位等の
+// レート制限）」を返すことがあるが、公式ドキュメント通りどちらも数秒で解消する
+// ことが多い一時的なエラーのため、利用者にエラーを見せる前に軽くリトライする。
+// ただし429のうち「1日あたりの無料枠上限（quotaId に PerDay を含む）」に達した
+// 場合は、数秒待ってもその日のうちは絶対に解消しないため、リトライせず即座に
+// エラーを見せる（無駄に待たせないため）。
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1500;
 
 function extractErrorCode(message: string): string | null {
   const match = message.match(/"code"\s*:\s*"?(\d+)"?/);
   return match ? match[1] : null;
+}
+
+function isDailyQuotaExceeded(message: string): boolean {
+  return message.includes("PerDay");
+}
+
+function isRetryable(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const code = extractErrorCode(err.message);
+  if (code === "503") return true;
+  if (code === "429") return !isDailyQuotaExceeded(err.message);
+  return false;
 }
 
 async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
@@ -55,8 +68,7 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
       return await fn();
     } catch (err) {
       lastErr = err;
-      const code = err instanceof Error ? extractErrorCode(err.message) : null;
-      if (attempt === MAX_RETRIES || !code || !RETRYABLE_CODES.includes(code)) {
+      if (attempt === MAX_RETRIES || !isRetryable(err)) {
         throw new Error(cleanErrorMessage(lastErr));
       }
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
@@ -77,6 +89,9 @@ function cleanErrorMessage(err: unknown): string {
     if (typeof inner === "string") {
       if (parsed?.error?.status === "UNAVAILABLE") {
         return `Geminiが現在混雑しています。しばらく待ってから再試行してください。（${inner}）`;
+      }
+      if (parsed?.error?.status === "RESOURCE_EXHAUSTED" && isDailyQuotaExceeded(err.message)) {
+        return `Geminiの1日あたりの無料枠上限に達しました。日付が変わるまで待つか、有料プランへの切り替えが必要です。（${inner}）`;
       }
       return inner;
     }
