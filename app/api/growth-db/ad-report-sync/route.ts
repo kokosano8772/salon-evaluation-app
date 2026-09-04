@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MetaAdsClient } from "@/lib/ad-platforms/meta-ads-client";
-import { CampaignNotStartedError, GoogleAdsClient } from "@/lib/ad-platforms/google-ads-client";
+import { GoogleAdsClient } from "@/lib/ad-platforms/google-ads-client";
+import { CampaignNotStartedError } from "@/lib/ad-platforms/types";
 import { AdPlatform } from "@/lib/growth-db/ad-report-types";
 
 export const runtime = "nodejs";

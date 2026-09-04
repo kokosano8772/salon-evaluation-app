@@ -12,7 +12,7 @@
 //       https://developers.facebook.com/docs/marketing-api/insights/breakdowns/
 
 import { AGE_GROUPS, AgeGroup, AdCampaignMetrics, GenderBreakdown, GenderBreakdownValue, HourlyClicks, HOURLY_SLOTS } from "@/lib/growth-db/ad-report-types";
-import { AdPlatformClient, NormalizedAdReport } from "./types";
+import { AdPlatformClient, CampaignNotStartedError, NormalizedAdReport } from "./types";
 
 const GRAPH_API_VERSION = "v25.0";
 const GRAPH_API_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
@@ -203,6 +203,20 @@ export class MetaAdsClient implements AdPlatformClient {
       );
     }
 
+    // 一括同期（複数月まとめて）で、対象キャンペーンがまだ開始していない月まで範囲に
+    // 含めてしまうと、実績が無いだけなのに「表示回数0・クリック数0…」という本物のゼロ値
+    // レコードが保存されてしまう（Google Ads連携で起きたのと同種の不具合）。
+    // Metaのキャンペーンは「[店舗名]-YYYYMM」のように月ごとに命名されている運用が
+    // 前提のため、この命名規則に沿っていることが確認できる場合（＝いずれかの
+    // マッチしたキャンペーン名に6桁の数字が含まれる）だけ、対象月の数字を含む
+    // キャンペーンが1件も無ければスキップする。命名規則に沿っていない店舗では
+    // 判定できないため、従来通りスキップせず進める。
+    const yearMonthDigits = yearMonth.replace("-", "");
+    const followsMonthlyNaming = matchedCampaigns.some((c) => /\d{6}/.test(c.name ?? ""));
+    if (campaignNameFilter && followsMonthlyNaming && !matchedCampaigns.some((c) => c.name?.includes(yearMonthDigits))) {
+      throw new CampaignNotStartedError(`対象月（${yearMonth}）に一致するキャンペーンが見つからないため、データがありません`);
+    }
+
     const campaignIds = matchedCampaigns.map((c) => c.id).filter((id): id is string => !!id);
     const filterParams: Record<string, string> = campaignNameFilter
       ? { filtering: JSON.stringify([{ field: "campaign.id", operator: "IN", value: campaignIds }]) }
@@ -214,7 +228,6 @@ export class MetaAdsClient implements AdPlatformClient {
     // そのまま使うと、他の月のキャンペーンの設定まで混ざって範囲が不正確に広がってしまう。
     // 対象月（YYYYMM）も名前に含むキャンペーンだけに絞り込んでから広告セットを取得する。
     // 該当が無い場合（命名規則に合わない等）は誤った値を出すより取得自体を諦める。
-    const yearMonthDigits = yearMonth.replace("-", "");
     const monthScopedCampaignIds = matchedCampaigns
       .filter((c) => c.name?.includes(yearMonthDigits))
       .map((c) => c.id)

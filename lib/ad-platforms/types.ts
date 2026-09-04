@@ -7,6 +7,12 @@ import { AdReportPatch } from "@/lib/growth-db/ad-report-repository";
 
 export type NormalizedAdReport = AdReportPatch;
 
+// 一括同期（複数月まとめて）で、対象キャンペーンがまだ開始していない月まで範囲に
+// 含めてしまった場合に投げる専用エラー。呼び出し側（sync route）で通常のエラーと
+// 区別し、実績ゼロなだけの本物のレコードを作らずスキップできるようにする。
+// GoogleAds/Meta両方のクライアントで共用する。
+export class CampaignNotStartedError extends Error {}
+
 export interface AdPlatformClient {
   /**
    * 指定アカウント・指定月のレポートを取得し、共通フォーマットに変換して返す。

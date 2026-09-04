@@ -30,7 +30,7 @@ import {
   ConversionActionBreakdown,
   SearchTermClicks,
 } from "@/lib/growth-db/ad-report-types";
-import { AdPlatformClient, NormalizedAdReport } from "./types";
+import { AdPlatformClient, CampaignNotStartedError, NormalizedAdReport } from "./types";
 
 const GOOGLE_ADS_API_VERSION = "v25";
 const GOOGLE_ADS_API_BASE = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}`;
@@ -127,11 +127,6 @@ async function searchGoogleAds<T>(customerId: string, query: string): Promise<T[
 interface CampaignExistenceRow {
   campaign?: { id?: string; name?: string; startDateTime?: string };
 }
-
-// 一括同期で「開始月より前」を範囲に含めてしまった場合に、実績の無い月へ
-// ゼロ値のレコードを作ってしまわないよう、呼び出し側（sync route）で
-// 通常のエラーと区別してスキップ扱いにするための専用エラー。
-export class CampaignNotStartedError extends Error {}
 
 interface CampaignMetricsRow {
   campaign?: { id?: string; name?: string };
