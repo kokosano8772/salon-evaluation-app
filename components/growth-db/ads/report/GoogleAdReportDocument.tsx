@@ -280,7 +280,7 @@ export default function GoogleAdReportDocument({
                       value={page1Draft.status}
                       onChange={(e) => setPage1Draft((d) => ({ ...d, status: e.target.value }))}
                       placeholder={computeGoogleAdReportStatus(report.cvr, isRecruitment)}
-                      className="text-3xl font-extrabold bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none w-36"
+                      className="text-3xl font-extrabold bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none flex-1 min-w-0"
                       style={{ color: theme.text }}
                     />
                   </div>
