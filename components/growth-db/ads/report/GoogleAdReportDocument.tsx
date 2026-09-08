@@ -364,7 +364,9 @@ export default function GoogleAdReportDocument({
             accent={theme.accent}
             valueColor={theme.accent}
           >
-            {!isRecruitment && (
+            {isRecruitment ? (
+              <p className="text-sm text-gray-400 leading-relaxed">{buttonLabel}をクリックしていただいた割合</p>
+            ) : (
               <div className="text-sm text-gray-400 leading-relaxed">
                 {benchmark && (
                   <p>
