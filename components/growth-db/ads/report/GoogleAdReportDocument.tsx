@@ -364,15 +364,17 @@ export default function GoogleAdReportDocument({
             accent={theme.accent}
             valueColor={theme.accent}
           >
-            <div className="text-sm text-gray-400 leading-relaxed">
-              {benchmark && (
-                <p>
-                  {businessCategory}平均{benchmark.ownAverage}%
-                </p>
-              )}
-              <p>ココデザインでの目標：{AD_REPORT_TARGET_RATE}%</p>
-              {benchmark && <p>全国美容院平均約{NATIONAL_AVERAGE_CVR}%</p>}
-            </div>
+            {!isRecruitment && (
+              <div className="text-sm text-gray-400 leading-relaxed">
+                {benchmark && (
+                  <p>
+                    {businessCategory}平均{benchmark.ownAverage}%
+                  </p>
+                )}
+                <p>ココデザインでの目標：{AD_REPORT_TARGET_RATE}%</p>
+                {benchmark && <p>全国美容院平均約{NATIONAL_AVERAGE_CVR}%</p>}
+              </div>
+            )}
           </GoogleReportStatCard>
         </div>
 
