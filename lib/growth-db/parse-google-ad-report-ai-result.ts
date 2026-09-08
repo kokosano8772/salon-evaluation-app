@@ -44,7 +44,7 @@ export function computeGoogleAdReportStatus(cvr: number, isRecruitment: boolean)
   if (cvr >= 20) return "💮絶好調";
   if (cvr >= 12) return "◎好調";
   if (cvr >= 8) return "〇安定";
-  const buttonLabel = isRecruitment ? "お問い合わせボタン" : "予約ボタン";
+  const buttonLabel = isRecruitment ? "お問合せボタン" : "予約ボタン";
   return `△${buttonLabel}反応控えめ`;
 }
 

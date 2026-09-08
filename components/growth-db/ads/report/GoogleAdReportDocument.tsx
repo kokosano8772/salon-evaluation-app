@@ -184,7 +184,7 @@ export default function GoogleAdReportDocument({
   const isRecruitment = report.category === "recruitment";
   const theme = GOOGLE_REPORT_THEME[report.category];
   const benchmark = getBusinessCategoryBenchmark(businessCategory);
-  const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
+  const buttonLabel = isRecruitment ? "お問合せボタン" : "ご予約ボタン";
   const breakdown = report.conversionActionBreakdown ?? [];
   const conversionGroups = groupConversionBreakdown(breakdown);
   const { status, summary, ageGroupInsight, ownerSuggestion, agencyAction } = parseGoogleAdReportAiResult(report.aiResult ?? "");
