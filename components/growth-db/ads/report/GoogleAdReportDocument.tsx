@@ -23,9 +23,10 @@ import { getBusinessCategoryBenchmark, AD_REPORT_TARGET_RATE, NATIONAL_AVERAGE_C
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
 import {
   buildGoogleAdReportAiResultString,
-  DEFAULT_STATUS,
+  computeGoogleAdReportStatus,
   GoogleAdReportPill,
   GoogleAdReportSuggestionPart,
+  hasExplicitStatus,
   parseGoogleAdReportAiResult,
   PILL_ICON_KEYS,
   PillIconKey,
@@ -187,6 +188,11 @@ export default function GoogleAdReportDocument({
   const breakdown = report.conversionActionBreakdown ?? [];
   const conversionGroups = groupConversionBreakdown(breakdown);
   const { status, summary, ageGroupInsight, ownerSuggestion, agencyAction } = parseGoogleAdReportAiResult(report.aiResult ?? "");
+  // レポート内編集でユーザーが明示的にステータスを上書きしていればそれを使い、
+  // 未編集なら獲得率（cvr）から自動判定した値を表示する（AIには生成させない）。
+  const displayStatus = hasExplicitStatus(report.aiResult ?? "")
+    ? status
+    : computeGoogleAdReportStatus(report.cvr, isRecruitment);
   const confirmOptions = isRecruitment ? RECRUITMENT_CONFIRM_OPTIONS : ACQUISITION_CONFIRM_OPTIONS;
 
   // 前サイクル（比較対象となる1年前の実績）がまだ1件も無い＝開始から1周年を
@@ -215,7 +221,7 @@ export default function GoogleAdReportDocument({
   }, [editingPage1, editingPage2, onEditingChange]);
 
   const startEditPage1 = () => {
-    setPage1Draft({ status, summary, ageGroupInsight });
+    setPage1Draft({ status: displayStatus, summary, ageGroupInsight });
     setEditingPage1(true);
   };
 
@@ -273,14 +279,14 @@ export default function GoogleAdReportDocument({
                       type="text"
                       value={page1Draft.status}
                       onChange={(e) => setPage1Draft((d) => ({ ...d, status: e.target.value }))}
-                      placeholder={DEFAULT_STATUS}
+                      placeholder={computeGoogleAdReportStatus(report.cvr, isRecruitment)}
                       className="text-3xl font-extrabold bg-transparent border border-dashed border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none w-36"
                       style={{ color: theme.text }}
                     />
                   </div>
                 ) : (
                   <p className="text-3xl font-extrabold" style={{ color: theme.text }}>
-                    {formatMonthShortLabel(report.yearMonth)}の運用状況：{status}
+                    {formatMonthShortLabel(report.yearMonth)}の運用状況：{displayStatus}
                   </p>
                 )}
                 {editingPage1 ? (

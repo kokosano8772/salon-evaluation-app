@@ -33,9 +33,20 @@ export interface GoogleAdReportAiResultParts {
   agencyAction: GoogleAdReportSuggestionPart;
 }
 
-// "◎好調"の判定基準は未確定のため、AIには生成させずレポート内編集のみで
-// 手動で変更できるようにしている。マーカーが無い場合はこの値を使う。
+// 編集欄が完全に空で保存された場合の最終フォールバック（本来はcomputeGoogleAdReportStatusの
+// 結果が入るが、念のための保険）。
 export const DEFAULT_STATUS = "◎好調";
+
+// 運用状況ステータスの自動判定基準（獲得率＝report.cvr を参考に）。
+// AIには生成させず、この関数で機械的に判定する。判定基準はユーザーから提示されたもの:
+// 20%以上=💮絶好調 / 12〜19.9%=◎好調 / 8〜11.9%=〇安定 / 8%未満=△(ボタン)反応控えめ
+export function computeGoogleAdReportStatus(cvr: number, isRecruitment: boolean): string {
+  if (cvr >= 20) return "💮絶好調";
+  if (cvr >= 12) return "◎好調";
+  if (cvr >= 8) return "〇安定";
+  const buttonLabel = isRecruitment ? "お問い合わせボタン" : "予約ボタン";
+  return `△${buttonLabel}反応控えめ`;
+}
 
 const STATUS_MARKER = "## ステータス";
 const SUMMARY_MARKER = "## 運用状況";
@@ -78,6 +89,13 @@ function findMarkerLine(text: string, marker: string): { start: number; end: num
     if (re.lastIndex === match.index) re.lastIndex++;
   }
   return last;
+}
+
+// "## ステータス"マーカーが明示的に存在するか（＝レポート内編集でユーザーが手動で
+// ステータスを上書き済みか）を判定する。マーカーが無い場合は、表示側で
+// computeGoogleAdReportStatus() による自動判定結果を使う想定。
+export function hasExplicitStatus(aiResult: string): boolean {
+  return findMarkerLine(aiResult, STATUS_MARKER) !== null;
 }
 
 // ピル行の先頭にオプションで付く "[gear]" のようなアイコン指定タグ。
