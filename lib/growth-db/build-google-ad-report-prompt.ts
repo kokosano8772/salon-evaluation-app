@@ -53,7 +53,7 @@ export function buildGoogleAdReportAnalysisPrompt(
   recruitmentLpUrls: NamedUrl[] = []
 ): string {
   const isRecruitment = report.category === "recruitment";
-  const buttonLabel = isRecruitment ? "お問合せボタン" : "ご予約ボタン";
+  const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
   const lines: string[] = [];
 
   lines.push(`# ${formatMonthLabel(report.yearMonth)}のGoogle広告実績データ（すべて計算済みの確定値）`);
