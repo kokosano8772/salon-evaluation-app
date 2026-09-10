@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
 import { AdReport, GOOGLE_REPORT_THEME } from "@/lib/growth-db/ad-report-types";
-import { getBusinessCategoryBenchmark, AD_REPORT_TARGET_RATE, NATIONAL_AVERAGE_CVR } from "@/lib/growth-db/business-category-benchmarks";
+import { AD_REPORT_TARGET_RATE, NATIONAL_AVERAGE_CVR } from "@/lib/growth-db/business-category-benchmarks";
 import { YoyTrend } from "@/lib/growth-db/ad-report-trend";
 import {
   buildGoogleAdReportAiResultString,
@@ -183,7 +183,6 @@ export default function GoogleAdReportDocument({
 }: GoogleAdReportDocumentProps) {
   const isRecruitment = report.category === "recruitment";
   const theme = GOOGLE_REPORT_THEME[report.category];
-  const benchmark = getBusinessCategoryBenchmark(businessCategory);
   const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
   const breakdown = report.conversionActionBreakdown ?? [];
   const conversionGroups = groupConversionBreakdown(breakdown);
@@ -194,6 +193,21 @@ export default function GoogleAdReportDocument({
     ? status
     : computeGoogleAdReportStatus(report.cvr, isRecruitment);
   const confirmOptions = isRecruitment ? RECRUITMENT_CONFIRM_OPTIONS : ACQUISITION_CONFIRM_OPTIONS;
+
+  // 「◯◯平均」は固定のベンチマーク値ではなく、実際に契約中の同業種クライアント
+  // （自店舗含む）の最新月データから毎回ライブ集計する実数のため、非同期に取得する。
+  // 該当データが無ければnullのままにし、架空の数値を出さない。
+  const [ownAverageCvr, setOwnAverageCvr] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setOwnAverageCvr(null);
+    repo.getBusinessCategoryAverageCvr(businessCategory, report.platform, report.category).then((avg) => {
+      if (!cancelled) setOwnAverageCvr(avg);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [businessCategory, report.platform, report.category]);
 
   // 前サイクル（比較対象となる1年前の実績）がまだ1件も無い＝開始から1周年を
   // 迎えていない店舗の場合、進行中サイクル1本だけが「新しい方の色」で表示され
@@ -368,13 +382,13 @@ export default function GoogleAdReportDocument({
               <p className="text-sm text-gray-400 leading-relaxed">{buttonLabel}をクリックしていただいた割合</p>
             ) : (
               <div className="text-sm text-gray-400 leading-relaxed">
-                {benchmark && (
+                {ownAverageCvr !== null && (
                   <p>
-                    {businessCategory}平均{benchmark.ownAverage}%
+                    {businessCategory}平均{ownAverageCvr}%
                   </p>
                 )}
                 <p>ココデザインでの目標：{AD_REPORT_TARGET_RATE}%</p>
-                {benchmark && <p>全国美容院平均約{NATIONAL_AVERAGE_CVR}%</p>}
+                {ownAverageCvr !== null && <p>全国美容院平均約{NATIONAL_AVERAGE_CVR}%</p>}
               </div>
             )}
           </GoogleReportStatCard>

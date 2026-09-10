@@ -134,3 +134,46 @@ export async function deleteAdReport(id: string): Promise<void> {
   const { error } = await supabase.from("ad_reports").delete().eq("id", id);
   if (error) throw error;
 }
+
+// 業種別の自社クライアント平均（獲得率=cvr）をライブ集計する。固定のベンチマーク値
+// ではなく、現在契約中の同業種クライアント（レポート対象の店舗自身も含む）の
+// 最新月データから毎回計算し直す。該当データが1件も無い場合はnullを返し、
+// 呼び出し側で「架空の数値を出さない」既存方針（business-category-benchmarks.ts
+// の方針）に沿って非表示にできるようにする。
+export async function getBusinessCategoryAverageCvr(
+  businessCategory: string,
+  platform: AdPlatform,
+  category: AdReportCategory
+): Promise<number | null> {
+  const supabase = createClient();
+
+  const { data: storeRows, error: storeError } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("business_category", businessCategory);
+  if (storeError) throw storeError;
+  const storeIds = (storeRows ?? []).map((r) => r.id);
+  if (storeIds.length === 0) return null;
+
+  const { data: reportRows, error: reportError } = await supabase
+    .from("ad_reports")
+    .select("store_id, year_month, cvr")
+    .in("store_id", storeIds)
+    .eq("platform", platform)
+    .eq("category", category);
+  if (reportError) throw reportError;
+  if (!reportRows || reportRows.length === 0) return null;
+
+  // 店舗ごとに最新月（year_monthが最も大きい行）のcvrだけを採用する
+  const latestByStore = new Map<string, { yearMonth: string; cvr: number }>();
+  for (const row of reportRows) {
+    const existing = latestByStore.get(row.store_id);
+    if (!existing || row.year_month > existing.yearMonth) {
+      latestByStore.set(row.store_id, { yearMonth: row.year_month, cvr: row.cvr });
+    }
+  }
+  const cvrs = Array.from(latestByStore.values()).map((v) => v.cvr);
+  if (cvrs.length === 0) return null;
+  const average = cvrs.reduce((sum, v) => sum + v, 0) / cvrs.length;
+  return Math.round(average * 100) / 100;
+}
