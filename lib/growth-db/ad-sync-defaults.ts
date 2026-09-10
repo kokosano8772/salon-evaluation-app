@@ -33,6 +33,29 @@ export async function getAdSyncDefault(
   return all[keyFor(platform, category)] ?? null;
 }
 
+// 複数店舗分の同期設定を1回のクエリでまとめて取得する。「全店舗まとめて同期」機能で、
+// 店舗ごとに何度も問い合わせずに済ませるために使う。設定が無い店舗はMapに含めない。
+export async function listAdSyncDefaults(
+  storeIds: string[],
+  platform: AdPlatform,
+  category: AdReportCategory
+): Promise<Map<string, AdSyncDefault>> {
+  const result = new Map<string, AdSyncDefault>();
+  if (storeIds.length === 0) return result;
+
+  const supabase = createClient();
+  const { data, error } = await supabase.from("stores").select("id, ad_sync_defaults").in("id", storeIds);
+  if (error) throw error;
+
+  const key = keyFor(platform, category);
+  for (const row of data ?? []) {
+    const all = (row.ad_sync_defaults as AdSyncDefaultsMap | null) ?? {};
+    const def = all[key];
+    if (def) result.set(row.id, def);
+  }
+  return result;
+}
+
 export async function saveAdSyncDefault(
   storeId: string,
   platform: AdPlatform,

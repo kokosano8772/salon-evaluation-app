@@ -8,7 +8,6 @@ import {
   Database,
   LineChart,
   FileText,
-  Lock,
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -20,10 +19,7 @@ const NAV_ITEMS = [
   { href: "/quick", label: "美容室価値診断", icon: ClipboardCheck, exact: false },
   { href: "/dashboard/stores", label: "成長データベース", icon: Database, exact: false },
   { href: "/dashboard/analysis", label: "月次分析", icon: LineChart, exact: false },
-];
-
-const COMING_SOON_ITEMS = [
-  { label: "レポート", icon: FileText },
+  { href: "/dashboard/reports", label: "レポート", icon: FileText, exact: false },
 ];
 
 export default function DashboardNav() {
@@ -67,27 +63,6 @@ export default function DashboardNav() {
             </Link>
           );
         })}
-
-        <div className="pt-4 mt-4 border-t border-gray-100 space-y-1">
-          <p className="px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-            近日公開
-          </p>
-          {COMING_SOON_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.label}
-                className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 cursor-not-allowed"
-              >
-                <span className="flex items-center gap-3">
-                  <Icon size={18} strokeWidth={1.8} />
-                  {item.label}
-                </span>
-                <Lock size={13} strokeWidth={2} />
-              </div>
-            );
-          })}
-        </div>
       </nav>
 
       <div className="px-6 py-6 space-y-3">
