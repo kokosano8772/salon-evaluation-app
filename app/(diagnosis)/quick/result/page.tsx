@@ -13,7 +13,6 @@ import {
   Share2,
   ArrowRight,
   Zap,
-  Lock,
 } from "lucide-react";
 import { useQuickStore } from "@/store/quickStore";
 import { RANK_INFO } from "@/lib/scoring";
@@ -38,49 +37,11 @@ export default function QuickResultPage() {
   const router = useRouter();
   const { result, reset } = useQuickStore();
   const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action">("overview");
-  const [isPreview, setIsPreview] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
-  const freeCardsRef = useRef<HTMLDivElement>(null);
-  const [showLockOverlay, setShowLockOverlay] = useState(false);
 
   useEffect(() => {
     if (!result) router.replace("/quick");
   }, [result, router]);
-
-  // 改善提案タブで、無料公開している2件目の改善案が画面中央より上に
-  // スクロールされたタイミングで初めて全画面ロックを表示する
-  useEffect(() => {
-    if (activeTab !== "action" || isPreview) {
-      setShowLockOverlay(false);
-      return;
-    }
-
-    let ticking = false;
-    const checkPosition = () => {
-      ticking = false;
-      const target = freeCardsRef.current;
-      if (!target) return;
-      setShowLockOverlay(target.getBoundingClientRect().bottom < window.innerHeight / 2);
-    };
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(checkPosition);
-    };
-
-    checkPosition();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [activeTab, isPreview]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setIsPreview(params.get("preview") === "KOKO2025");
-  }, []);
 
   if (!result) return null;
 
@@ -353,80 +314,13 @@ export default function QuickResultPage() {
             >
               <p className="text-gray-500 text-xs leading-relaxed mb-4">
                 改善提案は{improvements.length}件あります。
-                {!isPreview && "2件を無料公開中。残りを確認するには詳細診断をご利用ください。"}
               </p>
 
-              {/* Free preview cards */}
-              <div className="space-y-3" ref={freeCardsRef}>
-                {improvements.slice(0, 2).map((imp, i) => (
+              <div className="space-y-3">
+                {improvements.map((imp, i) => (
                   <ImprovementCard key={i} improvement={imp} index={i} />
                 ))}
               </div>
-
-              {/* Blurred remaining cards */}
-              {improvements.length > 2 && (
-                <div className="relative mt-3">
-                  <div
-                    className={`space-y-3 ${!isPreview ? "pointer-events-none select-none" : ""}`}
-                    style={isPreview ? {} : { filter: "blur(6px)" }}
-                  >
-                    {improvements.slice(2).map((imp, i) => (
-                      <ImprovementCard key={i + 2} improvement={imp} index={i + 2} />
-                    ))}
-                  </div>
-
-                  {/* Gradient fade at bottom of blurred area */}
-                  {!isPreview && (
-                    <div
-                      className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
-                      style={{ background: "linear-gradient(to top, #FAF8F3 0%, transparent 100%)" }}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* Lock overlay — hidden while reading the 2 free cards; fades in full-screen
-                  once the blurred section scrolls into view (see IntersectionObserver above). */}
-              {showLockOverlay && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/50 backdrop-blur-sm"
-                >
-                  <div className="w-full max-w-[400px] bg-white rounded-3xl p-6 shadow-xl flex flex-col items-center text-center">
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                      style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
-                    >
-                      <Lock size={22} strokeWidth={1.8} color="white" />
-                    </div>
-                    <p className="text-charcoal-900 font-bold text-base mb-1">
-                      改善提案を確認するには
-                    </p>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-5">
-                      詳細診断（30問）を受けると、具体的な改善アクションが<br />すべて表示されます。
-                    </p>
-                    <button
-                      onClick={() => window.open("https://page.line.me/470bhtcb?oat_content=url&openQrModal=true", "_blank")}
-                      className="w-full py-3.5 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 mb-2"
-                      style={{ backgroundColor: "#06C755" }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M22 10.5C22 6.36 17.52 3 12 3S2 6.36 2 10.5c0 3.64 3.23 6.7 7.59 7.28.3.07.7.2.8.47.09.24.06.61.03.85l-.13.77c-.04.24-.18.93.82.51 1-.42 5.38-3.17 7.35-5.43 1.35-1.49 2.54-3.28 2.54-6.45z" fill="white" />
-                      </svg>
-                      LINEで詳細診断を申し込む
-                    </button>
-                    <button
-                      onClick={() => window.open("https://koko-design.com/contact/", "_blank")}
-                      className="w-full py-3 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 flex items-center justify-center gap-1.5"
-                    >
-                      無料相談を申し込む
-                      <ArrowRight size={13} strokeWidth={2} />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
             </motion.div>
           )}
         </div>
