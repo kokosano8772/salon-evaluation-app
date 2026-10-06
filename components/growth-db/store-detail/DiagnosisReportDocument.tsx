@@ -130,7 +130,7 @@ export default function DiagnosisReportDocument({
           <SectionCard px={32} py={16}>
             <SectionTitle accent={ACCENT}>レーダーチャート</SectionTitle>
             <div className="flex justify-center">
-              <SalonRadarChart categoryScores={categoryScores} animate={false} width={520} height={240} />
+              <SalonRadarChart categoryScores={categoryScores} animate={false} width={680} height={340} />
             </div>
           </SectionCard>
         </div>
