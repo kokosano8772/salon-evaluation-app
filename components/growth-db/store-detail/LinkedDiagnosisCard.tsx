@@ -41,11 +41,11 @@ export default function LinkedDiagnosisCard({ storeId }: { storeId: string }) {
                 onClick={() => setExpandedId(isExpanded ? null : item.id)}
                 className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
               >
-                <div>
-                  <p className="text-sm font-semibold text-charcoal-900">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-charcoal-900 truncate">
                     {item.totalScore}点（{item.rank}ランク）
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-400 mt-0.5 truncate">
                     {formatMonthLabel(item.completedAt.slice(0, 7))}実施
                   </p>
                 </div>
@@ -54,10 +54,10 @@ export default function LinkedDiagnosisCard({ storeId }: { storeId: string }) {
                     href={`/dashboard/stores/${storeId}/diagnosis/${item.id}`}
                     target="_blank"
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-full border border-gray-200 text-charcoal-600 hover:bg-gray-50"
+                    title="レポートを見る"
+                    className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-200 text-charcoal-600 hover:bg-gray-50 shrink-0"
                   >
-                    <FileText size={12} strokeWidth={2} />
-                    レポートを見る
+                    <FileText size={13} strokeWidth={2} />
                   </Link>
                   {item.status === "pending" ? (
                     <span
