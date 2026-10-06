@@ -144,6 +144,21 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["ad_reports"]["Row"]>;
         Relationships: [];
       };
+      api_tokens: {
+        Row: {
+          provider: string;
+          access_token: string;
+          expires_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["api_tokens"]["Row"]> & {
+          provider: string;
+          access_token: string;
+          expires_at: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["api_tokens"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

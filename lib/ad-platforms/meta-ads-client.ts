@@ -13,15 +13,10 @@
 
 import { AGE_GROUPS, AgeGroup, AdCampaignMetrics, GenderBreakdown, GenderBreakdownValue, HourlyClicks, HOURLY_SLOTS } from "@/lib/growth-db/ad-report-types";
 import { AdPlatformClient, CampaignNotStartedError, NormalizedAdReport } from "./types";
+import { getMetaAccessToken } from "./meta-token-store";
 
 const GRAPH_API_VERSION = "v25.0";
 const GRAPH_API_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
-
-function getAccessToken(): string {
-  const token = process.env.META_ACCESS_TOKEN;
-  if (!token) throw new Error("META_ACCESS_TOKEN が設定されていません");
-  return token;
-}
 
 // "YYYY-MM" -> その月の初日・末日（YYYY-MM-DD）
 function monthRange(yearMonth: string): { since: string; until: string } {
@@ -43,7 +38,7 @@ function normalizeAccountId(accountId: string): string {
 async function callGraphApi<T>(path: string, params: Record<string, string>): Promise<T[]> {
   const url = new URL(`${GRAPH_API_BASE}/${path}`);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  url.searchParams.set("access_token", getAccessToken());
+  url.searchParams.set("access_token", await getMetaAccessToken());
 
   const res = await fetch(url.toString());
   const json = (await res.json()) as GraphApiErrorResponse & { data?: T[] };
