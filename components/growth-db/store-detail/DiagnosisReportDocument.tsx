@@ -151,16 +151,19 @@ export default function DiagnosisReportDocument({
               if (answered.length === 0) return null;
               return (
                 <div key={cat.id}>
-                  <p className="text-xs font-bold mb-2" style={{ color: cat.color }}>
-                    {cat.name}
-                  </p>
-                  <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="w-1 h-3.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                    <p className="text-xs font-bold" style={{ color: cat.color }}>
+                      {cat.name}
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
                     {answered.map((q) => {
                       const idx = answers[q.id];
                       const optionLabel = q.options?.[idx];
                       return (
-                        <div key={q.id} className="text-xs leading-snug">
-                          <p className="text-gray-500">{q.label}</p>
+                        <div key={q.id} className="rounded-lg border border-gray-100 px-2.5 py-1.5 text-xs leading-snug">
+                          <p className="text-gray-400">{q.label}</p>
                           <p className="font-semibold text-charcoal-900">{optionLabel ?? `選択肢${idx}`}</p>
                         </div>
                       );
