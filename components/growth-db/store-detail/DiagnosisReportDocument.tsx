@@ -70,8 +70,8 @@ export default function DiagnosisReportDocument({
           {new Date(completedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}実施
         </p>
 
-        <div className="mt-6">
-          <SectionCard px={36} py={28}>
+        <div className="mt-4">
+          <SectionCard px={36} py={20}>
             <div className="flex items-center gap-8">
               <div
                 className="w-24 h-24 rounded-full flex items-center justify-center shrink-0 text-3xl font-extrabold text-white"
@@ -89,10 +89,10 @@ export default function DiagnosisReportDocument({
           </SectionCard>
         </div>
 
-        <div className="mt-5">
-          <SectionCard px={36} py={28}>
+        <div className="mt-4">
+          <SectionCard px={36} py={22}>
             <SectionTitle accent={ACCENT}>カテゴリ別スコア</SectionTitle>
-            <div className="grid grid-cols-3 gap-6 mt-5">
+            <div className="grid grid-cols-3 gap-5 mt-4">
               {categoryScores.map((cs) => {
                 const category = CATEGORIES.find((c) => c.id === cs.categoryId);
                 return (
@@ -126,16 +126,16 @@ export default function DiagnosisReportDocument({
           </SectionCard>
         </div>
 
-        <div className="mt-5">
-          <SectionCard px={36} py={24}>
+        <div className="mt-4">
+          <SectionCard px={36} py={18}>
             <SectionTitle accent={ACCENT}>レーダーチャート</SectionTitle>
-            <div className="flex justify-center mt-3">
-              <SalonRadarChart categoryScores={categoryScores} animate={false} width={640} height={600} />
+            <div className="flex justify-center mt-2">
+              <SalonRadarChart categoryScores={categoryScores} animate={false} width={500} height={460} />
             </div>
           </SectionCard>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4">KOKODESIGN</p>
+        <p className="text-center text-xs text-gray-400 mt-3">KOKODESIGN</p>
       </div>
 
       {/* ページ2: 回答内容（カテゴリ別・コンパクトな2列グリッド） */}
