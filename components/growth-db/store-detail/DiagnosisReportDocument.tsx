@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { CategoryScore, Improvement } from "@/lib/types";
+import { CategoryScore, DiagnosisAnswers, Improvement } from "@/lib/types";
 import { RankInfo } from "@/lib/types";
 import { CATEGORIES } from "@/lib/scoring";
 import CategoryIcon from "@/components/ui/CategoryIcon";
@@ -38,6 +38,7 @@ interface DiagnosisReportDocumentProps {
   rankInfo: RankInfo;
   categoryScores: CategoryScore[];
   improvements: Improvement[];
+  answers: DiagnosisAnswers;
 }
 
 const ACCENT = "#C4788A";
@@ -45,7 +46,7 @@ const ACCENT = "#C4788A";
 // 成長データベースの診断連携結果を、Google広告レポートと同じ「密度の高い固定ページ」の
 // 思想で印刷・PDF保存できるようにしたレポート。既存の/resultページ用の
 // DiagnosisPrintDocument（スマホアプリのカードをそのまま縦に並べただけ）とは別物で、
-// 1件の診断結果をいつもA4相当2ページ程度に収まる密度で再設計している。
+// 1件の診断結果をA4相当2〜3ページ程度に収まる密度で再設計している。
 export default function DiagnosisReportDocument({
   salonName,
   completedAt,
@@ -54,6 +55,7 @@ export default function DiagnosisReportDocument({
   rankInfo,
   categoryScores,
   improvements,
+  answers,
 }: DiagnosisReportDocumentProps) {
   return (
     <div className="space-y-8">
@@ -136,7 +138,46 @@ export default function DiagnosisReportDocument({
         <p className="text-center text-xs text-gray-400 mt-3">KOKODESIGN</p>
       </div>
 
-      {/* ページ2: 改善提案（コンパクトな2列グリッド） */}
+      {/* ページ2: 回答内容（カテゴリ別・コンパクトな2列グリッド） */}
+      <div
+        className="ad-report-page rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center"
+        style={{ background: "#FAF8F3" }}
+      >
+        <SectionCard px={32} py={24}>
+          <SectionTitle accent={ACCENT}>回答内容</SectionTitle>
+          <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+            {CATEGORIES.map((cat) => {
+              const answered = cat.questions.filter((q) => answers[q.id] !== undefined);
+              if (answered.length === 0) return null;
+              return (
+                <div key={cat.id}>
+                  <p className="text-xs font-bold mb-2" style={{ color: cat.color }}>
+                    {cat.name}
+                  </p>
+                  <div className="space-y-1.5">
+                    {answered.map((q) => {
+                      const idx = answers[q.id];
+                      const optionLabel = q.options?.[idx];
+                      return (
+                        <div key={q.id} className="flex items-baseline justify-between gap-3 text-xs">
+                          <span className="text-gray-500">{q.label}</span>
+                          <span className="font-semibold text-charcoal-900 text-right shrink-0">
+                            {optionLabel ?? `選択肢${idx}`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
+
+        <p className="text-center text-xs text-gray-400 mt-3">KOKODESIGN</p>
+      </div>
+
+      {/* ページ3: 改善提案（コンパクトな2列グリッド） */}
       <div
         className="ad-report-page ad-report-page-last rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center"
         style={{ background: "#FAF8F3" }}

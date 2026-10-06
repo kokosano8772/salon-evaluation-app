@@ -114,6 +114,7 @@ export default function DiagnosisReportPage({ params }: DiagnosisReportPageProps
           rankInfo={rankInfo}
           categoryScores={item.categoryScores}
           improvements={improvements}
+          answers={item.answers}
         />
       </div>
     </div>
