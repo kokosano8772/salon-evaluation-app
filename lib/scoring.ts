@@ -479,7 +479,7 @@ export const RANK_INFO: Record<string, RankInfo> = {
   S: {
     rank: "S",
     label: "Sランク",
-    description: "業界トップクラス。このまま拡大戦略を。",
+    description: "業界トップクラスの実力です。このまま拡大を目指しましょう。",
     color: "#C4788A",
     bgColor: "bg-gradient-to-br from-rose-50 to-pink-50",
     textColor: "text-rose-600",
@@ -490,7 +490,7 @@ export const RANK_INFO: Record<string, RankInfo> = {
   A: {
     rank: "A",
     label: "Aランク",
-    description: "高水準の経営力。あと少しで業界最高峰に。",
+    description: "高い経営力をお持ちです。あと少しで業界最高峰に届きます。",
     color: "#7C9EB5",
     bgColor: "bg-gradient-to-br from-blue-50 to-sky-50",
     textColor: "text-sky-700",
@@ -501,7 +501,7 @@ export const RANK_INFO: Record<string, RankInfo> = {
   B: {
     rank: "B",
     label: "Bランク",
-    description: "平均以上の実力。重点改善で大きく伸びる。",
+    description: "平均以上の実力があります。重点改善でさらに伸びていけます。",
     color: "#9B8DBF",
     bgColor: "bg-gradient-to-br from-purple-50 to-violet-50",
     textColor: "text-violet-700",
@@ -512,7 +512,7 @@ export const RANK_INFO: Record<string, RankInfo> = {
   C: {
     rank: "C",
     label: "Cランク",
-    description: "基盤はある。仕組み化で安定した経営へ。",
+    description: "良い基盤があります。仕組みを整えて安定した経営を目指しましょう。",
     color: "#6BAB8A",
     bgColor: "bg-gradient-to-br from-green-50 to-emerald-50",
     textColor: "text-emerald-700",
@@ -523,7 +523,7 @@ export const RANK_INFO: Record<string, RankInfo> = {
   D: {
     rank: "D",
     label: "Dランク",
-    description: "今すぐ改革が必要。ここが出発点。",
+    description: "今が改革のチャンスです。ここを出発点に立て直していきましょう。",
     color: "#E08B6B",
     bgColor: "bg-gradient-to-br from-orange-50 to-red-50",
     textColor: "text-red-700",
