@@ -145,7 +145,7 @@ export default function DiagnosisReportDocument({
       >
         <SectionCard px={32} py={24}>
           <SectionTitle accent={ACCENT}>回答内容</SectionTitle>
-          <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-5">
             {CATEGORIES.map((cat) => {
               const answered = cat.questions.filter((q) => answers[q.id] !== undefined);
               if (answered.length === 0) return null;
@@ -154,16 +154,14 @@ export default function DiagnosisReportDocument({
                   <p className="text-xs font-bold mb-2" style={{ color: cat.color }}>
                     {cat.name}
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {answered.map((q) => {
                       const idx = answers[q.id];
                       const optionLabel = q.options?.[idx];
                       return (
-                        <div key={q.id} className="flex items-baseline justify-between gap-3 text-xs">
-                          <span className="text-gray-500">{q.label}</span>
-                          <span className="font-semibold text-charcoal-900 text-right shrink-0">
-                            {optionLabel ?? `選択肢${idx}`}
-                          </span>
+                        <div key={q.id} className="text-xs leading-snug">
+                          <p className="text-gray-500">{q.label}</p>
+                          <p className="font-semibold text-charcoal-900">{optionLabel ?? `選択肢${idx}`}</p>
                         </div>
                       );
                     })}
