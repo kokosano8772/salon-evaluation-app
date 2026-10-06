@@ -1,49 +1,27 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, ClipboardCheck, Download, Loader2 } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { CheckCircle2, ChevronDown, ClipboardCheck, FileText } from "lucide-react";
 import { useDiagnosisResults } from "@/lib/growth-db/hooks";
 import * as repo from "@/lib/growth-db/repository";
 import { formatMonthLabel } from "@/lib/growth-db/format";
 import { generateImprovements } from "@/lib/recommendations";
 import { CATEGORIES } from "@/lib/scoring";
-import { DiagnosisResult, Rank } from "@/lib/types";
-import { exportResultToPDF } from "@/lib/pdf";
 import CategoryScoreBar from "@/components/result/CategoryScoreBar";
 import ImprovementCard from "@/components/result/ImprovementCard";
-import DiagnosisPrintDocument from "@/components/result/DiagnosisPrintDocument";
 
 // 詳細診断(/diagnosis)から連携された結果の参照カード。
 // あくまで参考情報であり、独自診断スコア(GrowthScore)の計算には使用しない。
 export default function LinkedDiagnosisCard({ storeId }: { storeId: string }) {
   const { items, loading, refresh } = useDiagnosisResults(storeId);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
-  const printRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   if (loading || items.length === 0) return null;
 
   const handleMarkReviewed = async (id: string) => {
     await repo.markDiagnosisResultReviewed(id);
     refresh();
-  };
-
-  const handleExportPdf = async (item: (typeof items)[number]) => {
-    const el = printRefs.current[item.id];
-    if (!el || pdfLoadingId) return;
-    setPdfLoadingId(item.id);
-    try {
-      const result: DiagnosisResult = {
-        totalScore: item.totalScore,
-        rank: item.rank as Rank,
-        categoryScores: item.categoryScores,
-        answers: item.answers,
-        completedAt: item.completedAt,
-      };
-      await exportResultToPDF(el, result);
-    } finally {
-      setPdfLoadingId(null);
-    }
   };
 
   return (
@@ -72,23 +50,15 @@ export default function LinkedDiagnosisCard({ storeId }: { storeId: string }) {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleExportPdf(item);
-                    }}
-                    className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-full border border-gray-200 text-charcoal-600 ${
-                      pdfLoadingId === item.id ? "opacity-50" : "hover:bg-gray-50"
-                    }`}
+                  <Link
+                    href={`/dashboard/stores/${storeId}/diagnosis/${item.id}`}
+                    target="_blank"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-full border border-gray-200 text-charcoal-600 hover:bg-gray-50"
                   >
-                    {pdfLoadingId === item.id ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <Download size={12} strokeWidth={2} />
-                    )}
-                    PDF保存
-                  </span>
+                    <FileText size={12} strokeWidth={2} />
+                    レポートを見る
+                  </Link>
                   {item.status === "pending" ? (
                     <span
                       role="button"
@@ -175,25 +145,6 @@ export default function LinkedDiagnosisCard({ storeId }: { storeId: string }) {
             </div>
           );
         })}
-      </div>
-
-      {/* PDF保存専用の静止レイアウト。画面には表示せず常にDOM上に置いておくことで、
-          クリック直後にRechartsのチャート未マウント等を気にせずキャプチャできるようにする。 */}
-      <div style={{ position: "absolute", top: 0, left: -9999, width: 480 }} aria-hidden="true">
-        {items.map((item) => (
-          <div key={item.id} ref={(el) => { printRefs.current[item.id] = el; }}>
-            <DiagnosisPrintDocument
-              result={{
-                totalScore: item.totalScore,
-                rank: item.rank as Rank,
-                categoryScores: item.categoryScores,
-                answers: item.answers,
-                completedAt: item.completedAt,
-              }}
-              salonName={item.salonName}
-            />
-          </div>
-        ))}
       </div>
     </div>
   );

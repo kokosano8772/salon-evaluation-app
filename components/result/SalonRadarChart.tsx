@@ -16,6 +16,13 @@ interface SalonRadarChartProps {
   // （デフォルトで有効、完了まで約1.5秒）が終わる前にキャプチャされるとポリゴンが
   // 描画されていない状態で写ってしまうため、そちらからは false を渡して無効化する。
   animate?: boolean;
+  // 固定幅のレポートページ（DiagnosisReportDocument等）向け。ResponsiveContainerは
+  // ResizeObserverで親要素の幅を測ってから描画するため、印刷用のPDF生成（Chromiumの
+  // ページ生成パス）ではその測定が間に合わず、チャートが空のまま出力されることがあった。
+  // width/heightを渡した場合はResponsiveContainerを使わず固定サイズで直接描画し、
+  // この測定待ちを丸ごと回避する。
+  width?: number;
+  height?: number;
 }
 
 interface TooltipPayloadItem {
@@ -48,7 +55,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   return null;
 };
 
-export default function SalonRadarChart({ categoryScores, animate = true }: SalonRadarChartProps) {
+export default function SalonRadarChart({ categoryScores, animate = true, width, height }: SalonRadarChartProps) {
   const data = categoryScores.map((cs) => ({
     name: cs.name,
     value: cs.score,
@@ -56,26 +63,40 @@ export default function SalonRadarChart({ categoryScores, animate = true }: Salo
     percentage: cs.percentage,
   }));
 
+  const chart = (
+    <RadarChart
+      cx="50%"
+      cy="50%"
+      outerRadius="65%"
+      data={data}
+      {...(width !== undefined && height !== undefined ? { width, height } : {})}
+    >
+      <PolarGrid stroke="#e8e8e8" strokeWidth={1} />
+      <PolarAngleAxis
+        dataKey="name"
+        tick={{ fontSize: 11, fill: "#555", fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 500 }}
+        tickSize={8}
+      />
+      <Radar
+        name="スコア"
+        dataKey="value"
+        stroke="#C4788A"
+        strokeWidth={2}
+        fill="#C4788A"
+        fillOpacity={0.18}
+        isAnimationActive={animate}
+      />
+      <Tooltip content={<CustomTooltip />} />
+    </RadarChart>
+  );
+
+  if (width !== undefined && height !== undefined) {
+    return chart;
+  }
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <RadarChart cx="50%" cy="50%" outerRadius="65%" data={data}>
-        <PolarGrid stroke="#e8e8e8" strokeWidth={1} />
-        <PolarAngleAxis
-          dataKey="name"
-          tick={{ fontSize: 11, fill: "#555", fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 500 }}
-          tickSize={8}
-        />
-        <Radar
-          name="スコア"
-          dataKey="value"
-          stroke="#C4788A"
-          strokeWidth={2}
-          fill="#C4788A"
-          fillOpacity={0.18}
-          isAnimationActive={animate}
-        />
-        <Tooltip content={<CustomTooltip />} />
-      </RadarChart>
+      {chart}
     </ResponsiveContainer>
   );
 }
