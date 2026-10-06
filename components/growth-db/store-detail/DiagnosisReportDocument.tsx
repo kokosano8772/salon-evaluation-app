@@ -151,11 +151,12 @@ export default function DiagnosisReportDocument({
               if (answered.length === 0) return null;
               return (
                 <div key={cat.id}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-1 h-4 rounded-full" style={{ backgroundColor: cat.color }} />
-                    <p className="text-sm font-bold" style={{ color: cat.color }}>
-                      {cat.name}
-                    </p>
+                  <div
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium text-white mb-3"
+                    style={{ backgroundColor: cat.color }}
+                  >
+                    <CategoryIcon icon={cat.icon} size={14} color="white" strokeWidth={2} />
+                    {cat.name}
                   </div>
                   <div className="space-y-2.5">
                     {answered.map((q) => {
