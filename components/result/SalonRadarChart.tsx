@@ -23,6 +23,10 @@ interface SalonRadarChartProps {
   // この測定待ちを丸ごと回避する。
   width?: number;
   height?: number;
+  // グリッド(六角形)の半径。デフォルトの65%だと枠の周囲に常に一定の余白が残り、
+  // 枠自体を大きくしても中身の比率は変わらずスカスカに見える。枠を広く使いたい
+  // 場合はこちらを大きくする（軸ラベルの分、100には出来ない）。
+  outerRadius?: number;
 }
 
 interface TooltipPayloadItem {
@@ -55,7 +59,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   return null;
 };
 
-export default function SalonRadarChart({ categoryScores, animate = true, width, height }: SalonRadarChartProps) {
+export default function SalonRadarChart({ categoryScores, animate = true, width, height, outerRadius = 65 }: SalonRadarChartProps) {
   const data = categoryScores.map((cs) => ({
     name: cs.name,
     value: cs.score,
@@ -67,7 +71,7 @@ export default function SalonRadarChart({ categoryScores, animate = true, width,
     <RadarChart
       cx="50%"
       cy="50%"
-      outerRadius="65%"
+      outerRadius={`${outerRadius}%`}
       data={data}
       {...(width !== undefined && height !== undefined ? { width, height } : {})}
     >
