@@ -72,27 +72,33 @@ export default function DiagnosisReportDocument({
 
         <div className="mt-4">
           <SectionCard px={36} py={20}>
-            <div className="flex items-center gap-8">
-              <div
-                className="w-24 h-24 rounded-full flex items-center justify-center shrink-0 text-3xl font-extrabold text-white"
-                style={{ background: `linear-gradient(135deg, ${rankInfo.color} 0%, ${rankInfo.color}cc 100%)` }}
-              >
-                {rank}
+            <div className="grid grid-cols-[1fr_auto] gap-10 items-center">
+              <div className="flex items-center gap-8">
+                <div
+                  className="w-24 h-24 rounded-full flex items-center justify-center shrink-0 text-3xl font-extrabold text-white"
+                  style={{ background: `linear-gradient(135deg, ${rankInfo.color} 0%, ${rankInfo.color}cc 100%)` }}
+                >
+                  {rank}
+                </div>
+                <div className="flex-1">
+                  <p className="text-3xl font-extrabold" style={{ color: ACCENT }}>
+                    総合スコア：{totalScore}点（{rankInfo.label}）
+                  </p>
+                  <p className="text-base text-charcoal-700 mt-2 leading-relaxed">{rankInfo.description}</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-3xl font-extrabold" style={{ color: ACCENT }}>
-                  総合スコア：{totalScore}点（{rankInfo.label}）
-                </p>
-                <p className="text-base text-charcoal-700 mt-2 leading-relaxed">{rankInfo.description}</p>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 text-center mb-1">レーダーチャート</p>
+                <SalonRadarChart categoryScores={categoryScores} animate={false} width={300} height={280} outerRadius={75} />
               </div>
             </div>
           </SectionCard>
         </div>
 
-        <div className="mt-4">
-          <SectionCard px={36} py={22}>
+        <div className="mt-5">
+          <SectionCard px={36} py={28}>
             <SectionTitle accent={ACCENT}>カテゴリ別スコア</SectionTitle>
-            <div className="grid grid-cols-3 gap-5 mt-4">
+            <div className="grid grid-cols-3 gap-6 mt-5">
               {categoryScores.map((cs) => {
                 const category = CATEGORIES.find((c) => c.id === cs.categoryId);
                 return (
@@ -126,16 +132,7 @@ export default function DiagnosisReportDocument({
           </SectionCard>
         </div>
 
-        <div className="mt-4">
-          <SectionCard px={36} py={18}>
-            <SectionTitle accent={ACCENT}>レーダーチャート</SectionTitle>
-            <div className="flex justify-center mt-2 mb-10">
-              <SalonRadarChart categoryScores={categoryScores} animate={false} width={520} height={240} outerRadius={88} />
-            </div>
-          </SectionCard>
-        </div>
-
-        <p className="text-center text-xs text-gray-400 mt-3">KOKODESIGN</p>
+        <p className="text-center text-xs text-gray-400 mt-4">KOKODESIGN</p>
       </div>
 
       {/* ページ2: 回答内容（カテゴリ別・コンパクトな2列グリッド） */}
