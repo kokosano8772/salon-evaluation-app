@@ -184,30 +184,30 @@ export default function DiagnosisReportDocument({
         className="ad-report-page ad-report-page-last rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center"
         style={{ background: "#FAF8F3" }}
       >
-        <SectionCard px={32} py={24}>
+        <SectionCard px={36} py={28}>
           <SectionTitle accent={ACCENT}>改善提案（{improvements.length}件）</SectionTitle>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-5 mt-5">
             {improvements.map((imp, i) => {
               const category = CATEGORIES.find((c) => c.id === imp.categoryId);
               const color = category?.color ?? "#999";
               const priority = PRIORITY_LABEL[imp.priority];
               return (
-                <div key={i} className="rounded-xl border border-gray-100 px-4 py-3">
-                  <div className="flex items-center gap-2 mb-1.5">
+                <div key={i} className="rounded-xl border border-gray-100 px-5 py-4">
+                  <div className="flex items-center gap-2 mb-2">
                     <div
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium text-white shrink-0"
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-white shrink-0"
                       style={{ backgroundColor: color }}
                     >
-                      {category && <CategoryIcon icon={category.icon} size={10} color="white" strokeWidth={2} />}
+                      {category && <CategoryIcon icon={category.icon} size={12} color="white" strokeWidth={2} />}
                       {category?.name}
                     </div>
-                    <span className="text-[11px] font-medium shrink-0" style={{ color: priority.color }}>
+                    <span className="text-xs font-medium shrink-0" style={{ color: priority.color }}>
                       {priority.label}
                     </span>
                   </div>
-                  <p className="text-sm font-bold text-charcoal-900 leading-snug mb-1">{imp.title}</p>
-                  <p className="text-xs text-gray-600 leading-snug mb-1.5">{imp.description}</p>
-                  <p className="text-xs text-gray-500 leading-snug">
+                  <p className="text-base font-bold text-charcoal-900 leading-snug mb-1.5">{imp.title}</p>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-2">{imp.description}</p>
+                  <p className="text-sm text-gray-500 leading-relaxed">
                     <span className="font-semibold text-charcoal-700">アクション：</span>
                     {imp.action}
                   </p>
