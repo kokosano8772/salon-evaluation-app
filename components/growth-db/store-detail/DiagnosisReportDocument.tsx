@@ -145,7 +145,7 @@ export default function DiagnosisReportDocument({
       >
         <SectionCard px={36} py={28}>
           <SectionTitle accent={ACCENT}>回答内容</SectionTitle>
-          <div className="grid grid-cols-3 gap-x-10 gap-y-7">
+          <div className="grid grid-cols-3 gap-x-10 gap-y-10 mt-5">
             {CATEGORIES.map((cat) => {
               const answered = cat.questions.filter((q) => answers[q.id] !== undefined);
               if (answered.length === 0) return null;
