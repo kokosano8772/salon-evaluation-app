@@ -65,14 +65,14 @@ export default function DiagnosisReportDocument({
         style={{ background: "#FAF8F3" }}
       >
         <h1 className="text-[36px] font-extrabold text-center text-charcoal-900">美容室価値診断レポート</h1>
-        <p className="text-center text-base text-charcoal-700 mt-2">
+        <p className="text-center text-base text-charcoal-700 mt-3">
           {salonName}様 |{" "}
           {new Date(completedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}実施
         </p>
 
-        <div className="mt-4">
-          <SectionCard px={32} py={20}>
-            <div className="flex items-center gap-6">
+        <div className="mt-6">
+          <SectionCard px={36} py={28}>
+            <div className="flex items-center gap-8">
               <div
                 className="w-24 h-24 rounded-full flex items-center justify-center shrink-0 text-3xl font-extrabold text-white"
                 style={{ background: `linear-gradient(135deg, ${rankInfo.color} 0%, ${rankInfo.color}cc 100%)` }}
@@ -83,36 +83,36 @@ export default function DiagnosisReportDocument({
                 <p className="text-3xl font-extrabold" style={{ color: ACCENT }}>
                   総合スコア：{totalScore}点（{rankInfo.label}）
                 </p>
-                <p className="text-base text-charcoal-700 mt-1.5 leading-relaxed">{rankInfo.description}</p>
+                <p className="text-base text-charcoal-700 mt-2 leading-relaxed">{rankInfo.description}</p>
               </div>
             </div>
           </SectionCard>
         </div>
 
-        <div className="mt-3">
-          <SectionCard px={32} py={20}>
+        <div className="mt-5">
+          <SectionCard px={36} py={28}>
             <SectionTitle accent={ACCENT}>カテゴリ別スコア</SectionTitle>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-6 mt-5">
               {categoryScores.map((cs) => {
                 const category = CATEGORIES.find((c) => c.id === cs.categoryId);
                 return (
-                  <div key={cs.categoryId} className="rounded-xl border border-gray-100 px-4 py-3">
-                    <div className="flex items-center gap-2 mb-1.5">
+                  <div key={cs.categoryId} className="rounded-xl border border-gray-100 px-5 py-4">
+                    <div className="flex items-center gap-2 mb-2">
                       {category && (
                         <div
-                          className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
                           style={{ backgroundColor: `${cs.color}18` }}
                         >
-                          <CategoryIcon icon={category.icon} size={13} color={cs.color} strokeWidth={1.8} />
+                          <CategoryIcon icon={category.icon} size={14} color={cs.color} strokeWidth={1.8} />
                         </div>
                       )}
-                      <span className="text-sm font-semibold text-charcoal-900 truncate">{cs.name}</span>
+                      <span className="text-base font-semibold text-charcoal-900 truncate">{cs.name}</span>
                     </div>
-                    <div className="flex items-baseline justify-between mb-1">
-                      <span className="text-xs text-gray-400">
+                    <div className="flex items-baseline justify-between mb-1.5">
+                      <span className="text-sm text-gray-400">
                         {cs.score} / {cs.maxScore}
                       </span>
-                      <span className="text-sm font-bold" style={{ color: cs.color }}>
+                      <span className="text-base font-bold" style={{ color: cs.color }}>
                         {cs.percentage}%
                       </span>
                     </div>
@@ -126,16 +126,16 @@ export default function DiagnosisReportDocument({
           </SectionCard>
         </div>
 
-        <div className="mt-3">
-          <SectionCard px={32} py={16}>
+        <div className="mt-5">
+          <SectionCard px={36} py={24}>
             <SectionTitle accent={ACCENT}>レーダーチャート</SectionTitle>
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-3">
               <SalonRadarChart categoryScores={categoryScores} animate={false} width={680} height={340} />
             </div>
           </SectionCard>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-3">KOKODESIGN</p>
+        <p className="text-center text-xs text-gray-400 mt-4">KOKODESIGN</p>
       </div>
 
       {/* ページ2: 回答内容（カテゴリ別・コンパクトな2列グリッド） */}
