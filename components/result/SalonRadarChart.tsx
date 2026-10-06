@@ -12,6 +12,10 @@ import { CategoryScore } from "@/lib/types";
 
 interface SalonRadarChartProps {
   categoryScores: CategoryScore[];
+  // PDF保存用の静止ドキュメント（DiagnosisPrintDocument）では、Rechartsの入場アニメーション
+  // （デフォルトで有効、完了まで約1.5秒）が終わる前にキャプチャされるとポリゴンが
+  // 描画されていない状態で写ってしまうため、そちらからは false を渡して無効化する。
+  animate?: boolean;
 }
 
 interface TooltipPayloadItem {
@@ -44,7 +48,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   return null;
 };
 
-export default function SalonRadarChart({ categoryScores }: SalonRadarChartProps) {
+export default function SalonRadarChart({ categoryScores, animate = true }: SalonRadarChartProps) {
   const data = categoryScores.map((cs) => ({
     name: cs.name,
     value: cs.score,
@@ -68,6 +72,7 @@ export default function SalonRadarChart({ categoryScores }: SalonRadarChartProps
           strokeWidth={2}
           fill="#C4788A"
           fillOpacity={0.18}
+          isAnimationActive={animate}
         />
         <Tooltip content={<CustomTooltip />} />
       </RadarChart>

@@ -21,6 +21,7 @@ import { generateImprovements } from "@/lib/recommendations";
 import ScoreCounter from "@/components/result/ScoreCounter";
 import CategoryScoreBar from "@/components/result/CategoryScoreBar";
 import ImprovementCard from "@/components/result/ImprovementCard";
+import DiagnosisPrintDocument from "@/components/result/DiagnosisPrintDocument";
 import dynamic from "next/dynamic";
 
 const SalonRadarChart = dynamic(
@@ -44,6 +45,7 @@ export default function ResultPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action">("overview");
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!result) router.replace("/diagnosis");
@@ -89,10 +91,10 @@ export default function ResultPage() {
   };
 
   const handlePdf = async () => {
-    if (!resultRef.current || isPdfLoading) return;
+    if (!printRef.current || isPdfLoading) return;
     setIsPdfLoading(true);
     try {
-      await exportResultToPDF(resultRef.current, result);
+      await exportResultToPDF(printRef.current, result);
     } finally {
       setIsPdfLoading(false);
     }
@@ -394,6 +396,14 @@ export default function ResultPage() {
             <Share2 size={14} strokeWidth={1.8} />
             シェア
           </button>
+        </div>
+      </div>
+
+      {/* PDF保存専用の静止レイアウト。画面には表示せず常にDOM上に置いておくことで、
+          タブ切り替えの状態に関わらずPDF保存時にいつでもキャプチャできるようにする。 */}
+      <div style={{ position: "absolute", top: 0, left: -9999, width: 480 }} aria-hidden="true">
+        <div ref={printRef}>
+          <DiagnosisPrintDocument result={result} salonName={salonName} />
         </div>
       </div>
     </div>
