@@ -143,28 +143,28 @@ export default function DiagnosisReportDocument({
         className="ad-report-page rounded-3xl px-8 pt-8 pb-4 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center"
         style={{ background: "#FAF8F3" }}
       >
-        <SectionCard px={32} py={24}>
+        <SectionCard px={36} py={28}>
           <SectionTitle accent={ACCENT}>回答内容</SectionTitle>
-          <div className="grid grid-cols-3 gap-x-6 gap-y-5">
+          <div className="grid grid-cols-3 gap-x-10 gap-y-7">
             {CATEGORIES.map((cat) => {
               const answered = cat.questions.filter((q) => answers[q.id] !== undefined);
               if (answered.length === 0) return null;
               return (
                 <div key={cat.id}>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="w-1 h-3.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                    <p className="text-xs font-bold" style={{ color: cat.color }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-1 h-4 rounded-full" style={{ backgroundColor: cat.color }} />
+                    <p className="text-sm font-bold" style={{ color: cat.color }}>
                       {cat.name}
                     </p>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2.5">
                     {answered.map((q) => {
                       const idx = answers[q.id];
                       const optionLabel = q.options?.[idx];
                       return (
-                        <div key={q.id} className="rounded-lg border border-gray-100 px-2.5 py-1.5 text-xs leading-snug">
-                          <p className="text-gray-400">{q.label}</p>
-                          <p className="font-semibold text-charcoal-900">{optionLabel ?? `選択肢${idx}`}</p>
+                        <div key={q.id} className="rounded-xl border border-gray-100 px-4 py-3 leading-snug">
+                          <p className="text-xs text-gray-400 mb-0.5">{q.label}</p>
+                          <p className="text-sm font-semibold text-charcoal-900">{optionLabel ?? `選択肢${idx}`}</p>
                         </div>
                       );
                     })}
