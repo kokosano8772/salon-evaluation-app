@@ -7,10 +7,10 @@ import dynamic from "next/dynamic";
 
 const SalonRadarChart = dynamic(() => import("@/components/result/SalonRadarChart"), { ssr: false });
 
-const PRIORITY_LABEL: Record<Improvement["priority"], { label: string; color: string }> = {
-  high: { label: "優先度：高", color: "#dc2626" },
-  medium: { label: "優先度：中", color: "#d97706" },
-  low: { label: "優先度：低", color: "#16a34a" },
+const PRIORITY_LABEL: Record<Improvement["priority"], { label: string; bg: string; text: string; border: string }> = {
+  high: { label: "優先度：高", bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
+  medium: { label: "優先度：中", bg: "bg-amber-50", text: "text-amber-600", border: "border-amber-200" },
+  low: { label: "優先度：低", bg: "bg-green-50", text: "text-green-600", border: "border-green-200" },
 };
 
 function SectionCard({ children, px, py }: { children: ReactNode; px?: number; py?: number }) {
@@ -201,7 +201,9 @@ export default function DiagnosisReportDocument({
                       {category && <CategoryIcon icon={category.icon} size={12} color="white" strokeWidth={2} />}
                       {category?.name}
                     </div>
-                    <span className="text-xs font-medium shrink-0" style={{ color: priority.color }}>
+                    <span
+                      className={`text-xs font-medium px-3 py-1 rounded-full border shrink-0 ${priority.bg} ${priority.text} ${priority.border}`}
+                    >
                       {priority.label}
                     </span>
                   </div>
