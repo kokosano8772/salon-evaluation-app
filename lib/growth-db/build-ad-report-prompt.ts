@@ -37,6 +37,10 @@ export function buildAdReportAnalysisPrompt(
   // 数値として信用できない。「0件」を実態の不振と誤解してAIが指摘してしまうのを防ぐため、
   // Meta広告のレポートではコンバージョン/CPA/CVRに関する情報を一切AIに渡さない。
   const trustConversions = report.platform !== "meta";
+  // Google広告側（build-google-ad-report-prompt.ts）と同じ考え方。これまでMeta広告は
+  // 常にcategory="acquisition"固定だったため分岐が無くても実害が無かったが、求人カテゴリも
+  // 使えるようになったため、求人レポートで「集客」前提の文章にならないようにする。
+  const isRecruitment = report.category === "recruitment";
 
   lines.push(`# ${formatMonthLabel(report.yearMonth)}の広告実績データ（すべて計算済みの確定値）`);
   lines.push("");
@@ -91,7 +95,9 @@ export function buildAdReportAnalysisPrompt(
     }
   }
 
-  if (growthComparison.totalRevenue !== null) {
+  // 売上・新規客数等は集客の成果指標であり、求人広告の成果とは論理的に結びつかないため、
+  // 求人レポートではこのセクション自体を出さない。
+  if (!isRecruitment && growthComparison.totalRevenue !== null) {
     lines.push("");
     lines.push("## ③成長データ（売上・集客）との関連");
     lines.push(`- 月間売上: ${formatChange(growthComparison.totalRevenue, "yen")}`);
@@ -106,8 +112,11 @@ export function buildAdReportAnalysisPrompt(
   lines.push("");
   lines.push(
     "上記はすべて計算済みの確定値です。あなたはこの数値を一切再計算せず、解釈と文章化だけを行ってください。" +
-      "美容室オーナー向けの広告運用レポートの「運用状況とご提案」欄に載せる文章を、次の2部構成で日本語で書いてください。" +
-      "数値の再掲は根拠として簡潔に触れる程度にとどめ、羅列や表形式にはしないでください。"
+      `美容室オーナー向けの広告運用レポート（${isRecruitment ? "求人" : "集客"}目的）の「運用状況とご提案」欄に載せる文章を、次の2部構成で日本語で書いてください。` +
+      "数値の再掲は根拠として簡潔に触れる程度にとどめ、羅列や表形式にはしないでください。" +
+      (isRecruitment
+        ? "この広告は求人（採用）目的であり、来店客の獲得や売上とは関係ないため、ご予約・集客に関する表現は一切使わないこと。"
+        : "")
   );
   lines.push("");
   lines.push(
