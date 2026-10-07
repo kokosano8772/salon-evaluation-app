@@ -35,7 +35,6 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   const [platform, setPlatform] = useState<AdPlatform>(
     initial.platform === "google" || initial.platform === "meta" ? initial.platform : "meta"
   );
-  // 集客/求人の区分はGoogle広告のみで使う（Metaは常に集客扱い）
   const [category, setCategory] = useState<AdReportCategory>(
     initial.category === "recruitment" ? "recruitment" : "acquisition"
   );
@@ -218,25 +217,23 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
           ))}
         </div>
 
-        {platform === "google" && (
-          <div className="flex items-center gap-1 mb-6">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                onClick={() => {
-                  if (c === category) return;
-                  setCategory(c);
-                  setSelectedMonth(undefined);
-                }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  category === c ? "bg-[#C4788A] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}
-              >
-                {AD_REPORT_CATEGORY_LABEL[c]}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-1 mb-6">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => {
+                if (c === category) return;
+                setCategory(c);
+                setSelectedMonth(undefined);
+              }}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                category === c ? "bg-[#C4788A] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {AD_REPORT_CATEGORY_LABEL[c]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {report ? (

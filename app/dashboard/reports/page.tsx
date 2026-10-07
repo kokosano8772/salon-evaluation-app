@@ -47,26 +47,24 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      {platform === "google" && (
-        <div className="flex items-center gap-1 mb-6">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-                category === c ? "bg-[#C4788A] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              {AD_REPORT_CATEGORY_LABEL[c]}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex items-center gap-1 mb-6">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c}
+            onClick={() => setCategory(c)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+              category === c ? "bg-[#C4788A] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            }`}
+          >
+            {AD_REPORT_CATEGORY_LABEL[c]}
+          </button>
+        ))}
+      </div>
 
       <AllStoresBulkSyncPanel
-        key={`${platform}-${platform === "google" ? category : "acquisition"}-${yearMonth}`}
+        key={`${platform}-${category}-${yearMonth}`}
         platform={platform}
-        category={platform === "google" ? category : "acquisition"}
+        category={category}
         yearMonth={yearMonth}
       />
     </div>

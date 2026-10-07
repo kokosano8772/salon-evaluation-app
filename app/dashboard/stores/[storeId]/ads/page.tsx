@@ -26,7 +26,6 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
 
   const [selectedMonth, setSelectedMonth] = useState<string | undefined>(undefined);
   const [platform, setPlatform] = useState<AdPlatform>("google");
-  // 集客/求人の区分はGoogle広告のみで使う（Metaは常に集客扱い）
   const [category, setCategory] = useState<AdReportCategory>("acquisition");
 
   useEffect(() => {
@@ -61,9 +60,7 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
               className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#C4788A]"
             />
             <Link
-              href={`/dashboard/stores/${store.id}/ads/report?month=${selectedMonth}&platform=${platform}&category=${
-                platform === "google" ? category : "acquisition"
-              }`}
+              href={`/dashboard/stores/${store.id}/ads/report?month=${selectedMonth}&platform=${platform}&category=${category}`}
               className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-white"
               style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
             >
@@ -94,47 +91,44 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
         ))}
       </div>
 
-      {platform === "google" && (
-        <div className="flex items-center gap-1 mb-6">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-                category === c ? "bg-[#C4788A] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              {AD_REPORT_CATEGORY_LABEL[c]}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex items-center gap-1 mb-6">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c}
+            onClick={() => setCategory(c)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+              category === c ? "bg-[#C4788A] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            }`}
+          >
+            {AD_REPORT_CATEGORY_LABEL[c]}
+          </button>
+        ))}
+      </div>
 
       <AdReportBulkSyncPanel
-        key={`${platform}-${platform === "google" ? category : "acquisition"}`}
+        key={`${platform}-${category}`}
         storeId={store.id}
         storeName={store.name}
         platform={platform}
-        category={platform === "google" ? category : "acquisition"}
+        category={category}
         onSaved={refreshAdReports}
       />
 
       {(() => {
-        const activeCategory = platform === "google" ? category : "acquisition";
         const currentReport = adReports.find(
-          (r) => r.yearMonth === selectedMonth && r.platform === platform && r.category === activeCategory
+          (r) => r.yearMonth === selectedMonth && r.platform === platform && r.category === category
         );
         if (!currentReport) return null;
         return <AdReportAnalysisSummary report={currentReport} history={adReports} monthlyHistory={history} />;
       })()}
 
       <AdReportForm
-        key={`${selectedMonth}-${platform}-${platform === "google" ? category : "acquisition"}`}
+        key={`${selectedMonth}-${platform}-${category}`}
         storeId={store.id}
         storeName={store.name}
         yearMonth={selectedMonth}
         platform={platform}
-        category={platform === "google" ? category : "acquisition"}
+        category={category}
         onSaved={refreshAdReports}
       />
     </div>
