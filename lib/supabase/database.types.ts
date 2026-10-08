@@ -176,6 +176,10 @@ export interface Database {
           category_scores: unknown;
           diagnosis_items: unknown;
           manual_answers: unknown;
+          salon_name: string;
+          suggested_queries: unknown;
+          search_check_results: unknown;
+          search_check_run_at: string | null;
           crawl_warning: string | null;
           client_ip: string | null;
           created_at: string;

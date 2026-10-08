@@ -98,6 +98,12 @@ interface CategoryScoreRow {
   maxScore: number;
 }
 
+interface SearchCheckResult {
+  query: string;
+  mentioned: boolean;
+  excerpt: string;
+}
+
 interface DiagnosisRecord {
   id: string;
   url: string;
@@ -114,6 +120,10 @@ interface DiagnosisRecord {
   category_scores: CategoryScoreRow[];
   diagnosis_items: DiagnosisItemRow[];
   manual_answers: Record<string, number>;
+  salon_name: string;
+  suggested_queries: string[];
+  search_check_results: SearchCheckResult[];
+  search_check_run_at: string | null;
   crawl_warning: string | null;
   created_at: string;
 }
@@ -136,6 +146,8 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [isRetaking, setIsRetaking] = useState(false);
   const [retakeStep, setRetakeStep] = useState(0);
+  const [isSearchChecking, setIsSearchChecking] = useState(false);
+  const [searchCheckError, setSearchCheckError] = useState("");
   const rafRef = useRef<number | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -170,7 +182,12 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [diagnosis]);
+    // スコア自体が変わった時だけ再アニメーションする。AI検索実測の結果更新など、
+    // スコアに関係ない理由でdiagnosisオブジェクトが更新された時に円グラフが
+    // 0から再アニメーションし直すのを防ぐため、diagnosis自体ではなく
+    // スコアに関係するフィールドだけを依存配列にする。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diagnosis?.total_score, diagnosis?.score_max, diagnosis?.tier]);
 
   if (error) {
     return (
@@ -220,6 +237,24 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
       await exportResultToPDF(printRef.current, `AICheck_${diagnosis.total_score}pt_${diagnosis.rank ?? "simple"}_${date}.pdf`);
     } finally {
       setIsPdfLoading(false);
+    }
+  };
+
+  // AI検索実測（プロ版のオプトイン機能）。確定診断とは別にGeminiを質問数ぶん呼ぶため、
+  // 自動実行はせずボタン押下でのみ実行する。
+  const handleSearchCheck = async () => {
+    if (isSearchChecking) return;
+    setIsSearchChecking(true);
+    setSearchCheckError("");
+    try {
+      const res = await fetch(`/api/ai-check/diagnose/${id}/search-check`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "実測に失敗しました");
+      setDiagnosis((d) => (d ? { ...d, search_check_results: json.results, search_check_run_at: new Date().toISOString() } : d));
+    } catch (err) {
+      setSearchCheckError(err instanceof Error ? err.message : "実測に失敗しました");
+    } finally {
+      setIsSearchChecking(false);
     }
   };
 
@@ -497,6 +532,65 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                           </div>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {diagnosis.suggested_queries.length > 0 && (
+                    <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-1">AI検索実測</p>
+                      <p className="text-xs text-gray-500 leading-relaxed mb-4">
+                        実際にAIへ質問を投げて、{diagnosis.salon_name || "この美容室"}が回答に含まれるかを確かめます。
+                      </p>
+
+                      {diagnosis.search_check_results.length === 0 ? (
+                        <>
+                          <div className="space-y-1.5 mb-4">
+                            {diagnosis.suggested_queries.map((q, i) => (
+                              <p key={i} className="text-xs text-gray-400">「{q}」</p>
+                            ))}
+                          </div>
+                          {searchCheckError && <p className="text-xs text-red-500 mb-2">{searchCheckError}</p>}
+                          <motion.button
+                            whileTap={{ scale: 0.97 }}
+                            onClick={handleSearchCheck}
+                            disabled={isSearchChecking}
+                            className="w-full py-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-1.5 disabled:opacity-50"
+                            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+                          >
+                            {isSearchChecking ? "AIに質問中..." : "AI検索を実測する"}
+                          </motion.button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="space-y-3">
+                            {diagnosis.search_check_results.map((r, i) => (
+                              <div key={i} className="rounded-xl border border-gray-100 p-3">
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                  <p className="text-xs font-medium text-charcoal-800 flex-1">「{r.query}」</p>
+                                  <span
+                                    className="text-[11px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                                    style={r.mentioned ? { color: "#16a34a", backgroundColor: "#f0fdf4" } : { color: "#9ca3af", backgroundColor: "#f9fafb" }}
+                                  >
+                                    {r.mentioned ? "含まれていた" : "含まれていなかった"}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-gray-400 leading-relaxed">{r.excerpt}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[11px] text-gray-400 mt-3">
+                            ※これは実施時点でのAIの回答1回分であり、常に同じ結果になるとは限りません。検索順位を保証するものではありません。
+                          </p>
+                          {searchCheckError && <p className="text-xs text-red-500 mt-2">{searchCheckError}</p>}
+                          <button
+                            onClick={handleSearchCheck}
+                            disabled={isSearchChecking}
+                            className="w-full py-2.5 rounded-xl font-semibold text-xs mt-3 bg-gray-100 text-gray-600 disabled:opacity-50"
+                          >
+                            {isSearchChecking ? "AIに質問中..." : "もう一度実測する"}
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </>

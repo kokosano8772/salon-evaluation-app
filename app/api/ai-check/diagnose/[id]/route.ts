@@ -12,7 +12,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { data, error } = await admin
     .from("ai_check_diagnoses")
     .select(
-      "id, url, tier, total_score, score_max, rank, summary, target, strengths, weaknesses, missing_information, recommendations, category_scores, diagnosis_items, manual_answers, crawl_warning, created_at"
+      "id, url, tier, total_score, score_max, rank, summary, target, strengths, weaknesses, missing_information, recommendations, category_scores, diagnosis_items, manual_answers, salon_name, suggested_queries, search_check_results, search_check_run_at, crawl_warning, created_at"
     )
     .eq("id", id)
     .maybeSingle();

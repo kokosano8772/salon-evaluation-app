@@ -79,6 +79,8 @@ export async function POST(request: Request) {
       category_scores: categoryScores,
       diagnosis_items: allItems,
       manual_answers: body.quizAnswers,
+      salon_name: aiResponse.salonName,
+      suggested_queries: aiResponse.suggestedSearchQueries,
       crawl_warning: body.crawlWarning,
       client_ip: clientIp,
     })

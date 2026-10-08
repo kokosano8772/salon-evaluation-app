@@ -40,5 +40,7 @@ export async function generateAiCheckAnalysis(
     weaknesses: Array.isArray(obj.weaknesses) ? obj.weaknesses : [],
     missingInformation: Array.isArray(obj.missingInformation) ? obj.missingInformation : [],
     recommendations: Array.isArray(obj.recommendations) ? obj.recommendations : [],
+    salonName: obj.salonName ?? "",
+    suggestedSearchQueries: Array.isArray(obj.suggestedSearchQueries) ? obj.suggestedSearchQueries : [],
   };
 }

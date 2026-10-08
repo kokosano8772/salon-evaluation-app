@@ -14,6 +14,10 @@ export interface AiCheckAiResponse {
   weaknesses: string[];
   missingInformation: string[];
   recommendations: AiCheckRecommendation[];
+  // AI検索実測機能（プロ版のオプトイン機能）用。同じ呼び出しのついでに生成することで
+  // 追加のGemini呼び出しコストを発生させない。
+  salonName: string;
+  suggestedSearchQueries: string[];
 }
 
 export interface SiteDataForPrompt {
@@ -74,12 +78,17 @@ export function buildAiCheckPrompt(
             solution: "具体的な改善方法（ページ追加・コンテンツ内容など、与えられた情報から妥当な範囲で）",
           },
         ],
+        salonName: "サイトから読み取れる正式な店舗名（会社名ではなく実際の屋号）",
+        suggestedSearchQueries: [
+          "この美容室が検索結果に出てきそうな、地域名＋得意分野を含む自然な質問文を2〜3個（例: 「名古屋市で白髪ぼかしが得意な美容室は？」）。与えられた情報から読み取れる地域・得意分野が無い場合は無理に作らず配列を少なくする",
+        ],
       },
       null,
       2
     ),
     "",
     "recommendationsは「特に点数が伸びなかった項目」の中から優先度の高いもの順に最大5件、具体的な根拠のあるものだけを挙げてください。" +
-      "与えられた情報に無い事実（実際には確認していない施術内容やクリエイティブの中身など）を捏造しないこと。",
+      "与えられた情報に無い事実（実際には確認していない施術内容やクリエイティブの中身など）を捏造しないこと。" +
+      "suggestedSearchQueriesも同様に、与えられた情報から読み取れる地域・得意分野のみを使い、無い情報は補わないこと。",
   ].join("\n");
 }
