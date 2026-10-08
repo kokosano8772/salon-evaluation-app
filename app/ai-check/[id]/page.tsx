@@ -519,10 +519,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                       })}
                     </div>
 
-                    <p className="text-[11px] text-gray-400 mt-5 mb-2">
-                      以下はAIでしか判定できないため、プロ診断でのみチェックできます
-                    </p>
-                    <div className="space-y-2">
+                    <div className="space-y-2 mt-5">
                       {(Object.keys(AI_CHECK_CATEGORY_LABEL) as AiCheckCategoryId[]).map((categoryId) => {
                         const count = QUIZ_QUESTIONS.filter((q) => q.categoryId === categoryId).length;
                         if (count === 0) return null;
