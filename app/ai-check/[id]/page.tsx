@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Check,
   Download,
+  Sparkles,
   MapPin,
   Star,
   ListChecks,
@@ -28,6 +29,7 @@ import {
   AiCheckCategoryId,
   AiCheckRank,
   AiCheckRecommendation,
+  AiCheckTier,
   DiagnosisItemStatus,
 } from "@/lib/ai-check/types";
 import AiCheckPrintDocument from "@/components/ai-check/AiCheckPrintDocument";
@@ -50,6 +52,13 @@ const CATEGORY_ICON: Record<AiCheckCategoryId, typeof MapPin> = {
   ai_search: Bot,
 };
 
+const STATUS_LABEL: Record<DiagnosisItemStatus, { label: string; color: string; bg: string }> = {
+  pass: { label: "OK", color: "#16a34a", bg: "bg-green-50" },
+  partial: { label: "一部OK", color: "#d97706", bg: "bg-amber-50" },
+  fail: { label: "未対応", color: "#dc2626", bg: "bg-red-50" },
+  unknown: { label: "未確認", color: "#9ca3af", bg: "bg-gray-50" },
+};
+
 interface DiagnosisItemRow {
   id: string;
   categoryId: AiCheckCategoryId;
@@ -68,8 +77,10 @@ interface CategoryScoreRow {
 interface DiagnosisRecord {
   id: string;
   url: string;
+  tier: AiCheckTier;
   total_score: number;
-  rank: AiCheckRank;
+  score_max: number;
+  rank: AiCheckRank | null;
   summary: string;
   target: string;
   strengths: string[];
@@ -78,7 +89,7 @@ interface DiagnosisRecord {
   recommendations: AiCheckRecommendation[];
   category_scores: CategoryScoreRow[];
   diagnosis_items: DiagnosisItemRow[];
-  manual_answers: Record<string, boolean>;
+  manual_answers: Record<string, number>;
   crawl_warning: string | null;
   created_at: string;
 }
@@ -95,10 +106,8 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const [diagnosis, setDiagnosis] = useState<DiagnosisRecord | null>(null);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action" | "manual">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action">("overview");
   const [displayScore, setDisplayScore] = useState(0);
-  const [manualDraft, setManualDraft] = useState<Record<string, boolean>>({});
-  const [submittingManual, setSubmittingManual] = useState(false);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const rafRef = useRef<number | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
@@ -145,13 +154,15 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     return <div className="min-h-[100dvh] bg-[#F5F8FA]" />;
   }
 
-  const rankInfo = AI_CHECK_RANK_INFO[diagnosis.rank];
+  const isPro = diagnosis.tier === "pro";
+  const rankInfo = diagnosis.rank ? AI_CHECK_RANK_INFO[diagnosis.rank] : null;
   const highPriorityCount = diagnosis.recommendations.filter((r) => r.priority === "high").length;
   const circumference = 2 * Math.PI * 52;
-  const strokeDashoffset = circumference * (1 - displayScore / 100);
+  const strokeDashoffset = circumference * (1 - displayScore / diagnosis.score_max);
 
   const handleShare = async () => {
-    const text = `Salon AI Checkで${diagnosis.total_score}点（${rankInfo.label}）でした！`;
+    const scoreText = isPro ? `${diagnosis.total_score}点（${rankInfo?.label}）` : `${diagnosis.total_score}/${diagnosis.score_max}点`;
+    const text = `Salon AI Checkで${scoreText}でした！`;
     if (navigator.share) {
       try {
         await navigator.share({ title: "Salon AI Check 診断結果", text, url: window.location.href });
@@ -169,44 +180,16 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     setIsPdfLoading(true);
     try {
       const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-      await exportResultToPDF(printRef.current, `AICheck_${diagnosis.total_score}pt_${diagnosis.rank}_${date}.pdf`);
+      await exportResultToPDF(printRef.current, `AICheck_${diagnosis.total_score}pt_${diagnosis.rank ?? "simple"}_${date}.pdf`);
     } finally {
       setIsPdfLoading(false);
-    }
-  };
-
-  // 既にpassの項目に加え、「いいえ」で明示的に回答済みの項目も一覧から外す
-  // （fail/unknownのままでも、本人が一度答えた項目を何度も聞き直さないようにする）
-  const unresolvedItems = diagnosis.diagnosis_items.filter(
-    (i) => i.status !== "pass" && diagnosis.manual_answers[i.id] === undefined
-  );
-
-  const handleSubmitManualAnswers = async () => {
-    if (Object.keys(manualDraft).length === 0 || submittingManual) return;
-    setSubmittingManual(true);
-    try {
-      const res = await fetch(`/api/ai-check/diagnose/${id}/manual-answers`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(manualDraft),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "更新に失敗しました");
-      setDiagnosis(json.diagnosis);
-      setManualDraft({});
-      setActiveTab("detail");
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "更新に失敗しました");
-    } finally {
-      setSubmittingManual(false);
     }
   };
 
   const TABS = [
     { id: "overview", label: "サマリー" },
     { id: "detail", label: "詳細スコア" },
-    { id: "action", label: `改善提案 (${diagnosis.recommendations.length})` },
-    ...(unresolvedItems.length > 0 ? [{ id: "manual" as const, label: `追加情報 (${unresolvedItems.length})` }] : []),
+    ...(isPro ? [{ id: "action" as const, label: `改善提案 (${diagnosis.recommendations.length})` }] : []),
   ] as const;
 
   return (
@@ -218,7 +201,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
           <span className="text-xs">トップ</span>
         </Link>
         <p className="text-xs font-medium tracking-widest uppercase" style={{ color: ACCENT }}>
-          AI CHECK結果
+          {isPro ? "PRO診断結果" : "AI CHECK結果"}
         </p>
         <Link href="/ai-check" className="flex items-center gap-1 text-gray-400 text-xs">
           <RotateCcw size={12} strokeWidth={1.8} />
@@ -239,7 +222,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
             className="mb-2 text-center"
           >
             <p className="text-xs font-medium tracking-[0.3em] uppercase mb-1" style={{ color: ACCENT }}>
-              Salon AI Check
+              Salon AI Check{isPro ? " Pro" : "（基礎診断）"}
             </p>
             <p className="text-gray-500 text-xs break-all px-6">{diagnosis.url}</p>
           </motion.div>
@@ -267,25 +250,36 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                 >
                   {displayScore}
                 </motion.span>
-                <span className="text-gray-400 text-sm mt-0.5">/ 100点</span>
+                <span className="text-gray-400 text-sm mt-0.5">/ {diagnosis.score_max}点</span>
               </div>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.0, duration: 0.5 }}
-              className="mt-5 flex flex-col items-center"
-            >
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-lg"
-                style={{ background: `linear-gradient(135deg, ${rankInfo.color} 0%, ${rankInfo.color}cc 100%)`, boxShadow: `0 8px 24px ${rankInfo.color}50` }}
+            {isPro && rankInfo ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.0, duration: 0.5 }}
+                className="mt-5 flex flex-col items-center"
               >
-                {diagnosis.rank}
-              </div>
-              <p className="mt-2 font-semibold text-charcoal-900 text-base">{rankInfo.label}</p>
-              <p className="text-gray-500 text-sm mt-1 text-center max-w-[240px]">{rankInfo.description}</p>
-            </motion.div>
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-lg"
+                  style={{ background: `linear-gradient(135deg, ${rankInfo.color} 0%, ${rankInfo.color}cc 100%)`, boxShadow: `0 8px 24px ${rankInfo.color}50` }}
+                >
+                  {diagnosis.rank}
+                </div>
+                <p className="mt-2 font-semibold text-charcoal-900 text-base">{rankInfo.label}</p>
+                <p className="text-gray-500 text-sm mt-1 text-center max-w-[240px]">{rankInfo.description}</p>
+              </motion.div>
+            ) : (
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.0, duration: 0.5 }}
+                className="mt-5 text-gray-500 text-xs text-center max-w-[260px] leading-relaxed"
+              >
+                これは機械的に判定できる項目のみの基礎スコアです。ランク判定はプロ診断（100点満点）で表示されます。
+              </motion.p>
+            )}
           </div>
 
           {diagnosis.crawl_warning && (
@@ -302,7 +296,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
             </motion.div>
           )}
 
-          {highPriorityCount > 0 && (
+          {isPro && highPriorityCount > 0 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -347,46 +341,68 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
         <div className="px-5 py-6">
           {activeTab === "overview" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="space-y-6">
-              {diagnosis.summary && (
-                <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">AIから見たあなたの美容室</p>
-                  <p className="text-sm text-charcoal-800 leading-relaxed mb-3">{diagnosis.summary}</p>
-                  {diagnosis.target && (
-                    <p className="text-xs text-gray-500">
-                      <span className="font-semibold text-charcoal-700">想定ターゲット：</span>
-                      {diagnosis.target}
-                    </p>
+              {isPro ? (
+                <>
+                  {diagnosis.summary && (
+                    <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">AIから見たあなたの美容室</p>
+                      <p className="text-sm text-charcoal-800 leading-relaxed mb-3">{diagnosis.summary}</p>
+                      {diagnosis.target && (
+                        <p className="text-xs text-gray-500">
+                          <span className="font-semibold text-charcoal-700">想定ターゲット：</span>
+                          {diagnosis.target}
+                        </p>
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
 
-              {(diagnosis.strengths.length > 0 || diagnosis.weaknesses.length > 0) && (
-                <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">強みと弱みのサマリー</p>
-                  <div className="space-y-2">
-                    {diagnosis.strengths.length > 0 && (
-                      <>
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <TrendingUp size={13} strokeWidth={2} className="text-green-600" />
-                          <p className="text-xs font-semibold text-green-600">AIが理解できていること</p>
-                        </div>
-                        {diagnosis.strengths.map((s, i) => (
-                          <div key={i} className="bg-green-50 rounded-lg px-3 py-2 text-xs text-green-800 mb-1.5">{s}</div>
-                        ))}
-                      </>
-                    )}
-                    {diagnosis.weaknesses.length > 0 && (
-                      <div className="pt-3">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Target size={13} strokeWidth={2} className="text-red-500" />
-                          <p className="text-xs font-semibold text-red-500">AIが理解できていないこと</p>
-                        </div>
-                        {diagnosis.weaknesses.map((w, i) => (
-                          <div key={i} className="bg-red-50 rounded-lg px-3 py-2 text-xs text-red-800 mb-1.5">{w}</div>
-                        ))}
+                  {(diagnosis.strengths.length > 0 || diagnosis.weaknesses.length > 0) && (
+                    <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">強みと弱みのサマリー</p>
+                      <div className="space-y-2">
+                        {diagnosis.strengths.length > 0 && (
+                          <>
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <TrendingUp size={13} strokeWidth={2} className="text-green-600" />
+                              <p className="text-xs font-semibold text-green-600">AIが理解できていること</p>
+                            </div>
+                            {diagnosis.strengths.map((s, i) => (
+                              <div key={i} className="bg-green-50 rounded-lg px-3 py-2 text-xs text-green-800 mb-1.5">{s}</div>
+                            ))}
+                          </>
+                        )}
+                        {diagnosis.weaknesses.length > 0 && (
+                          <div className="pt-3">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <Target size={13} strokeWidth={2} className="text-red-500" />
+                              <p className="text-xs font-semibold text-red-500">AIが理解できていないこと</p>
+                            </div>
+                            {diagnosis.weaknesses.map((w, i) => (
+                              <div key={i} className="bg-red-50 rounded-lg px-3 py-2 text-xs text-red-800 mb-1.5">{w}</div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="rounded-2xl p-5 text-white" style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)" }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Sparkles size={14} style={{ color: ACCENT }} />
+                    <p className="font-semibold text-sm">さらに詳しく知りたい方へ</p>
                   </div>
+                  <p className="text-gray-400 text-xs leading-relaxed mb-4">
+                    専門性・口コミなど機械判定できない項目まで含めた100点満点のプロ診断なら、AIがあなたの美容室の強み・改善提案までコメントします。
+                  </p>
+                  <Link
+                    href="/ai-check/pro"
+                    className="flex items-center justify-center gap-1.5 w-full py-3 rounded-xl text-white font-semibold text-sm"
+                    style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+                  >
+                    プロ診断を受ける
+                    <ArrowRight size={14} strokeWidth={2} />
+                  </Link>
                 </div>
               )}
             </motion.div>
@@ -467,19 +483,36 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                     <tr className="bg-[#1a1a1a]">
                       <td className="px-4 py-3 text-sm font-bold text-white">合計</td>
                       <td className="px-4 py-3 text-right text-sm font-bold" style={{ color: ACCENT }}>
-                        {diagnosis.total_score} <span className="text-gray-400 font-normal text-xs">/ 100</span>
+                        {diagnosis.total_score} <span className="text-gray-400 font-normal text-xs">/ {diagnosis.score_max}</span>
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-bold" style={{ color: ACCENT }}>
-                        {diagnosis.total_score}%
+                        {Math.round((diagnosis.total_score / diagnosis.score_max) * 100)}%
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
+
+              {!isPro && (
+                <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">チェック項目の内訳</p>
+                  <div className="space-y-2">
+                    {diagnosis.diagnosis_items.map((it) => {
+                      const s = STATUS_LABEL[it.status];
+                      return (
+                        <div key={it.id} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${s.bg}`}>
+                          <span className="text-xs text-charcoal-800 flex-1">{it.label}</span>
+                          <span className="text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>{s.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
-          {activeTab === "action" && (
+          {isPro && activeTab === "action" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="space-y-3">
               <p className="text-gray-500 text-xs leading-relaxed mb-4">
                 改善提案は{diagnosis.recommendations.length}件あります。優先度の高いものから順番に取り組みましょう。
@@ -546,70 +579,13 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
               </div>
             </motion.div>
           )}
-
-          {activeTab === "manual" && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="space-y-5">
-              <p className="text-gray-500 text-xs leading-relaxed">
-                自動診断では確認できなかった項目です。実際には当てはまる場合は回答するとスコアに反映されます（既にできている判定は回答で下がりません）。
-              </p>
-
-              {(Object.keys(AI_CHECK_CATEGORY_LABEL) as AiCheckCategoryId[]).map((categoryId) => {
-                const categoryItems = unresolvedItems.filter((i) => i.categoryId === categoryId);
-                if (categoryItems.length === 0) return null;
-                return (
-                  <div key={categoryId} className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">{AI_CHECK_CATEGORY_LABEL[categoryId]}</p>
-                    <div className="space-y-3">
-                      {categoryItems.map((it) => {
-                        const draftValue = manualDraft[it.id];
-                        return (
-                          <div key={it.id} className="flex items-center justify-between gap-3">
-                            <span className="text-sm text-charcoal-800 flex-1">{it.label}</span>
-                            <div className="flex gap-1.5 flex-shrink-0">
-                              {([
-                                [true, "はい"],
-                                [false, "いいえ"],
-                              ] as const).map(([value, label]) => (
-                                <button
-                                  key={String(value)}
-                                  type="button"
-                                  onClick={() => setManualDraft((d) => ({ ...d, [it.id]: value }))}
-                                  className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
-                                  style={
-                                    draftValue === value
-                                      ? { background: ACCENT, borderColor: ACCENT, color: "white" }
-                                      : { background: "transparent", borderColor: "#e5e7eb", color: "#6b7280" }
-                                  }
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-
-              <button
-                onClick={handleSubmitManualAnswers}
-                disabled={Object.keys(manualDraft).length === 0 || submittingManual}
-                className="w-full py-4 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
-              >
-                {submittingManual ? "更新中..." : "回答を反映してスコアを更新する"}
-              </button>
-            </motion.div>
-          )}
         </div>
       </main>
 
       {/* Bottom Action Bar */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 px-5 pt-3 pb-6 flex flex-col gap-2 z-40">
         <Link
-          href="/ai-check"
+          href={isPro ? "/ai-check/pro" : "/ai-check"}
           className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 text-white"
           style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
         >
@@ -645,6 +621,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
           <AiCheckPrintDocument
             url={diagnosis.url}
             totalScore={diagnosis.total_score}
+            scoreMax={diagnosis.score_max}
             rank={diagnosis.rank}
             summary={diagnosis.summary}
             target={diagnosis.target}

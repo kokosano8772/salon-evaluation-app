@@ -23,7 +23,8 @@ interface CategoryScoreRow {
 interface AiCheckPrintDocumentProps {
   url: string;
   totalScore: number;
-  rank: AiCheckRank;
+  scoreMax: number;
+  rank: AiCheckRank | null;
   summary: string;
   target: string;
   strengths: string[];
@@ -41,6 +42,7 @@ interface AiCheckPrintDocumentProps {
 export default function AiCheckPrintDocument({
   url,
   totalScore,
+  scoreMax,
   rank,
   summary,
   target,
@@ -50,9 +52,9 @@ export default function AiCheckPrintDocument({
   categoryScores,
   createdAt,
 }: AiCheckPrintDocumentProps) {
-  const rankInfo = AI_CHECK_RANK_INFO[rank];
+  const rankInfo = rank ? AI_CHECK_RANK_INFO[rank] : null;
   const circumference = 2 * Math.PI * 52;
-  const strokeDashoffset = circumference * (1 - totalScore / 100);
+  const strokeDashoffset = circumference * (1 - totalScore / scoreMax);
 
   return (
     <div style={{ width: 480, backgroundColor: "#F5F8FA", fontFamily: "'Noto Sans JP', sans-serif" }}>
@@ -79,25 +81,31 @@ export default function AiCheckPrintDocument({
           </svg>
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
             <span style={{ fontSize: 48, fontWeight: 700, color: ACCENT, lineHeight: 1 }}>{totalScore}</span>
-            <span style={{ color: "#9ca3af", fontSize: 14, marginTop: 2 }}>/ 100点</span>
+            <span style={{ color: "#9ca3af", fontSize: 14, marginTop: 2 }}>/ {scoreMax}点</span>
           </div>
         </div>
 
-        <div style={{ marginTop: 20, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div
-            style={{
-              width: 64, height: 64, borderRadius: "50%", display: "flex", alignItems: "center",
-              justifyContent: "center", color: "white", fontSize: 28, fontWeight: 700,
-              background: `linear-gradient(135deg, ${rankInfo.color} 0%, ${rankInfo.color}cc 100%)`,
-            }}
-          >
-            {rank}
+        {rank && rankInfo ? (
+          <div style={{ marginTop: 20, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div
+              style={{
+                width: 64, height: 64, borderRadius: "50%", display: "flex", alignItems: "center",
+                justifyContent: "center", color: "white", fontSize: 28, fontWeight: 700,
+                background: `linear-gradient(135deg, ${rankInfo.color} 0%, ${rankInfo.color}cc 100%)`,
+              }}
+            >
+              {rank}
+            </div>
+            <p style={{ marginTop: 8, fontWeight: 600, color: "#1a1a1a", fontSize: 16 }}>{rankInfo.label}</p>
+            <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4, textAlign: "center", maxWidth: 240 }}>
+              {rankInfo.description}
+            </p>
           </div>
-          <p style={{ marginTop: 8, fontWeight: 600, color: "#1a1a1a", fontSize: 16 }}>{rankInfo.label}</p>
-          <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4, textAlign: "center", maxWidth: 240 }}>
-            {rankInfo.description}
+        ) : (
+          <p style={{ marginTop: 16, color: "#6b7280", fontSize: 12, textAlign: "center", maxWidth: 280 }}>
+            機械的に判定できる項目のみの基礎スコアです（ランク判定はプロ診断で表示されます）
           </p>
-        </div>
+        )}
       </div>
 
       {/* AIから見たあなたの美容室 */}
@@ -200,10 +208,10 @@ export default function AiCheckPrintDocument({
               <tr style={{ background: "#1a1a1a" }}>
                 <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 700, color: "white" }}>合計</td>
                 <td style={{ padding: "12px 16px", textAlign: "right", fontSize: 13, fontWeight: 700, color: ACCENT }}>
-                  {totalScore} <span style={{ color: "#9ca3af", fontWeight: 400, fontSize: 11 }}>/ 100</span>
+                  {totalScore} <span style={{ color: "#9ca3af", fontWeight: 400, fontSize: 11 }}>/ {scoreMax}</span>
                 </td>
                 <td style={{ padding: "12px 16px", textAlign: "right", fontSize: 13, fontWeight: 700, color: ACCENT }}>
-                  {totalScore}%
+                  {Math.round((totalScore / scoreMax) * 100)}%
                 </td>
               </tr>
             </tbody>

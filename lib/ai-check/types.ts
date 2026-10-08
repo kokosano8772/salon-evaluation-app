@@ -35,8 +35,13 @@ export const AI_CHECK_CATEGORY_MAX: Record<AiCheckCategoryId, number> = {
 };
 
 // pass=満たしている / fail=満たしていない（手動入力で「なし」等、明確に無いと分かった場合のみ）
+// partial=質問に段階的に回答した結果、満点ではないが一部得点した（プロ版のクイズ回答のみ）
 // unknown=クロールで確認できなかった（0点にはなるが「できていない」と断定した表示はしない）
-export type DiagnosisItemStatus = "pass" | "fail" | "unknown";
+export type DiagnosisItemStatus = "pass" | "fail" | "partial" | "unknown";
+
+// 簡易版=ルールベースのみ（AI呼び出し無し、誰でも無制限に使える）
+// プロ版=クイズ回答＋AIによるコメント生成込みのフル診断（Geminiを1回呼ぶ）
+export type AiCheckTier = "simple" | "pro";
 
 export interface DiagnosisItem {
   id: string;

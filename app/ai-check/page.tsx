@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Bot,
   Zap,
@@ -15,11 +15,10 @@ import {
   Users,
   MessageSquareText,
   ArrowDown,
-  History,
-  Trash2,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { AI_CHECK_CATEGORY_LABEL, AI_CHECK_CATEGORY_MAX, AI_CHECK_RANK_INFO, AiCheckCategoryId } from "@/lib/ai-check/types";
-import { useAiCheckHistoryStore } from "@/store/aiCheckHistoryStore";
 
 // 美容室価値診断（薔薇色 #C4788A）と同じシリーズだが別物と分かるよう、
 // 「将来性」カテゴリ（lib/scoring.ts）と同じ青系をAI Check専用のアクセントにする。
@@ -30,8 +29,7 @@ const LOADING_STEPS = [
   "Webサイトを確認しています...",
   "ページ構造を確認しています...",
   "店舗情報を分析しています...",
-  "AI対策を分析しています...",
-  "改善ポイントを作成しています...",
+  "基礎項目をチェックしています...",
 ];
 
 const CATEGORY_ICON: Record<AiCheckCategoryId, typeof MapPin> = {
@@ -58,12 +56,6 @@ export default function AiCheckPage() {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState("");
-  const [mounted, setMounted] = useState(false);
-  const { entries: history, addEntry, clear: clearHistory } = useAiCheckHistoryStore();
-
-  // zustand/persistはlocalStorageからの復元がマウント後になるため、SSRとの
-  // hydrationずれを避けるためマウント完了まで履歴セクションは描画しない。
-  useEffect(() => setMounted(true), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,10 +64,10 @@ export default function AiCheckPage() {
     setError("");
     const stepTimer = setInterval(() => {
       setLoadingStep((s) => Math.min(s + 1, LOADING_STEPS.length - 1));
-    }, 4000);
+    }, 1500);
 
     try {
-      const body: Record<string, unknown> = { url: url.trim() };
+      const body: Record<string, unknown> = { url: url.trim(), tier: "simple" };
       if (hasGbp !== "unknown") {
         body.googleReviews = {
           hasGoogleBusinessProfile: hasGbp === "yes",
@@ -90,7 +82,6 @@ export default function AiCheckPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "診断に失敗しました");
-      addEntry({ id: json.id, url: json.url, totalScore: json.totalScore, rank: json.rank, createdAt: new Date().toISOString() });
       router.push(`/ai-check/${json.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "診断に失敗しました");
@@ -157,19 +148,7 @@ export default function AiCheckPage() {
               ...
             </motion.span>
           </p>
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={loadingStep}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.3 }}
-              className="text-sm text-gray-400"
-            >
-              {LOADING_STEPS[loadingStep]}
-            </motion.p>
-          </AnimatePresence>
-          <p className="text-xs text-gray-500 mt-6 max-w-xs">サイトの規模によっては1分以上かかることがあります</p>
+          <p className="text-sm text-gray-400">{LOADING_STEPS[loadingStep]}</p>
         </div>
       </div>
     );
@@ -231,7 +210,7 @@ export default function AiCheckPage() {
         <div className="relative z-10 flex-1 flex flex-col justify-center px-6 pb-16">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }}>
             <p className="text-sm font-medium tracking-[0.2em] mb-4 uppercase" style={{ color: ACCENT }}>
-              AI対策診断
+              無料・基礎診断
             </p>
             <h1 className="text-white text-4xl leading-tight mb-6">
               AI検索に、
@@ -251,7 +230,7 @@ export default function AiCheckPage() {
             <p className="text-gray-400 text-sm leading-relaxed mb-10">
               URLを入れるだけで、
               <br />
-              AI検索対策の充実度を無料診断。
+              サイトの基礎項目を無料で自動チェック。
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -330,7 +309,7 @@ export default function AiCheckPage() {
                 無料で診断する
               </motion.button>
             </form>
-            <p className="text-gray-500 text-xs text-center mt-3">所要時間：約1分 ／ 無料 ／ 登録不要</p>
+            <p className="text-gray-500 text-xs text-center mt-3">所要時間：約30秒 ／ 無料 ／ 登録不要 ／ AI不使用</p>
           </motion.div>
         </div>
 
@@ -346,71 +325,43 @@ export default function AiCheckPage() {
         </motion.div>
       </section>
 
-      {/* 診断履歴（ログイン不要、localStorageのみ。履歴が無い初見ユーザーには表示しない） */}
-      {mounted && history.length > 0 && (
-        <section className="px-6 pt-10 pb-2">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-1.5">
-              <History size={14} style={{ color: ACCENT }} />
-              <p className="text-xs font-medium tracking-[0.2em] uppercase" style={{ color: ACCENT }}>前回までの診断</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => { if (confirm("診断履歴を削除しますか？")) clearHistory(); }}
-              className="flex items-center gap-1 text-[11px] text-gray-400"
-            >
-              <Trash2 size={11} />
-              履歴を削除
-            </button>
-          </div>
-          <div className="space-y-2">
-            {history.map((entry) => {
-              const info = AI_CHECK_RANK_INFO[entry.rank];
-              return (
-                <Link
-                  key={entry.id}
-                  href={`/ai-check/${entry.id}`}
-                  className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100"
-                >
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                    style={{ background: info.color }}
-                  >
-                    {entry.rank}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-charcoal-900 truncate">{entry.url}</p>
-                    <p className="text-[11px] text-gray-400">
-                      {new Date(entry.createdAt).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" })}
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold flex-shrink-0" style={{ color: ACCENT }}>{entry.totalScore}点</span>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* About */}
+      {/* 簡易 / プロ の違い */}
       <section className="px-6 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
           <p className="text-xs font-medium tracking-[0.3em] uppercase mb-4" style={{ color: ACCENT }}>About</p>
           <h2 className="text-2xl font-bold text-charcoal-900 mb-4 leading-snug">
-            SEO診断とは
+            このページでできること、
             <br />
-            少し違います
+            できないこと
           </h2>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            単純な検索順位チェックではなく、
-            <strong className="text-charcoal-900">AIがあなたの美容室を理解し、おすすめできる状態か</strong>
-            を診断します。
-            <br />
-            <br />
-            店舗情報・専門性・メニュー・サイト構造・コンテンツ・スタッフ・口コミ・AI検索対応度の
-            <strong className="text-charcoal-900">8つの軸</strong>
-            で、100点満点でスコアリングします。
+          <p className="text-gray-600 text-sm leading-relaxed mb-6">
+            このページ（基礎診断）は、サイトの構造など
+            <strong className="text-charcoal-900">自動で機械的に判定できる項目のみ</strong>
+            をチェックします。AIは使わないので無料・無制限・結果は数十秒で出ます。
           </p>
+
+          <div className="bg-white rounded-2xl border p-5 mb-3" style={{ borderColor: `${ACCENT}33`, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+            <p className="font-semibold text-charcoal-900 text-sm mb-1">基礎診断（このページ）</p>
+            <p className="text-gray-500 text-xs leading-relaxed">URL入力だけ・AI不使用・無料無制限。サイト構造など機械的に判定できる項目のみチェック。</p>
+          </div>
+
+          <div className="rounded-2xl p-5 text-white" style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)" }}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Sparkles size={14} style={{ color: ACCENT }} />
+              <p className="font-semibold text-sm">プロ診断</p>
+            </div>
+            <p className="text-gray-400 text-xs leading-relaxed mb-4">
+              質問に答えることで、専門性・強み・口コミなどAIでしか判定できない項目まで含めた100点満点のフル診断に。AIが「あなたの美容室から見た強み・改善提案」まで作成します。
+            </p>
+            <Link
+              href="/ai-check/pro"
+              className="flex items-center justify-center gap-1.5 w-full py-3 rounded-xl text-white font-semibold text-sm"
+              style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+            >
+              プロ診断を見てみる
+              <ArrowRight size={14} strokeWidth={2} />
+            </Link>
+          </div>
         </motion.div>
       </section>
 
@@ -419,6 +370,7 @@ export default function AiCheckPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-8">
           <p className="text-xs font-medium tracking-[0.3em] uppercase mb-4" style={{ color: ACCENT }}>8 Categories</p>
           <h2 className="text-2xl font-bold text-charcoal-900 leading-snug">診断の8つの軸</h2>
+          <p className="text-gray-500 text-xs mt-2">※各軸の満点まで診断するにはプロ診断が必要です</p>
         </motion.div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -452,7 +404,7 @@ export default function AiCheckPage() {
       <section className="px-6 pb-16">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-8">
           <p className="text-xs font-medium tracking-[0.3em] uppercase mb-4" style={{ color: ACCENT }}>Rank System</p>
-          <h2 className="text-2xl font-bold text-charcoal-900 leading-snug">6段階のランク判定</h2>
+          <h2 className="text-2xl font-bold text-charcoal-900 leading-snug">プロ診断の6段階ランク</h2>
         </motion.div>
 
         <div className="space-y-2">
@@ -482,33 +434,6 @@ export default function AiCheckPage() {
               </motion.div>
             ))}
         </div>
-      </section>
-
-      {/* CTA */}
-      <section className="px-6 pb-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="bg-[#1a1a1a] rounded-3xl p-8 text-center"
-        >
-          <p className="text-white text-2xl font-bold mb-3 leading-snug">
-            あなたの美容室は
-            <br />
-            AIに選ばれますか？
-          </p>
-          <p className="text-gray-400 text-sm mb-8">今すぐ無料で診断してみましょう</p>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="w-full py-5 rounded-2xl text-white font-semibold text-base tracking-wide flex items-center justify-center gap-2"
-            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`, boxShadow: `0 8px 32px ${ACCENT}59` }}
-          >
-            <Zap size={18} strokeWidth={2} />
-            <span>診断を始める</span>
-          </motion.button>
-        </motion.div>
       </section>
 
       <footer className="px-6 py-8 border-t border-gray-200">

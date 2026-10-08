@@ -163,8 +163,10 @@ export interface Database {
         Row: {
           id: string;
           url: string;
+          tier: string;
           total_score: number;
-          rank: string;
+          score_max: number;
+          rank: string | null;
           summary: string;
           target: string;
           strengths: unknown;
@@ -180,8 +182,9 @@ export interface Database {
         };
         Insert: Partial<Omit<Database["public"]["Tables"]["ai_check_diagnoses"]["Row"], "id" | "created_at">> & {
           url: string;
+          tier: string;
           total_score: number;
-          rank: string;
+          score_max: number;
         };
         Update: Partial<Database["public"]["Tables"]["ai_check_diagnoses"]["Row"]>;
         Relationships: [];
