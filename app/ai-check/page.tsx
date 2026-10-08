@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2,
   Bot,
   Zap,
   MapPin,
@@ -94,16 +93,71 @@ export default function AiCheckPage() {
       <div className="min-h-[100dvh] bg-charcoal-950 flex flex-col items-center justify-center px-6 text-center relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
           <motion.div
-            animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.3, 0.15] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full"
+            animate={{
+              x: [0, -180, 60, -140, 0],
+              y: [0, 140, -100, 200, 0],
+              scale: [1, 1.4, 0.75, 1.5, 1],
+              opacity: [0.18, 0.32, 0.12, 0.3, 0.18],
+            }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-40 -right-40 w-[480px] h-[480px] rounded-full"
+            style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 70%)` }}
+          />
+          <motion.div
+            animate={{
+              x: [0, 200, -100, 160, 0],
+              y: [0, -160, 120, -200, 0],
+              scale: [1, 0.65, 1.5, 0.8, 1],
+              opacity: [0.16, 0.1, 0.34, 0.14, 0.16],
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+            className="absolute -bottom-40 -left-40 w-[480px] h-[480px] rounded-full"
             style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 70%)` }}
           />
         </div>
+
         <div className="relative z-10 flex flex-col items-center">
-          <Loader2 size={32} className="animate-spin mb-6" style={{ color: ACCENT }} />
-          <p className="text-white font-semibold mb-2">サイトを分析しています</p>
-          <p className="text-sm text-gray-400">{LOADING_STEPS[loadingStep]}</p>
+          <div className="relative flex items-center justify-center w-32 h-32 mb-8">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              className="absolute w-32 h-32 rounded-full border-2 border-dashed"
+              style={{ borderColor: `${ACCENT}44` }}
+            />
+            <motion.div
+              animate={{ rotate: -360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="absolute w-20 h-20 rounded-full border-2"
+              style={{ borderColor: `${ACCENT}88` }}
+            />
+            <motion.div
+              animate={{ scale: [1, 1.3, 1] }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+              className="w-4 h-4 rounded-full"
+              style={{ backgroundColor: ACCENT }}
+            />
+          </div>
+          <p className="text-white font-semibold text-lg tracking-wider mb-3">
+            分析中
+            <motion.span
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+            >
+              ...
+            </motion.span>
+          </p>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={loadingStep}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.3 }}
+              className="text-sm text-gray-400"
+            >
+              {LOADING_STEPS[loadingStep]}
+            </motion.p>
+          </AnimatePresence>
           <p className="text-xs text-gray-500 mt-6 max-w-xs">サイトの規模によっては1分以上かかることがあります</p>
         </div>
       </div>
@@ -116,16 +170,37 @@ export default function AiCheckPage() {
       <section className="relative overflow-hidden bg-charcoal-950 min-h-[100dvh] flex flex-col">
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
           <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.14, 0.24, 0.14] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full"
+            animate={{
+              x: [0, -200, 80, -160, 0],
+              y: [0, 160, -120, 220, 0],
+              scale: [1, 1.5, 0.75, 1.6, 1],
+              opacity: [0.18, 0.35, 0.12, 0.32, 0.18],
+            }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-40 -right-40 w-[520px] h-[520px] rounded-full"
             style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 70%)` }}
           />
           <motion.div
-            animate={{ scale: [1, 0.8, 1], opacity: [0.1, 0.18, 0.1] }}
-            transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            className="absolute -bottom-32 -left-24 w-[420px] h-[420px] rounded-full"
+            animate={{
+              x: [0, 220, -120, 180, 0],
+              y: [0, -180, 140, -220, 0],
+              scale: [1, 0.65, 1.55, 0.8, 1],
+              opacity: [0.18, 0.12, 0.38, 0.15, 0.18],
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+            className="absolute -bottom-40 -left-40 w-[520px] h-[520px] rounded-full"
             style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 70%)` }}
+          />
+          <motion.div
+            animate={{
+              x: [0, 240, -180, 160, -200, 0],
+              y: [0, -160, 200, -180, 120, 0],
+              scale: [0.7, 1.4, 0.85, 1.5, 0.7],
+              opacity: [0.06, 0.14, 0.07, 0.16, 0.06],
+            }}
+            transition={{ duration: 24, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full"
+            style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 60%)` }}
           />
         </div>
 
