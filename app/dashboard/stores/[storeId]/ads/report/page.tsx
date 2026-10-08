@@ -61,8 +61,8 @@ export default function StoreAdReportPage({ params, searchParams }: StoreAdRepor
   }
 
   const report = platformReports.find((r) => r.yearMonth === selectedMonth) ?? null;
-  const ctrTrend = report && platform === "meta" ? buildCtrTrend(adReports, platform, selectedMonth) : [];
-  const ageGroupTrend = report && platform === "meta" ? buildAgeGroupTrend(adReports, platform, selectedMonth) : [];
+  const ctrTrend = report && platform === "meta" ? buildCtrTrend(adReports, platform, selectedMonth, category) : [];
+  const ageGroupTrend = report && platform === "meta" ? buildAgeGroupTrend(adReports, platform, selectedMonth, category) : [];
 
   // Google広告のみ: 広告開始月を基準にした1年サイクルでの前年同期比較トレンド
   const yoyTrend =

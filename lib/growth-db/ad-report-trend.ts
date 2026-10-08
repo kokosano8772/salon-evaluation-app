@@ -8,8 +8,6 @@ import { shiftYearMonth } from "./format";
 const TREND_MONTHS = 12;
 
 // history は yearMonth 昇順（listAdReports の返り値）を前提とする。
-// categoryはGoogle広告（集客/求人）でのみ意味を持つ。Metaは常にacquisition固定のため
-// 省略時のデフォルトのままでよい。
 function recentReports(
   history: AdReport[],
   platform: AdReport["platform"],
@@ -27,8 +25,13 @@ export interface CtrTrendPoint {
   ctr: number;
 }
 
-export function buildCtrTrend(history: AdReport[], platform: AdReport["platform"], uptoYearMonth: string): CtrTrendPoint[] {
-  return recentReports(history, platform, uptoYearMonth).map((r) => ({ yearMonth: r.yearMonth, ctr: r.ctr }));
+export function buildCtrTrend(
+  history: AdReport[],
+  platform: AdReport["platform"],
+  uptoYearMonth: string,
+  category: AdReportCategory = "acquisition"
+): CtrTrendPoint[] {
+  return recentReports(history, platform, uptoYearMonth, TREND_MONTHS, category).map((r) => ({ yearMonth: r.yearMonth, ctr: r.ctr }));
 }
 
 export type AgeGroupTrendPoint = { yearMonth: string; total: number } & Record<(typeof AGE_GROUPS)[number], number>;
@@ -36,9 +39,10 @@ export type AgeGroupTrendPoint = { yearMonth: string; total: number } & Record<(
 export function buildAgeGroupTrend(
   history: AdReport[],
   platform: AdReport["platform"],
-  uptoYearMonth: string
+  uptoYearMonth: string,
+  category: AdReportCategory = "acquisition"
 ): AgeGroupTrendPoint[] {
-  return recentReports(history, platform, uptoYearMonth)
+  return recentReports(history, platform, uptoYearMonth, TREND_MONTHS, category)
     .filter((r) => r.ageGroupClicks && r.ageGroupClicks.length > 0)
     .map((r) => {
       const point = { yearMonth: r.yearMonth, total: 0 } as AgeGroupTrendPoint;
