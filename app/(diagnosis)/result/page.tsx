@@ -402,7 +402,11 @@ export default function ResultPage() {
 
       {/* PDF保存専用の静止レイアウト。画面には表示せず常にDOM上に置いておくことで、
           タブ切り替えの状態に関わらずPDF保存時にいつでもキャプチャできるようにする。 */}
-      <div style={{ position: "absolute", top: 0, left: -9999, width: 480 }} aria-hidden="true">
+      {/* heightを0+overflow:hiddenにし、中の実コンテンツ（印刷用ドキュメント）自体は
+          通常通りレイアウトさせたまま、ページ全体のスクロール可能領域には影響させない
+          （これが無いと、横に-9999pxずらしていても縦方向の高さ分だけ documentの
+          scrollHeightに加算され、実際のコンテンツより下までスクロールできてしまう） */}
+      <div style={{ position: "absolute", top: 0, left: -9999, width: 480, height: 0, overflow: "hidden" }} aria-hidden="true">
         <div ref={printRef}>
           <DiagnosisPrintDocument result={result} salonName={salonName} />
         </div>
