@@ -149,13 +149,19 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     if (!diagnosis) return;
+    // 簡易版は39点満点のような半端な分母を前面に出さず、円の中心には常に
+    // 「100に対する割合」を表示する（プロ版は元々100点満点なのでそのまま）。
+    const displayTarget =
+      diagnosis.tier === "simple"
+        ? Math.round((diagnosis.total_score / diagnosis.score_max) * 100)
+        : diagnosis.total_score;
     const duration = 1800;
     const start = performance.now();
     const animate = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayScore(Math.round(diagnosis.total_score * eased));
+      setDisplayScore(Math.round(displayTarget * eased));
       if (progress < 1) rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
@@ -183,10 +189,14 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   const rankInfo = diagnosis.rank ? AI_CHECK_RANK_INFO[diagnosis.rank] : null;
   const highPriorityCount = diagnosis.recommendations.filter((r) => r.priority === "high").length;
   const circumference = 2 * Math.PI * 52;
-  const strokeDashoffset = circumference * (1 - displayScore / diagnosis.score_max);
+  // displayScoreはプロ版なら素点(/100)、簡易版なら割合(%)で、どちらも0〜100の
+  // レンジに揃えてあるため、リングの充填率は常にdisplayScore/100でよい。
+  const strokeDashoffset = circumference * (1 - displayScore / 100);
 
   const handleShare = async () => {
-    const scoreText = isPro ? `${diagnosis.total_score}点（${rankInfo?.label}）` : `${diagnosis.total_score}/${diagnosis.score_max}点`;
+    const scoreText = isPro
+      ? `${diagnosis.total_score}点（${rankInfo?.label}）`
+      : `${Math.round((diagnosis.total_score / diagnosis.score_max) * 100)}%`;
     const text = `Salon AI Checkで${scoreText}でした！`;
     if (navigator.share) {
       try {
@@ -348,8 +358,11 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                   transition={{ delay: 0.3, duration: 0.5, type: "spring" }}
                 >
                   {displayScore}
+                  {!isPro && <span className="text-2xl align-top">%</span>}
                 </motion.span>
-                <span className="text-gray-400 text-sm mt-0.5">/ {diagnosis.score_max}点</span>
+                <span className="text-gray-400 text-sm mt-0.5">
+                  {isPro ? `/ ${diagnosis.score_max}点` : `基礎項目 ${diagnosis.total_score}/${diagnosis.score_max}点`}
+                </span>
               </div>
             </div>
 

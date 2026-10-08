@@ -52,9 +52,11 @@ export default function AiCheckPrintDocument({
   categoryScores,
   createdAt,
 }: AiCheckPrintDocumentProps) {
+  const isPro = rank !== null;
   const rankInfo = rank ? AI_CHECK_RANK_INFO[rank] : null;
+  const percentage = Math.round((totalScore / scoreMax) * 100);
   const circumference = 2 * Math.PI * 52;
-  const strokeDashoffset = circumference * (1 - totalScore / scoreMax);
+  const strokeDashoffset = circumference * (1 - percentage / 100);
 
   return (
     <div style={{ width: 480, backgroundColor: "#F5F8FA", fontFamily: "'Noto Sans JP', sans-serif" }}>
@@ -80,8 +82,13 @@ export default function AiCheckPrintDocument({
             />
           </svg>
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: 48, fontWeight: 700, color: ACCENT, lineHeight: 1 }}>{totalScore}</span>
-            <span style={{ color: "#9ca3af", fontSize: 14, marginTop: 2 }}>/ {scoreMax}点</span>
+            <span style={{ fontSize: 48, fontWeight: 700, color: ACCENT, lineHeight: 1 }}>
+              {isPro ? totalScore : percentage}
+              {!isPro && <span style={{ fontSize: 24 }}>%</span>}
+            </span>
+            <span style={{ color: "#9ca3af", fontSize: 14, marginTop: 2 }}>
+              {isPro ? `/ ${scoreMax}点` : `基礎項目 ${totalScore}/${scoreMax}点`}
+            </span>
           </div>
         </div>
 
