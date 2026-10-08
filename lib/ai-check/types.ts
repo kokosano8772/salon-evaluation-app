@@ -65,7 +65,7 @@ export interface AiCheckRankInfo {
 }
 
 export const AI_CHECK_RANK_INFO: Record<AiCheckRank, AiCheckRankInfo> = {
-  S: { rank: "S", label: "Sランク", description: "AI対策が非常に充実しています", color: "#C4788A", minScore: 90, maxScore: 100 },
+  S: { rank: "S", label: "Sランク", description: "AI対策が非常に充実しています", color: "#5B9BD5", minScore: 90, maxScore: 100 },
   A: { rank: "A", label: "Aランク", description: "AI対策がかなり充実しています", color: "#7C9EB5", minScore: 80, maxScore: 89 },
   B: { rank: "B", label: "Bランク", description: "基本対策はできています", color: "#9B8DBF", minScore: 70, maxScore: 79 },
   C: { rank: "C", label: "Cランク", description: "改善余地が大きいです", color: "#6BAB8A", minScore: 60, maxScore: 69 },
