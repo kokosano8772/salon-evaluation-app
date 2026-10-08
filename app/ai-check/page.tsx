@@ -16,6 +16,7 @@ import {
   MessageSquareText,
   ChevronDown,
   ArrowRight,
+  ArrowDown,
 } from "lucide-react";
 import { AI_CHECK_CATEGORY_LABEL, AI_CHECK_CATEGORY_MAX, AI_CHECK_RANK_INFO, AiCheckCategoryId } from "@/lib/ai-check/types";
 
@@ -114,19 +115,25 @@ export default function AiCheckPage() {
 
   return (
     <main className="min-h-screen bg-[#F5F8FA] flex flex-col">
-      {/* Hero（コンパクト） */}
-      <section className="relative overflow-hidden bg-charcoal-950 flex flex-col px-6 pt-8 pb-8">
+      {/* Hero（価値診断と同じく、最初の1画面分で完結させる） */}
+      <section className="relative overflow-hidden bg-charcoal-950 min-h-[100dvh] flex flex-col">
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
           <motion.div
             animate={{ scale: [1, 1.2, 1], opacity: [0.14, 0.24, 0.14] }}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-32 -right-24 w-[380px] h-[380px] rounded-full"
+            className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full"
+            style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 70%)` }}
+          />
+          <motion.div
+            animate={{ scale: [1, 0.8, 1], opacity: [0.1, 0.18, 0.1] }}
+            transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute -bottom-32 -left-24 w-[420px] h-[420px] rounded-full"
             style={{ background: `radial-gradient(circle, ${ACCENT} 0%, transparent 70%)` }}
           />
         </div>
 
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-5">
+        <header className="relative z-10 px-6 pt-12 pb-4">
+          <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: ACCENT }}>
               <Bot size={15} color="white" strokeWidth={2} />
             </div>
@@ -134,10 +141,13 @@ export default function AiCheckPage() {
               Salon AI Check
             </span>
           </div>
+        </header>
 
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <h1 className="text-white text-[26px] leading-snug mb-2 font-bold">
+        <div className="relative z-10 flex-1 flex flex-col justify-center px-6 pb-16">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }}>
+            <h1 className="text-white text-3xl leading-tight mb-5 font-bold">
               AI検索に、
+              <br />
               <span
                 style={{
                   background: `linear-gradient(135deg, ${ACCENT} 0%, #8FC1E8 100%)`,
@@ -150,8 +160,10 @@ export default function AiCheckPage() {
               </span>
               に。
             </h1>
-            <p className="text-gray-400 text-xs leading-relaxed mb-6">
-              URLを入れるだけで、AI検索対策の充実度を無料診断。
+            <p className="text-gray-400 text-sm leading-relaxed mb-10">
+              URLを入れるだけで、
+              <br />
+              AI検索対策の充実度を無料診断。
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-3">
@@ -162,8 +174,7 @@ export default function AiCheckPage() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://example.com"
-                  className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-white text-charcoal-900 text-sm border-2 border-transparent focus:outline-none"
-                  style={{ "--tw-focus-color": ACCENT } as React.CSSProperties}
+                  className="flex-1 min-w-0 px-4 py-3.5 rounded-xl bg-white text-charcoal-900 text-sm border-2 border-transparent focus:outline-none"
                   onFocus={(e) => (e.currentTarget.style.borderColor = ACCENT)}
                   onBlur={(e) => (e.currentTarget.style.borderColor = "transparent")}
                 />
@@ -247,9 +258,20 @@ export default function AiCheckPage() {
 
               {error && <p className="text-xs text-red-400">{error}</p>}
             </form>
-            <p className="text-gray-500 text-[11px] mt-3">所要時間：約1分 ／ 無料 ／ 登録不要</p>
+            <p className="text-gray-500 text-xs text-center mt-3">所要時間：約1分 ／ 無料 ／ 登録不要</p>
           </motion.div>
         </div>
+
+        <motion.div
+          className="relative z-10 flex justify-center pb-8"
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <div className="flex flex-col items-center gap-1 opacity-40">
+            <span className="text-white text-[10px] tracking-widest">SCROLL</span>
+            <ArrowDown size={16} strokeWidth={1.5} color="white" />
+          </div>
+        </motion.div>
       </section>
 
       {/* About */}
