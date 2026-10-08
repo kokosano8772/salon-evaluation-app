@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Loader2,
   Bot,
@@ -14,7 +14,6 @@ import {
   MessageCircleQuestion,
   Users,
   MessageSquareText,
-  ChevronDown,
   ArrowRight,
   ArrowDown,
 } from "lucide-react";
@@ -51,7 +50,6 @@ const CATEGORY_ORDER: AiCheckCategoryId[] = [
 export default function AiCheckPage() {
   const router = useRouter();
   const [url, setUrl] = useState("");
-  const [showGbp, setShowGbp] = useState(false);
   const [hasGbp, setHasGbp] = useState<"unknown" | "yes" | "no">("unknown");
   const [reviewCount, setReviewCount] = useState("");
   const [averageRating, setAverageRating] = useState("");
@@ -189,72 +187,54 @@ export default function AiCheckPage() {
                 </motion.button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowGbp((v) => !v)}
-                className="flex items-center gap-1 text-[11px] text-gray-500"
-              >
-                Googleの情報も入力する（任意）
-                <ChevronDown size={12} className={`transition-transform ${showGbp ? "rotate-180" : ""}`} />
-              </button>
-
-              <AnimatePresence>
-                {showGbp && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
-                      <div className="flex gap-2">
-                        {([
-                          ["unknown", "未入力"],
-                          ["yes", "登録あり"],
-                          ["no", "登録なし"],
-                        ] as const).map(([value, label]) => (
-                          <button
-                            type="button"
-                            key={value}
-                            onClick={() => setHasGbp(value)}
-                            className="flex-1 py-2 rounded-lg text-xs font-medium border transition-colors"
-                            style={
-                              hasGbp === value
-                                ? { background: ACCENT, borderColor: ACCENT, color: "white" }
-                                : { background: "transparent", borderColor: "rgba(255,255,255,0.15)", color: "#9ca3af" }
-                            }
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                      {hasGbp === "yes" && (
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="number"
-                            min={0}
-                            value={reviewCount}
-                            onChange={(e) => setReviewCount(e.target.value)}
-                            placeholder="口コミ数"
-                            className="px-3 py-2 rounded-lg bg-white text-charcoal-900 text-sm focus:outline-none"
-                          />
-                          <input
-                            type="number"
-                            min={0}
-                            max={5}
-                            step={0.1}
-                            value={averageRating}
-                            onChange={(e) => setAverageRating(e.target.value)}
-                            placeholder="評価（例: 4.3）"
-                            className="px-3 py-2 rounded-lg bg-white text-charcoal-900 text-sm focus:outline-none"
-                          />
-                        </div>
-                      )}
+              <div>
+                <p className="text-[11px] text-gray-500 mb-2">Googleの情報も入力する（任意）</p>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+                  <div className="flex gap-2">
+                    {([
+                      ["unknown", "未入力"],
+                      ["yes", "登録あり"],
+                      ["no", "登録なし"],
+                    ] as const).map(([value, label]) => (
+                      <button
+                        type="button"
+                        key={value}
+                        onClick={() => setHasGbp(value)}
+                        className="flex-1 py-2 rounded-lg text-xs font-medium border transition-colors"
+                        style={
+                          hasGbp === value
+                            ? { background: ACCENT, borderColor: ACCENT, color: "white" }
+                            : { background: "transparent", borderColor: "rgba(255,255,255,0.15)", color: "#9ca3af" }
+                        }
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {hasGbp === "yes" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        value={reviewCount}
+                        onChange={(e) => setReviewCount(e.target.value)}
+                        placeholder="口コミ数"
+                        className="px-3 py-2 rounded-lg bg-white text-charcoal-900 text-sm focus:outline-none"
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        max={5}
+                        step={0.1}
+                        value={averageRating}
+                        onChange={(e) => setAverageRating(e.target.value)}
+                        placeholder="評価（例: 4.3）"
+                        className="px-3 py-2 rounded-lg bg-white text-charcoal-900 text-sm focus:outline-none"
+                      />
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  )}
+                </div>
+              </div>
 
               {error && <p className="text-xs text-red-400">{error}</p>}
             </form>
