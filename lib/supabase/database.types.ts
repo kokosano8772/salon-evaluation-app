@@ -159,6 +159,32 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["api_tokens"]["Row"]>;
         Relationships: [];
       };
+      ai_check_diagnoses: {
+        Row: {
+          id: string;
+          url: string;
+          total_score: number;
+          rank: string;
+          summary: string;
+          target: string;
+          strengths: unknown;
+          weaknesses: unknown;
+          missing_information: unknown;
+          recommendations: unknown;
+          category_scores: unknown;
+          diagnosis_items: unknown;
+          crawl_warning: string | null;
+          client_ip: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["ai_check_diagnoses"]["Row"], "id" | "created_at">> & {
+          url: string;
+          total_score: number;
+          rank: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["ai_check_diagnoses"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
