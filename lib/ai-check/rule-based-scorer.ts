@@ -3,7 +3,9 @@
 // build-ai-check-prompt.ts側でAIに判定させ、ここでは扱わない。
 //
 // カテゴリ別の内訳（details.mdのA〜Hのうち、ここで数値確定できる項目のみ）:
-// A(15点中7点) D(15点満点) E(15点中5点) C(15点中3点) F(10点中3点) G(10点中6点、残り4点はunknown)
+// A(15点中7点) D(15点満点) E(15点中5点) C(15点中3点) F(10点中3点) G(10点中6点、
+// 残り4点はプロ版のクイズのみで確認可能なためここでは扱わない)
+// 合計39点がルールベースのみ(簡易版)で到達できる上限。
 
 import { ParsedPage } from "./html-parser";
 import { DiagnosisItem, GoogleReviewsManualInput } from "./types";
@@ -105,7 +107,12 @@ export function scoreWithRules(input: RuleBasedScoringInput): DiagnosisItem[] {
   items.push(item("f_staff_intro", "staff", "スタッフ紹介", 2, !!staffPage));
   items.push(item("f_staff_photos", "staff", "店舗・スタッフの写真", 1, !!staffPage && staffPage.imageAltTexts.length > 0));
 
-  // --- G. Google・口コミ・外部情報（10点中6点。手動入力。残り2項目はPhase 1では確認手段が無いためunknown）---
+  // --- G. Google・口コミ・外部情報（10点中6点。手動入力） ---
+  // 残り2項目（口コミに施術内容が含まれるか／他媒体との店舗情報一致）は
+  // クロール・ルールのどちらでも確認手段が無く、プロ版のクイズ(quiz-questions.ts)
+  // でのみ回答できる。ここで常にunknownのプレースホルダーを積むと、簡易版の
+  // score_maxに「絶対に埋まらない4点」が混ざって中途半端な数字になる上、
+  // プロ版ではクイズ回答とid が重複してしまうため、ここでは一切出力しない。
   if (googleReviews) {
     items.push(item("g_gbp", "google_reviews", "Googleビジネスプロフィール登録", 2, googleReviews.hasGoogleBusinessProfile));
     items.push(item("g_review_count", "google_reviews", "Google口コミ数", 2, googleReviews.reviewCount >= 20));
@@ -115,8 +122,6 @@ export function scoreWithRules(input: RuleBasedScoringInput): DiagnosisItem[] {
     items.push(unknownItem("g_review_count", "google_reviews", "Google口コミ数", 2));
     items.push(unknownItem("g_rating", "google_reviews", "Google評価", 2));
   }
-  items.push(unknownItem("g_review_content", "google_reviews", "口コミに施術内容が含まれる", 2));
-  items.push(unknownItem("g_cross_platform_match", "google_reviews", "他媒体との店舗情報一致", 2));
 
   return items;
 }

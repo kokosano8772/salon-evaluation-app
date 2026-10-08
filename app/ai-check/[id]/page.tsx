@@ -3,7 +3,7 @@
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   RotateCcw,
@@ -41,6 +41,13 @@ import { exportResultToPDF } from "@/lib/pdf";
 // アクセントカラーのみ青系（#5B9BD5）でAI Check専用に差別化。
 const ACCENT = "#5B9BD5";
 const ACCENT_DARK = "#4A82B5";
+
+const LOADING_STEPS = [
+  "Webサイトを確認しています...",
+  "ページ構造を確認しています...",
+  "店舗情報を分析しています...",
+  "基礎項目をチェックしています...",
+];
 
 // プロ診断はアクセスコードが必要なスタッフ向けページのため、一般公開側の導線としては
 // 直接リンクせず、価値診断と同じLINE相談窓口に繋ぐ（既存のapp/(diagnosis)/quick/result
@@ -126,6 +133,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   const [displayScore, setDisplayScore] = useState(0);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [isRetaking, setIsRetaking] = useState(false);
+  const [retakeStep, setRetakeStep] = useState(0);
   const rafRef = useRef<number | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -209,6 +217,10 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   const handleRetake = async () => {
     if (isRetaking) return;
     setIsRetaking(true);
+    setRetakeStep(0);
+    const stepTimer = setInterval(() => {
+      setRetakeStep((s) => Math.min(s + 1, LOADING_STEPS.length - 1));
+    }, 1500);
     try {
       const res = await fetch("/api/ai-check/diagnose", {
         method: "POST",
@@ -221,6 +233,8 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     } catch (err) {
       alert(err instanceof Error ? err.message : "診断に失敗しました");
       setIsRetaking(false);
+    } finally {
+      clearInterval(stepTimer);
     }
   };
 
@@ -254,7 +268,24 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
               style={{ backgroundColor: ACCENT }}
             />
           </div>
-          <p className="text-white font-semibold text-lg tracking-wider">再診断中...</p>
+          <p className="text-white font-semibold text-lg tracking-wider mb-3">
+            分析中
+            <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}>
+              ...
+            </motion.span>
+          </p>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={retakeStep}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.3 }}
+              className="text-sm text-gray-400"
+            >
+              {LOADING_STEPS[retakeStep]}
+            </motion.p>
+          </AnimatePresence>
         </div>
       </div>
     );
