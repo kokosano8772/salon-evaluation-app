@@ -130,19 +130,24 @@ export default function AiCheckPage() {
         </div>
 
         <header className="relative z-10 px-6 pt-12 pb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: ACCENT }}>
-              <Bot size={15} color="white" strokeWidth={2} />
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: ACCENT }}>
+                <Bot size={13} color="white" strokeWidth={2} />
+              </div>
+              <span className="text-xs font-medium tracking-[0.3em] uppercase" style={{ color: ACCENT }}>
+                Salon AI Check
+              </span>
             </div>
-            <span className="text-xs font-medium tracking-[0.25em] uppercase" style={{ color: ACCENT }}>
-              Salon AI Check
-            </span>
-          </div>
+          </motion.div>
         </header>
 
         <div className="relative z-10 flex-1 flex flex-col justify-center px-6 pb-16">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }}>
-            <h1 className="text-white text-3xl leading-tight mb-5 font-bold">
+            <p className="text-sm font-medium tracking-[0.2em] mb-4 uppercase" style={{ color: ACCENT }}>
+              AI対策診断
+            </p>
+            <h1 className="text-white text-4xl leading-tight mb-6">
               AI検索に、
               <br />
               <span
@@ -170,13 +175,13 @@ export default function AiCheckPage() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://example.com"
-                className="w-full px-4 py-3.5 rounded-xl bg-white text-charcoal-900 text-sm border-2 border-transparent focus:outline-none"
+                className="w-full px-4 py-4 rounded-xl bg-white text-charcoal-900 text-sm border-2 border-transparent focus:outline-none"
                 onFocus={(e) => (e.currentTarget.style.borderColor = ACCENT)}
                 onBlur={(e) => (e.currentTarget.style.borderColor = "transparent")}
               />
 
               <div>
-                <p className="text-[11px] text-gray-500 mb-2">Googleの情報も入力する（任意）</p>
+                <p className="text-xs text-gray-500 mb-2">Googleの情報も入力する（任意）</p>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
                   <div className="flex gap-2">
                     {([
@@ -229,17 +234,17 @@ export default function AiCheckPage() {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 type="submit"
-                className="w-full py-4 rounded-xl text-white font-semibold text-sm tracking-wide flex items-center justify-center gap-2"
+                className="w-full py-5 rounded-2xl text-white font-semibold text-base tracking-wide flex items-center justify-center gap-2"
                 style={{
                   background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`,
-                  boxShadow: `0 8px 24px ${ACCENT}40`,
+                  boxShadow: `0 8px 32px ${ACCENT}59`,
                 }}
               >
-                <Zap size={16} strokeWidth={2} />
+                <Zap size={18} strokeWidth={2} />
                 無料で診断する
               </motion.button>
             </form>
-            <p className="text-gray-500 text-xs text-center mt-4">所要時間：約1分 ／ 無料 ／ 登録不要</p>
+            <p className="text-gray-500 text-xs text-center mt-3">所要時間：約1分 ／ 無料 ／ 登録不要</p>
           </motion.div>
         </div>
 
@@ -256,43 +261,55 @@ export default function AiCheckPage() {
       </section>
 
       {/* About */}
-      <section className="px-6 py-10">
-        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
-          <p className="text-xs font-medium tracking-[0.25em] uppercase mb-3" style={{ color: ACCENT }}>About</p>
-          <h2 className="text-xl font-bold text-charcoal-900 mb-3 leading-snug">SEO診断とは少し違います</h2>
+      <section className="px-6 py-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+          <p className="text-xs font-medium tracking-[0.3em] uppercase mb-4" style={{ color: ACCENT }}>About</p>
+          <h2 className="text-2xl font-bold text-charcoal-900 mb-4 leading-snug">
+            SEO診断とは
+            <br />
+            少し違います
+          </h2>
           <p className="text-gray-600 text-sm leading-relaxed">
-            単純な検索順位チェックではなく、<strong className="text-charcoal-900">AIがあなたの美容室を理解し、おすすめできる状態か</strong>を、
-            8つの軸・100点満点でスコアリングします。
+            単純な検索順位チェックではなく、
+            <strong className="text-charcoal-900">AIがあなたの美容室を理解し、おすすめできる状態か</strong>
+            を診断します。
+            <br />
+            <br />
+            店舗情報・専門性・メニュー・サイト構造・コンテンツ・スタッフ・口コミ・AI検索対応度の
+            <strong className="text-charcoal-900">8つの軸</strong>
+            で、100点満点でスコアリングします。
           </p>
         </motion.div>
       </section>
 
       {/* 8 Categories */}
-      <section className="px-6 pb-10">
-        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mb-5">
-          <h2 className="text-xl font-bold text-charcoal-900 leading-snug">診断の8つの軸</h2>
+      <section className="px-6 pb-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-8">
+          <p className="text-xs font-medium tracking-[0.3em] uppercase mb-4" style={{ color: ACCENT }}>8 Categories</p>
+          <h2 className="text-2xl font-bold text-charcoal-900 leading-snug">診断の8つの軸</h2>
         </motion.div>
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-3">
           {CATEGORY_ORDER.map((categoryId, i) => {
             const Icon = CATEGORY_ICON[categoryId];
             return (
               <motion.div
                 key={categoryId}
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-                className="bg-white rounded-xl p-3.5 border border-gray-100"
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="bg-white rounded-2xl p-4 border"
+                style={{ borderColor: `${ACCENT}33`, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
               >
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center mb-2.5"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
                   style={{ backgroundColor: `${ACCENT}18` }}
                 >
-                  <Icon size={15} color={ACCENT} strokeWidth={1.8} />
+                  <Icon size={20} color={ACCENT} strokeWidth={1.8} />
                 </div>
-                <p className="font-semibold text-charcoal-900 text-xs mb-0.5">{AI_CHECK_CATEGORY_LABEL[categoryId]}</p>
-                <p className="text-gray-400 text-[11px]">{AI_CHECK_CATEGORY_MAX[categoryId]}点満点</p>
+                <p className="font-semibold text-charcoal-900 text-sm mb-1">{AI_CHECK_CATEGORY_LABEL[categoryId]}</p>
+                <p className="text-gray-500 text-xs">{AI_CHECK_CATEGORY_MAX[categoryId]}点満点</p>
               </motion.div>
             );
           })}
@@ -300,32 +317,33 @@ export default function AiCheckPage() {
       </section>
 
       {/* Rank system */}
-      <section className="px-6 pb-10">
-        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mb-5">
-          <h2 className="text-xl font-bold text-charcoal-900 leading-snug">6段階のランク判定</h2>
+      <section className="px-6 pb-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="mb-8">
+          <p className="text-xs font-medium tracking-[0.3em] uppercase mb-4" style={{ color: ACCENT }}>Rank System</p>
+          <h2 className="text-2xl font-bold text-charcoal-900 leading-snug">6段階のランク判定</h2>
         </motion.div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {(Object.values(AI_CHECK_RANK_INFO) as (typeof AI_CHECK_RANK_INFO)[keyof typeof AI_CHECK_RANK_INFO][])
             .sort((a, b) => b.minScore - a.minScore)
             .map((info, i) => (
               <motion.div
                 key={info.rank}
-                initial={{ opacity: 0, x: -14 }}
+                initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.35, delay: i * 0.06 }}
-                className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100"
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                className="flex items-center gap-4 bg-white rounded-xl p-4 border border-gray-100"
               >
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
                   style={{ background: info.color }}
                 >
                   {info.rank}
                 </div>
                 <div>
-                  <p className="font-semibold text-charcoal-900 text-xs">{info.description}</p>
-                  <p className="text-gray-400 text-[11px]">
+                  <p className="font-semibold text-charcoal-900 text-sm">{info.description}</p>
+                  <p className="text-gray-500 text-xs">
                     {info.maxScore === 100 ? `${info.minScore}〜100点` : `${info.minScore}〜${info.maxScore}点`}
                   </p>
                 </div>
@@ -335,30 +353,34 @@ export default function AiCheckPage() {
       </section>
 
       {/* CTA */}
-      <section className="px-6 pb-14">
+      <section className="px-6 pb-20">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="bg-[#1a1a1a] rounded-2xl p-6 text-center"
+          transition={{ duration: 0.6 }}
+          className="bg-[#1a1a1a] rounded-3xl p-8 text-center"
         >
-          <p className="text-white text-lg font-bold mb-1 leading-snug">あなたの美容室はAIに選ばれますか？</p>
-          <p className="text-gray-400 text-xs mb-5">今すぐ無料で診断してみましょう</p>
+          <p className="text-white text-2xl font-bold mb-3 leading-snug">
+            あなたの美容室は
+            <br />
+            AIに選ばれますか？
+          </p>
+          <p className="text-gray-400 text-sm mb-8">今すぐ無料で診断してみましょう</p>
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="w-full py-3.5 rounded-xl text-white font-semibold text-sm tracking-wide flex items-center justify-center gap-2"
-            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+            className="w-full py-5 rounded-2xl text-white font-semibold text-base tracking-wide flex items-center justify-center gap-2"
+            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`, boxShadow: `0 8px 32px ${ACCENT}59` }}
           >
-            <Zap size={15} strokeWidth={2} />
+            <Zap size={18} strokeWidth={2} />
             <span>診断を始める</span>
           </motion.button>
         </motion.div>
       </section>
 
-      <footer className="px-6 py-6 border-t border-gray-200">
-        <p className="text-gray-400 text-[11px] text-center leading-relaxed">
+      <footer className="px-6 py-8 border-t border-gray-200">
+        <p className="text-gray-400 text-xs text-center leading-relaxed">
           本診断はAI検索順位を保証するものではありません。AIが店舗の情報を理解・評価するために
           必要と考えられる情報の充実度を、独自基準で診断したものです。
         </p>
