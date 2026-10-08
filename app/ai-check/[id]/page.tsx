@@ -2,6 +2,7 @@
 
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -118,11 +119,13 @@ const CARD_STYLE: React.CSSProperties = { borderColor: `${ACCENT}33`, boxShadow:
 
 export default function AiCheckResultPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [diagnosis, setDiagnosis] = useState<DiagnosisRecord | null>(null);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action">("overview");
   const [displayScore, setDisplayScore] = useState(0);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [isRetaking, setIsRetaking] = useState(false);
   const rafRef = useRef<number | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -200,11 +203,62 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  // 簡易版はURLを入れ直す手間を省き、その場で同じURLを再診断する。
+  // プロ版はクイズの再回答が必須なため、URLを引き継いだ状態で/ai-check/proに
+  // 遷移し、フォーム入力を省いてそのままクロールへ進めるようにする。
+  const handleRetake = async () => {
+    if (isRetaking) return;
+    setIsRetaking(true);
+    try {
+      const res = await fetch("/api/ai-check/diagnose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: diagnosis.url, tier: "simple" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "診断に失敗しました");
+      router.push(`/ai-check/${json.id}`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "診断に失敗しました");
+      setIsRetaking(false);
+    }
+  };
+
   const TABS = [
     { id: "overview", label: "サマリー" },
     { id: "detail", label: "詳細スコア" },
     ...(isPro ? [{ id: "action" as const, label: `改善提案 (${diagnosis.recommendations.length})` }] : []),
   ] as const;
+
+  if (isRetaking) {
+    return (
+      <div className="min-h-[100dvh] bg-charcoal-950 flex flex-col items-center justify-center px-6 text-center relative overflow-hidden">
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="relative flex items-center justify-center w-32 h-32 mb-8">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              className="absolute w-32 h-32 rounded-full border-2 border-dashed"
+              style={{ borderColor: `${ACCENT}44` }}
+            />
+            <motion.div
+              animate={{ rotate: -360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="absolute w-20 h-20 rounded-full border-2"
+              style={{ borderColor: `${ACCENT}88` }}
+            />
+            <motion.div
+              animate={{ scale: [1, 1.3, 1] }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+              className="w-4 h-4 rounded-full"
+              style={{ backgroundColor: ACCENT }}
+            />
+          </div>
+          <p className="text-white font-semibold text-lg tracking-wider">再診断中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] bg-[#F5F8FA] flex flex-col">
@@ -600,14 +654,25 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
 
       {/* Bottom Action Bar */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 px-5 pt-3 pb-6 flex flex-col gap-2 z-40">
-        <Link
-          href={isPro ? "/ai-check/pro" : "/ai-check"}
-          className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 text-white"
-          style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
-        >
-          <RotateCcw size={14} strokeWidth={1.8} />
-          もう一度診断する
-        </Link>
+        {isPro ? (
+          <Link
+            href={`/ai-check/pro?url=${encodeURIComponent(diagnosis.url)}`}
+            className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 text-white"
+            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+          >
+            <RotateCcw size={14} strokeWidth={1.8} />
+            もう一度診断する
+          </Link>
+        ) : (
+          <button
+            onClick={handleRetake}
+            className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 text-white"
+            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+          >
+            <RotateCcw size={14} strokeWidth={1.8} />
+            もう一度診断する
+          </button>
+        )}
         <div className="flex gap-2">
           <button
             onClick={handlePdf}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot,
@@ -185,10 +185,21 @@ function LoadingOverlay({ title, subtitle }: { title: string; subtitle: string }
 }
 
 export default function AiCheckProPage() {
+  return (
+    <Suspense fallback={<LoadingOverlay title="読み込み中" subtitle="" />}>
+      <AiCheckProInner />
+    </Suspense>
+  );
+}
+
+// useSearchParams()はSuspense境界内でないとビルド時にエラーになるため、
+// 中身を分離している。
+function AiCheckProInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [phase, setPhase] = useState<Phase>("form");
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(() => searchParams.get("url") ?? "");
   const [hasGbp, setHasGbp] = useState<"unknown" | "yes" | "no">("unknown");
   const [reviewCount, setReviewCount] = useState("");
   const [averageRating, setAverageRating] = useState("");
@@ -196,18 +207,32 @@ export default function AiCheckProPage() {
   const [draft, setDraft] = useState<CrawlDraft | null>(null);
   const [quizIndex, setQuizIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const autoStarted = useRef(false);
 
   useEffect(() => {
     setIsAuthorized(!!sessionStorage.getItem(AUTH_KEY));
   }, []);
 
-  const handleStart = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!url.trim()) return;
+  // 結果画面の「もう一度診断する」から ?url= 付きで来た場合、URL入力フォームを
+  // 省略してそのままクロールへ進む（手入力の手間を省く）。
+  useEffect(() => {
+    if (isAuthorized !== true || autoStarted.current) return;
+    const urlParam = searchParams.get("url");
+    if (urlParam) {
+      autoStarted.current = true;
+      handleStart(undefined, urlParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthorized]);
+
+  const handleStart = async (e?: React.FormEvent, overrideUrl?: string) => {
+    e?.preventDefault();
+    const targetUrl = overrideUrl ?? url;
+    if (!targetUrl.trim()) return;
     setPhase("crawling");
     setError("");
     try {
-      const body: Record<string, unknown> = { url: url.trim(), tier: "pro" };
+      const body: Record<string, unknown> = { url: targetUrl.trim(), tier: "pro" };
       if (hasGbp !== "unknown") {
         const googleReviews: GoogleReviewsManualInput = {
           hasGoogleBusinessProfile: hasGbp === "yes",
