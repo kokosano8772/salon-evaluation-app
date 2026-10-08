@@ -14,7 +14,6 @@ import {
   MessageCircleQuestion,
   Users,
   MessageSquareText,
-  ArrowRight,
   ArrowDown,
 } from "lucide-react";
 import { AI_CHECK_CATEGORY_LABEL, AI_CHECK_CATEGORY_MAX, AI_CHECK_RANK_INFO, AiCheckCategoryId } from "@/lib/ai-check/types";
@@ -164,28 +163,17 @@ export default function AiCheckPage() {
               AI検索対策の充実度を無料診断。
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  required
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://example.com"
-                  className="flex-1 min-w-0 px-4 py-3.5 rounded-xl bg-white text-charcoal-900 text-sm border-2 border-transparent focus:outline-none"
-                  onFocus={(e) => (e.currentTarget.style.borderColor = ACCENT)}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "transparent")}
-                />
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  type="submit"
-                  className="shrink-0 w-12 rounded-xl flex items-center justify-center text-white"
-                  style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
-                  aria-label="診断する"
-                >
-                  <ArrowRight size={18} strokeWidth={2.2} />
-                </motion.button>
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                type="url"
+                required
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com"
+                className="w-full px-4 py-3.5 rounded-xl bg-white text-charcoal-900 text-sm border-2 border-transparent focus:outline-none"
+                onFocus={(e) => (e.currentTarget.style.borderColor = ACCENT)}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "transparent")}
+              />
 
               <div>
                 <p className="text-[11px] text-gray-500 mb-2">Googleの情報も入力する（任意）</p>
@@ -237,8 +225,21 @@ export default function AiCheckPage() {
               </div>
 
               {error && <p className="text-xs text-red-400">{error}</p>}
+
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                type="submit"
+                className="w-full py-4 rounded-xl text-white font-semibold text-sm tracking-wide flex items-center justify-center gap-2"
+                style={{
+                  background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`,
+                  boxShadow: `0 8px 24px ${ACCENT}40`,
+                }}
+              >
+                <Zap size={16} strokeWidth={2} />
+                無料で診断する
+              </motion.button>
             </form>
-            <p className="text-gray-500 text-xs text-center mt-3">所要時間：約1分 ／ 無料 ／ 登録不要</p>
+            <p className="text-gray-500 text-xs text-center mt-4">所要時間：約1分 ／ 無料 ／ 登録不要</p>
           </motion.div>
         </div>
 
