@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Bot,
@@ -15,7 +14,6 @@ import {
   Users,
   MessageSquareText,
   ArrowDown,
-  ArrowRight,
   Sparkles,
 } from "lucide-react";
 import { AI_CHECK_CATEGORY_LABEL, AI_CHECK_CATEGORY_MAX, AI_CHECK_RANK_INFO, AiCheckCategoryId } from "@/lib/ai-check/types";
@@ -24,6 +22,19 @@ import { AI_CHECK_CATEGORY_LABEL, AI_CHECK_CATEGORY_MAX, AI_CHECK_RANK_INFO, AiC
 // 「将来性」カテゴリ（lib/scoring.ts）と同じ青系をAI Check専用のアクセントにする。
 const ACCENT = "#5B9BD5";
 const ACCENT_DARK = "#4A82B5";
+
+// プロ診断はアクセスコードが必要なスタッフ向けページのため、一般公開側の導線としては
+// 直接リンクせず、価値診断と同じLINE相談窓口に繋ぐ。
+const LINE_URL = "https://page.line.me/470bhtcb?oat_content=url&openQrModal=true";
+
+const LineIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M22 10.5C22 6.36 17.52 3 12 3S2 6.36 2 10.5c0 3.64 3.23 6.7 7.59 7.28.3.07.7.2.8.47.09.24.06.61.03.85l-.13.77c-.04.24-.18.93.82.51 1-.42 5.38-3.17 7.35-5.43 1.35-1.49 2.54-3.28 2.54-6.45z"
+      fill="white"
+    />
+  </svg>
+);
 
 const LOADING_STEPS = [
   "Webサイトを確認しています...",
@@ -353,14 +364,16 @@ export default function AiCheckPage() {
             <p className="text-gray-400 text-xs leading-relaxed mb-4">
               質問に答えることで、専門性・強み・口コミなどAIでしか判定できない項目まで含めた100点満点のフル診断に。AIが「あなたの美容室から見た強み・改善提案」まで作成します。
             </p>
-            <Link
-              href="/ai-check/pro"
+            <a
+              href={LINE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center justify-center gap-1.5 w-full py-3 rounded-xl text-white font-semibold text-sm"
-              style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+              style={{ backgroundColor: "#06C755" }}
             >
-              プロ診断を見てみる
-              <ArrowRight size={14} strokeWidth={2} />
-            </Link>
+              <LineIcon />
+              LINEでプロ診断について相談する
+            </a>
           </div>
         </motion.div>
       </section>

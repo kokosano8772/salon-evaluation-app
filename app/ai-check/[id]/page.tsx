@@ -41,6 +41,20 @@ import { exportResultToPDF } from "@/lib/pdf";
 const ACCENT = "#5B9BD5";
 const ACCENT_DARK = "#4A82B5";
 
+// プロ診断はアクセスコードが必要なスタッフ向けページのため、一般公開側の導線としては
+// 直接リンクせず、価値診断と同じLINE相談窓口に繋ぐ（既存のapp/(diagnosis)/quick/result
+// 等と同じURL）。
+const LINE_URL = "https://page.line.me/470bhtcb?oat_content=url&openQrModal=true";
+
+const LineIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M22 10.5C22 6.36 17.52 3 12 3S2 6.36 2 10.5c0 3.64 3.23 6.7 7.59 7.28.3.07.7.2.8.47.09.24.06.61.03.85l-.13.77c-.04.24-.18.93.82.51 1-.42 5.38-3.17 7.35-5.43 1.35-1.49 2.54-3.28 2.54-6.45z"
+      fill="white"
+    />
+  </svg>
+);
+
 const CATEGORY_ICON: Record<AiCheckCategoryId, typeof MapPin> = {
   store_info: MapPin,
   specialty: Star,
@@ -387,23 +401,42 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                   )}
                 </>
               ) : (
-                <div className="rounded-2xl p-5 text-white" style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)" }}>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Sparkles size={14} style={{ color: ACCENT }} />
-                    <p className="font-semibold text-sm">さらに詳しく知りたい方へ</p>
+                <>
+                  <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">チェック項目の内訳</p>
+                    <div className="space-y-2">
+                      {diagnosis.diagnosis_items.map((it) => {
+                        const s = STATUS_LABEL[it.status];
+                        return (
+                          <div key={it.id} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${s.bg}`}>
+                            <span className="text-xs text-charcoal-800 flex-1">{it.label}</span>
+                            <span className="text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>{s.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <p className="text-gray-400 text-xs leading-relaxed mb-4">
-                    専門性・口コミなど機械判定できない項目まで含めた100点満点のプロ診断なら、AIがあなたの美容室の強み・改善提案までコメントします。
-                  </p>
-                  <Link
-                    href="/ai-check/pro"
-                    className="flex items-center justify-center gap-1.5 w-full py-3 rounded-xl text-white font-semibold text-sm"
-                    style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
-                  >
-                    プロ診断を受ける
-                    <ArrowRight size={14} strokeWidth={2} />
-                  </Link>
-                </div>
+
+                  <div className="rounded-2xl p-5 text-white" style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)" }}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Sparkles size={14} style={{ color: ACCENT }} />
+                      <p className="font-semibold text-sm">さらに詳しく知りたい方へ</p>
+                    </div>
+                    <p className="text-gray-400 text-xs leading-relaxed mb-4">
+                      専門性・口コミなど機械判定できない項目まで含めた100点満点のプロ診断なら、AIがあなたの美容室の強み・改善提案までコメントします。
+                    </p>
+                    <a
+                      href={LINE_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 w-full py-3 rounded-xl text-white font-semibold text-sm"
+                      style={{ backgroundColor: "#06C755" }}
+                    >
+                      <LineIcon />
+                      LINEでプロ診断について相談する
+                    </a>
+                  </div>
+                </>
               )}
             </motion.div>
           )}
@@ -492,23 +525,6 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                   </tbody>
                 </table>
               </div>
-
-              {!isPro && (
-                <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">チェック項目の内訳</p>
-                  <div className="space-y-2">
-                    {diagnosis.diagnosis_items.map((it) => {
-                      const s = STATUS_LABEL[it.status];
-                      return (
-                        <div key={it.id} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${s.bg}`}>
-                          <span className="text-xs text-charcoal-800 flex-1">{it.label}</span>
-                          <span className="text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>{s.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </motion.div>
           )}
 
