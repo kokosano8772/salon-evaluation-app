@@ -1,22 +1,21 @@
-import { DiagnosisResult } from "./types";
-import { RANK_INFO } from "./scoring";
-
 // html2canvasはcanvas上に文字を自前で再描画する方式で、CJK(日本語)テキストに
 // アルファベット用のベースラインを使ってしまう既知の制限があり、文字が行の中で
 // 下にズレて描画される（広告レポートPNG出力で発生・修正済みと同じ不具合）。
 // html-to-imageはDOMをSVGのforeignObject内に埋め込んでブラウザ本来の描画エンジンで
 // レンダリングするため、この種のズレが原理的に起きない。
+//
+// 価値診断（DiagnosisResult）専用だった関数を、ファイル名を呼び出し側で組み立てて
+// 渡す形に汎用化（Salon AI Check Phase 2でも同じキャプチャ/改ページロジックを
+// 再利用するため。型はDiagnosisResultに依存しない）。
 export async function exportResultToPDF(
   element: HTMLElement,
-  result: DiagnosisResult
+  filename: string
 ): Promise<void> {
   // dynamic import — SSR 非対応ライブラリのため実行時のみ読み込む
   const [{ default: jsPDF }, { toCanvas }] = await Promise.all([
     import("jspdf"),
     import("html-to-image"),
   ]);
-
-  const rankInfo = RANK_INFO[result.rank];
 
   // Webフォント(Noto Sans JP)がまだ使われていないウェイトだと document.fonts.ready を
   // 待つだけでは不十分なため、実際に使うウェイトを明示的にloadしてから待つ。
@@ -88,6 +87,5 @@ export async function exportResultToPDF(
     pageIndex++;
   }
 
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  pdf.save(`SVS_${result.totalScore}pt_${rankInfo.rank}_${date}.pdf`);
+  pdf.save(filename);
 }

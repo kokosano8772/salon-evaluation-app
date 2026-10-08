@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot,
@@ -14,8 +15,11 @@ import {
   Users,
   MessageSquareText,
   ArrowDown,
+  History,
+  Trash2,
 } from "lucide-react";
 import { AI_CHECK_CATEGORY_LABEL, AI_CHECK_CATEGORY_MAX, AI_CHECK_RANK_INFO, AiCheckCategoryId } from "@/lib/ai-check/types";
+import { useAiCheckHistoryStore } from "@/store/aiCheckHistoryStore";
 
 // 美容室価値診断（薔薇色 #C4788A）と同じシリーズだが別物と分かるよう、
 // 「将来性」カテゴリ（lib/scoring.ts）と同じ青系をAI Check専用のアクセントにする。
@@ -54,6 +58,12 @@ export default function AiCheckPage() {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
+  const { entries: history, addEntry, clear: clearHistory } = useAiCheckHistoryStore();
+
+  // zustand/persistはlocalStorageからの復元がマウント後になるため、SSRとの
+  // hydrationずれを避けるためマウント完了まで履歴セクションは描画しない。
+  useEffect(() => setMounted(true), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +90,7 @@ export default function AiCheckPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "診断に失敗しました");
+      addEntry({ id: json.id, url: json.url, totalScore: json.totalScore, rank: json.rank, createdAt: new Date().toISOString() });
       router.push(`/ai-check/${json.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "診断に失敗しました");
@@ -334,6 +345,52 @@ export default function AiCheckPage() {
           </div>
         </motion.div>
       </section>
+
+      {/* 診断履歴（ログイン不要、localStorageのみ。履歴が無い初見ユーザーには表示しない） */}
+      {mounted && history.length > 0 && (
+        <section className="px-6 pt-10 pb-2">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-1.5">
+              <History size={14} style={{ color: ACCENT }} />
+              <p className="text-xs font-medium tracking-[0.2em] uppercase" style={{ color: ACCENT }}>前回までの診断</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { if (confirm("診断履歴を削除しますか？")) clearHistory(); }}
+              className="flex items-center gap-1 text-[11px] text-gray-400"
+            >
+              <Trash2 size={11} />
+              履歴を削除
+            </button>
+          </div>
+          <div className="space-y-2">
+            {history.map((entry) => {
+              const info = AI_CHECK_RANK_INFO[entry.rank];
+              return (
+                <Link
+                  key={entry.id}
+                  href={`/ai-check/${entry.id}`}
+                  className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100"
+                >
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                    style={{ background: info.color }}
+                  >
+                    {entry.rank}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-charcoal-900 truncate">{entry.url}</p>
+                    <p className="text-[11px] text-gray-400">
+                      {new Date(entry.createdAt).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold flex-shrink-0" style={{ color: ACCENT }}>{entry.totalScore}点</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* About */}
       <section className="px-6 py-16">

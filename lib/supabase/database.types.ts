@@ -173,6 +173,7 @@ export interface Database {
           recommendations: unknown;
           category_scores: unknown;
           diagnosis_items: unknown;
+          manual_answers: unknown;
           crawl_warning: string | null;
           client_ip: string | null;
           created_at: string;

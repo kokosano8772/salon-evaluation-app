@@ -94,7 +94,8 @@ export default function ResultPage() {
     if (!printRef.current || isPdfLoading) return;
     setIsPdfLoading(true);
     try {
-      await exportResultToPDF(printRef.current, result);
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      await exportResultToPDF(printRef.current, `SVS_${result.totalScore}pt_${rankInfo.rank}_${date}.pdf`);
     } finally {
       setIsPdfLoading(false);
     }

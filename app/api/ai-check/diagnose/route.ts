@@ -119,5 +119,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: insertError?.message ?? "保存に失敗しました" }, { status: 500 });
   }
 
-  return NextResponse.json({ id: data.id });
+  // 診断履歴（ブラウザのlocalStorage）に即時追加できるよう、一覧表示に必要な値も返す
+  return NextResponse.json({ id: data.id, url: crawlResult.topPage.url, totalScore, rank });
 }

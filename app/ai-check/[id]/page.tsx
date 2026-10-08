@@ -12,6 +12,7 @@ import {
   Share2,
   ArrowRight,
   Check,
+  Download,
   MapPin,
   Star,
   ListChecks,
@@ -29,6 +30,8 @@ import {
   AiCheckRecommendation,
   DiagnosisItemStatus,
 } from "@/lib/ai-check/types";
+import AiCheckPrintDocument from "@/components/ai-check/AiCheckPrintDocument";
+import { exportResultToPDF } from "@/lib/pdf";
 
 // 美容室価値診断と同じシリーズとして、結果画面の「見せ方」（ヘッダー/スコアヒーロー/
 // タブ構成/下部アクションバー）はapp/(diagnosis)/result/page.tsxに合わせている。
@@ -75,6 +78,7 @@ interface DiagnosisRecord {
   recommendations: AiCheckRecommendation[];
   category_scores: CategoryScoreRow[];
   diagnosis_items: DiagnosisItemRow[];
+  manual_answers: Record<string, boolean>;
   crawl_warning: string | null;
   created_at: string;
 }
@@ -91,9 +95,13 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const [diagnosis, setDiagnosis] = useState<DiagnosisRecord | null>(null);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action" | "manual">("overview");
   const [displayScore, setDisplayScore] = useState(0);
+  const [manualDraft, setManualDraft] = useState<Record<string, boolean>>({});
+  const [submittingManual, setSubmittingManual] = useState(false);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
   const rafRef = useRef<number | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/ai-check/diagnose/${id}`)
@@ -156,10 +164,49 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handlePdf = async () => {
+    if (!printRef.current || isPdfLoading) return;
+    setIsPdfLoading(true);
+    try {
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      await exportResultToPDF(printRef.current, `AICheck_${diagnosis.total_score}pt_${diagnosis.rank}_${date}.pdf`);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
+  // 既にpassの項目に加え、「いいえ」で明示的に回答済みの項目も一覧から外す
+  // （fail/unknownのままでも、本人が一度答えた項目を何度も聞き直さないようにする）
+  const unresolvedItems = diagnosis.diagnosis_items.filter(
+    (i) => i.status !== "pass" && diagnosis.manual_answers[i.id] === undefined
+  );
+
+  const handleSubmitManualAnswers = async () => {
+    if (Object.keys(manualDraft).length === 0 || submittingManual) return;
+    setSubmittingManual(true);
+    try {
+      const res = await fetch(`/api/ai-check/diagnose/${id}/manual-answers`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(manualDraft),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "更新に失敗しました");
+      setDiagnosis(json.diagnosis);
+      setManualDraft({});
+      setActiveTab("detail");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "更新に失敗しました");
+    } finally {
+      setSubmittingManual(false);
+    }
+  };
+
   const TABS = [
     { id: "overview", label: "サマリー" },
     { id: "detail", label: "詳細スコア" },
     { id: "action", label: `改善提案 (${diagnosis.recommendations.length})` },
+    ...(unresolvedItems.length > 0 ? [{ id: "manual" as const, label: `追加情報 (${unresolvedItems.length})` }] : []),
   ] as const;
 
   return (
@@ -499,26 +546,111 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
               </div>
             </motion.div>
           )}
+
+          {activeTab === "manual" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="space-y-5">
+              <p className="text-gray-500 text-xs leading-relaxed">
+                自動診断では確認できなかった項目です。実際には当てはまる場合は回答するとスコアに反映されます（既にできている判定は回答で下がりません）。
+              </p>
+
+              {(Object.keys(AI_CHECK_CATEGORY_LABEL) as AiCheckCategoryId[]).map((categoryId) => {
+                const categoryItems = unresolvedItems.filter((i) => i.categoryId === categoryId);
+                if (categoryItems.length === 0) return null;
+                return (
+                  <div key={categoryId} className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">{AI_CHECK_CATEGORY_LABEL[categoryId]}</p>
+                    <div className="space-y-3">
+                      {categoryItems.map((it) => {
+                        const draftValue = manualDraft[it.id];
+                        return (
+                          <div key={it.id} className="flex items-center justify-between gap-3">
+                            <span className="text-sm text-charcoal-800 flex-1">{it.label}</span>
+                            <div className="flex gap-1.5 flex-shrink-0">
+                              {([
+                                [true, "はい"],
+                                [false, "いいえ"],
+                              ] as const).map(([value, label]) => (
+                                <button
+                                  key={String(value)}
+                                  type="button"
+                                  onClick={() => setManualDraft((d) => ({ ...d, [it.id]: value }))}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+                                  style={
+                                    draftValue === value
+                                      ? { background: ACCENT, borderColor: ACCENT, color: "white" }
+                                      : { background: "transparent", borderColor: "#e5e7eb", color: "#6b7280" }
+                                  }
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              <button
+                onClick={handleSubmitManualAnswers}
+                disabled={Object.keys(manualDraft).length === 0 || submittingManual}
+                className="w-full py-4 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40"
+                style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+              >
+                {submittingManual ? "更新中..." : "回答を反映してスコアを更新する"}
+              </button>
+            </motion.div>
+          )}
         </div>
       </main>
 
       {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 px-5 pt-3 pb-6 flex gap-2 z-40">
-        <button
-          onClick={handleShare}
-          className="flex-1 py-3.5 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 flex items-center justify-center gap-1.5"
-        >
-          <Share2 size={14} strokeWidth={1.8} />
-          シェア
-        </button>
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 px-5 pt-3 pb-6 flex flex-col gap-2 z-40">
         <Link
           href="/ai-check"
-          className="flex-1 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 text-white"
+          className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 text-white"
           style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
         >
           <RotateCcw size={14} strokeWidth={1.8} />
           もう一度診断する
         </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={handlePdf}
+            disabled={isPdfLoading}
+            className="flex-1 py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 flex items-center justify-center gap-1.5 disabled:opacity-50"
+          >
+            <Download size={14} strokeWidth={1.8} />
+            {isPdfLoading ? "生成中..." : "PDF保存"}
+          </button>
+          <button
+            onClick={handleShare}
+            className="flex-1 py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 flex items-center justify-center gap-1.5"
+          >
+            <Share2 size={14} strokeWidth={1.8} />
+            シェア
+          </button>
+        </div>
+      </div>
+
+      {/* PDF保存専用の静止レイアウト。画面には表示せず常にDOM上に置いておく */}
+      <div style={{ position: "absolute", top: 0, left: -9999, width: 480 }} aria-hidden="true">
+        <div ref={printRef}>
+          <AiCheckPrintDocument
+            url={diagnosis.url}
+            totalScore={diagnosis.total_score}
+            rank={diagnosis.rank}
+            summary={diagnosis.summary}
+            target={diagnosis.target}
+            strengths={diagnosis.strengths}
+            weaknesses={diagnosis.weaknesses}
+            recommendations={diagnosis.recommendations}
+            categoryScores={diagnosis.category_scores}
+            createdAt={diagnosis.created_at}
+          />
+        </div>
       </div>
     </div>
   );

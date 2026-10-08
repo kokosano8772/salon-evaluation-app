@@ -33,3 +33,15 @@ export function aggregateCategoryScores(items: DiagnosisItem[]): AiCheckCategory
 export function calculateTotalScore(categoryScores: AiCheckCategoryScore[]): number {
   return categoryScores.reduce((sum, c) => sum + c.score, 0);
 }
+
+// Phase 2: 自動診断でfail/unknownだった項目について、本人が直接Yes/Noを回答した
+// 内容をマージする（設計書24章の統合ルール＝自動判定が既にpassの項目は手動回答で
+// 絶対に書き換えない。AIの再判定は挟まず、決定的にスコアを更新する）。
+export function mergeManualAnswers(items: DiagnosisItem[], answers: Record<string, boolean>): DiagnosisItem[] {
+  return items.map((i) => {
+    if (i.status === "pass") return i;
+    const answer = answers[i.id];
+    if (typeof answer !== "boolean") return i;
+    return { ...i, score: answer ? i.maxScore : 0, status: answer ? ("pass" as const) : ("fail" as const) };
+  });
+}
