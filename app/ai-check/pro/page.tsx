@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,6 +17,9 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { QUIZ_QUESTIONS } from "@/lib/ai-check/quiz-questions";
 import { AI_CHECK_CATEGORY_LABEL, AiCheckCategoryId, DiagnosisItem, GoogleReviewsManualInput } from "@/lib/ai-check/types";
@@ -25,6 +28,92 @@ import { SiteDataForPrompt } from "@/lib/ai-check/build-ai-check-prompt";
 const ACCENT = "#5B9BD5";
 const ACCENT_DARK = "#4A82B5";
 const TOTAL = QUIZ_QUESTIONS.length;
+
+// 価値診断の詳細版(app/(diagnosis)/diagnosis/page.tsx)と同じアクセスコード方式。
+// プロ版はGeminiを1回呼ぶため、価値診断の詳細版と同様スタッフ経由の配布に限定する
+// （簡易版は誰でも無制限に使える想定のためゲート無し）。
+const ACCESS_CODE = "KOKO2025";
+const AUTH_KEY = "ai-check-pro-auth";
+
+function AccessGate({ onUnlock }: { onUnlock: () => void }) {
+  const [input, setInput] = useState("");
+  const [error, setError] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim().toUpperCase() === ACCESS_CODE) {
+      sessionStorage.setItem(AUTH_KEY, "1");
+      onUnlock();
+    } else {
+      setError(true);
+      setInput("");
+      setTimeout(() => setError(false), 2000);
+    }
+  };
+
+  return (
+    <div className="min-h-[100dvh] bg-[#F5F8FA] flex flex-col items-center justify-center px-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}>
+            <Lock size={28} strokeWidth={1.8} color="white" />
+          </div>
+          <p className="text-xs font-medium tracking-[0.3em] uppercase mb-2" style={{ color: ACCENT }}>Salon AI Check</p>
+          <h1 className="text-charcoal-900 text-2xl font-bold text-center leading-snug">プロ診断</h1>
+          <p className="text-gray-500 text-sm text-center mt-2 leading-relaxed">
+            この診断はスタッフ向けです。<br />アクセスコードを入力してください。
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <input
+              type={showCode ? "text" : "password"}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="アクセスコードを入力"
+              autoComplete="off"
+              className="w-full px-5 py-4 rounded-2xl border-2 text-center text-lg font-bold tracking-widest outline-none transition-all duration-200"
+              style={{
+                borderColor: error ? "#ef4444" : input ? ACCENT : "#e5e7eb",
+                backgroundColor: error ? "#fef2f2" : "white",
+              }}
+            />
+            <button type="button" onClick={() => setShowCode(!showCode)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+              {showCode ? <EyeOff size={18} strokeWidth={1.8} /> : <Eye size={18} strokeWidth={1.8} />}
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {error && (
+              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-red-500 text-sm text-center">
+                アクセスコードが違います
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            type="submit"
+            disabled={!input}
+            className="w-full py-4 rounded-2xl text-white font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-40"
+            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+          >
+            <span>入る</span>
+            <ChevronRight size={18} strokeWidth={2} />
+          </motion.button>
+        </form>
+
+        <p className="text-gray-400 text-xs text-center mt-6">
+          一般の方は
+          <a href="/ai-check" className="underline ml-1" style={{ color: ACCENT }}>基礎診断</a>
+          をご利用ください
+        </p>
+      </motion.div>
+    </div>
+  );
+}
 
 const CATEGORY_ICON: Record<AiCheckCategoryId, typeof MapPin> = {
   store_info: MapPin,
@@ -97,6 +186,7 @@ function LoadingOverlay({ title, subtitle }: { title: string; subtitle: string }
 
 export default function AiCheckProPage() {
   const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [phase, setPhase] = useState<Phase>("form");
   const [url, setUrl] = useState("");
   const [hasGbp, setHasGbp] = useState<"unknown" | "yes" | "no">("unknown");
@@ -106,6 +196,10 @@ export default function AiCheckProPage() {
   const [draft, setDraft] = useState<CrawlDraft | null>(null);
   const [quizIndex, setQuizIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setIsAuthorized(!!sessionStorage.getItem(AUTH_KEY));
+  }, []);
 
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,6 +267,9 @@ export default function AiCheckProPage() {
       setQuizIndex((i) => i - 1);
     }
   };
+
+  if (isAuthorized === null) return null;
+  if (!isAuthorized) return <AccessGate onUnlock={() => setIsAuthorized(true)} />;
 
   if (phase === "crawling") return <LoadingOverlay title="サイトを確認中" subtitle="基礎項目を自動チェックしています..." />;
   if (phase === "finalizing") return <LoadingOverlay title="AIが分析中" subtitle="回答内容をもとにコメントを作成しています..." />;
