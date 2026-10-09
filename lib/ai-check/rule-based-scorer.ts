@@ -27,7 +27,7 @@ const CLOSED_DAY_PATTERN = /定休日|休業日/;
 const MENU_PRICE_PATTERN = /[¥￥]\s?[\d,]{3,}|[\d,]{3,}\s?円/;
 const DURATION_PATTERN = /\d{1,3}\s?分/;
 const FAQ_KEYWORD_PATTERN = /faq|よくある質問|q\s*&\s*a/i;
-const BLOG_URL_PATTERN = /\/(blog|news|column|article)s?\//i;
+const BLOG_URL_PATTERN = /\/(blog|news|column|article|topic|diary|feature|info)s?\//i;
 // 「スタッフ」ではなく「スタイリスト/STYLIST」を使う美容室サイトも多いため追加。
 const STAFF_KEYWORD_PATTERN = /staff|スタッフ|美容師紹介|stylist|スタイリスト/i;
 const MENU_KEYWORD_PATTERN = /menu|メニュー/i;
@@ -99,7 +99,10 @@ export function scoreWithRules(input: RuleBasedScoringInput): DiagnosisItem[] {
     allPages.some((p) => p.jsonLdTypes.includes("FAQPage")) ||
     allPages.some((p) => pageMatchesKeyword(p, FAQ_KEYWORD_PATTERN));
   items.push(item("e_faq", "content_faq", "FAQ", 3, hasFaq));
-  const hasBlog = allPages.some((p) => BLOG_URL_PATTERN.test(p.url));
+  // URLの命名パターンに加え、RSSフィードリンク（CMSが標準出力するため命名に依存しない）
+  // も見る。「/topics/」等、blog/news/column等に当てはまらない命名のブログ欄を持つ
+  // サイトで、URLパターンだけでは取りこぼすことが実例で判明したため（casica.powder-group.com）。
+  const hasBlog = allPages.some((p) => BLOG_URL_PATTERN.test(p.url)) || allPages.some((p) => p.hasFeedLink);
   items.push(item("e_blog", "content_faq", "ブログ・記事コンテンツ", 2, hasBlog));
 
   // --- F. スタッフ・実績・信頼性（10点中3点）---

@@ -10,6 +10,11 @@ export interface ParsedPage {
   canonical: string | null;
   robotsMeta: string | null;
   hasViewportMeta: boolean;
+  // WordPress等のCMSは、ブログ・お知らせ欄のURLが「/blog/」のような分かりやすい命名で
+  // あるとは限らない（「/topics/」等、サイトごとに自由な命名のことが多い）が、
+  // <head>のRSSフィード自動検出リンクはCMSが標準で出力するため、命名に依存せず
+  // ブログ機能の有無を判定できる（実例: casica.powder-group.comで確認）。
+  hasFeedLink: boolean;
   jsonLdTypes: string[];
   jsonLd: unknown[];
   imageAltTexts: string[];
@@ -81,6 +86,7 @@ export function parseHtml(url: string, html: string): ParsedPage {
     canonical: $('link[rel="canonical"]').attr("href") || null,
     robotsMeta: $('meta[name="robots"]').attr("content") || null,
     hasViewportMeta: /width\s*=\s*device-width/i.test($('meta[name="viewport"]').attr("content") ?? ""),
+    hasFeedLink: $('link[rel="alternate"][type="application/rss+xml"], link[rel="alternate"][type="application/atom+xml"]').length > 0,
     jsonLdTypes,
     jsonLd,
     imageAltTexts,
