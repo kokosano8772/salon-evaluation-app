@@ -411,7 +411,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
         </Link>
       </div>
 
-      <main className="flex-1 pb-28">
+      <main className="flex-1 pb-40">
         {/* Score Hero */}
         <section
           className="px-5 pt-10 pb-8 flex flex-col items-center relative overflow-hidden"
