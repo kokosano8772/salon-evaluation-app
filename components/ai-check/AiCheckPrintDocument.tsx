@@ -80,7 +80,13 @@ export default function AiCheckPrintDocument({
   const hasSummaryPage = isPro && (!!summary || strengths.length > 0 || weaknesses.length > 0);
   const hasRecommendationsPage = isPro && recommendations.length > 0;
 
-  const pageClass = "ad-report-page rounded-3xl px-10 pt-9 pb-5 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center";
+  // 幅はw-[900px]固定ではなくw-full max-w-[900px]にしている。handlePdf側で@pageに
+  // 900px幅を指定しても、ブラウザのネイティブ印刷ダイアログ（window.print）はデフォルトの
+  // 用紙サイズ（Letterは816px相当など）を優先し、カスタム@pageのwidthを無視することが
+  // 実機検証で判明した。固定900px幅のままだと、その場合に3列目のカード内容が用紙の右端で
+  // 切れてしまうため、実際の印刷幅に追従できるようにしている（@pageの指定自体は、
+  // ブラウザ側が尊重してくれる場合に備えて残している）。
+  const pageClass = "ad-report-page rounded-3xl px-10 pt-9 pb-5 w-full max-w-[900px] min-h-[1150px] mx-auto flex flex-col justify-center";
 
   return (
     <div style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
