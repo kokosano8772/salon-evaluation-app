@@ -36,6 +36,7 @@ import {
 } from "@/lib/ai-check/types";
 import AiCheckPrintDocument from "@/components/ai-check/AiCheckPrintDocument";
 import { AI_JUDGED_ITEMS } from "@/lib/ai-check/build-ai-check-prompt";
+import { FIX_GUIDES } from "@/lib/ai-check/fix-guides";
 import { QUIZ_QUESTIONS } from "@/lib/ai-check/quiz-questions";
 
 // 美容室価値診断と同じシリーズとして、結果画面の「見せ方」（ヘッダー/スコアヒーロー/
@@ -90,6 +91,22 @@ interface DiagnosisItemRow {
   maxScore: number;
   score: number;
   status: DiagnosisItemStatus;
+}
+
+// 項目が未達成（pass以外）で、かつ店舗の中身に関係なく直し方が常に同じ項目
+// （FIX_GUIDES対象）の場合だけ、固定の直し方ガイドを添える。
+function ItemRow({ item }: { item: DiagnosisItemRow }) {
+  const s = STATUS_LABEL[item.status];
+  const guide = item.status !== "pass" ? FIX_GUIDES[item.id] : undefined;
+  return (
+    <div className={`rounded-lg px-3 py-2 ${s.bg}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs text-charcoal-800 flex-1">{item.label}</span>
+        <span className="text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>{s.label}</span>
+      </div>
+      {guide && <p className="text-[11px] text-gray-500 leading-relaxed mt-1.5 pt-1.5 border-t border-black/5">{guide}</p>}
+    </div>
+  );
 }
 
 interface CategoryScoreRow {
@@ -658,15 +675,9 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                       <span className="text-[11px] text-gray-400">{diagnosis.diagnosis_items.length}項目チェック済み／他{QUIZ_QUESTIONS.length + AI_JUDGED_ITEMS.length}項目</span>
                     </div>
                     <div className="space-y-2">
-                      {diagnosis.diagnosis_items.map((it) => {
-                        const s = STATUS_LABEL[it.status];
-                        return (
-                          <div key={it.id} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${s.bg}`}>
-                            <span className="text-xs text-charcoal-800 flex-1">{it.label}</span>
-                            <span className="text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>{s.label}</span>
-                          </div>
-                        );
-                      })}
+                      {diagnosis.diagnosis_items.map((it) => (
+                        <ItemRow key={it.id} item={it} />
+                      ))}
                     </div>
 
                     <div className="space-y-2 mt-5">
@@ -811,15 +822,9 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                         <div key={categoryId}>
                           <p className="text-xs font-semibold text-charcoal-700 mb-2">{AI_CHECK_CATEGORY_LABEL[categoryId]}</p>
                           <div className="space-y-2">
-                            {items.map((it) => {
-                              const s = STATUS_LABEL[it.status];
-                              return (
-                                <div key={it.id} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${s.bg}`}>
-                                  <span className="text-xs text-charcoal-800 flex-1">{it.label}</span>
-                                  <span className="text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>{s.label}</span>
-                                </div>
-                              );
-                            })}
+                            {items.map((it) => (
+                              <ItemRow key={it.id} item={it} />
+                            ))}
                           </div>
                         </div>
                       );
