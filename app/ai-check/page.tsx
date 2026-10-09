@@ -27,6 +27,23 @@ const ACCENT_DARK = "#4A82B5";
 // 直接リンクせず、価値診断と同じLINE相談窓口に繋ぐ。
 const LINE_URL = "https://page.line.me/470bhtcb?oat_content=url&openQrModal=true";
 
+// サーバー関数のタイムアウト等でレスポンスがJSONでないプレーンテキストになることが
+// あり、その場合res.json()が生のSyntaxErrorを投げてしまう。ユーザーに分かりやすい
+// メッセージを出すため、先にtextで受けてから自前でパースする。
+async function parseJsonResponse(res: Response): Promise<{ ok: true; data: Record<string, unknown> } | { ok: false; message: string }> {
+  const text = await res.text();
+  try {
+    return { ok: true, data: JSON.parse(text) };
+  } catch {
+    return {
+      ok: false,
+      message: res.ok
+        ? "サーバーからの応答が不正でした。もう一度お試しください"
+        : "処理に時間がかかりすぎたか、サーバー側で問題が発生しました。しばらく待ってから再度お試しください",
+    };
+  }
+}
+
 const LineIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <path
@@ -91,8 +108,10 @@ export default function AiCheckPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "診断に失敗しました");
+      const parsed = await parseJsonResponse(res);
+      if (!parsed.ok) throw new Error(parsed.message);
+      const json = parsed.data;
+      if (!res.ok) throw new Error((json.error as string | undefined) ?? "診断に失敗しました");
       router.push(`/ai-check/${json.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "診断に失敗しました");

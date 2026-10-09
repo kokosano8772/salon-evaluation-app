@@ -29,6 +29,25 @@ const ACCENT = "#5B9BD5";
 const ACCENT_DARK = "#4A82B5";
 const TOTAL = QUIZ_QUESTIONS.length;
 
+// サーバー関数のタイムアウト等でレスポンスがJSONでないプレーンテキスト（例:
+// Vercelの"An error occurred with your deployment"等）になることがあり、その場合
+// res.json()が生のSyntaxError（"Unexpected token 'A'..."のような分かりにくい文言）を
+// 投げてしまう。ユーザーに分かりやすいメッセージを出すため、先にtextで受けてから
+// 自前でパースする。
+async function parseJsonResponse(res: Response): Promise<{ ok: true; data: Record<string, unknown> } | { ok: false; message: string }> {
+  const text = await res.text();
+  try {
+    return { ok: true, data: JSON.parse(text) };
+  } catch {
+    return {
+      ok: false,
+      message: res.ok
+        ? "サーバーからの応答が不正でした。もう一度お試しください"
+        : "処理に時間がかかりすぎたか、サーバー側で問題が発生しました。しばらく待ってから再度お試しください",
+    };
+  }
+}
+
 // 価値診断の詳細版(app/(diagnosis)/diagnosis/page.tsx)と同じアクセスコード方式。
 // プロ版はGeminiを1回呼ぶため、価値診断の詳細版と同様スタッフ経由の配布に限定する
 // （簡易版は誰でも無制限に使える想定のためゲート無し）。
@@ -246,9 +265,16 @@ function AiCheckProInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "サイトの確認に失敗しました");
-      setDraft({ url: json.url, ruleItems: json.ruleItems, crawlWarning: json.crawlWarning, siteDataForPrompt: json.siteDataForPrompt });
+      const parsed = await parseJsonResponse(res);
+      if (!parsed.ok) throw new Error(parsed.message);
+      const json = parsed.data;
+      if (!res.ok) throw new Error((json.error as string | undefined) ?? "サイトの確認に失敗しました");
+      setDraft({
+        url: json.url as string,
+        ruleItems: json.ruleItems as DiagnosisItem[],
+        crawlWarning: json.crawlWarning as string | null,
+        siteDataForPrompt: json.siteDataForPrompt as SiteDataForPrompt,
+      });
       setPhase("quiz");
     } catch (err) {
       setError(err instanceof Error ? err.message : "サイトの確認に失敗しました");
@@ -274,8 +300,10 @@ function AiCheckProInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...draft, quizAnswers: answers }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "診断に失敗しました");
+      const parsed = await parseJsonResponse(res);
+      if (!parsed.ok) throw new Error(parsed.message);
+      const json = parsed.data;
+      if (!res.ok) throw new Error((json.error as string | undefined) ?? "診断に失敗しました");
       router.push(`/ai-check/${json.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "診断に失敗しました");

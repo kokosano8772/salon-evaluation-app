@@ -6,7 +6,10 @@ import { aggregateCategoryScores, applyQuizAnswers, buildAiJudgedDiagnosisItems,
 import { calculateAiCheckRank, DiagnosisItem } from "@/lib/ai-check/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+// AI_MAX_CHARS_PER_PAGE拡大（1500→8000文字、取りこぼし対策）とAI判定24項目の復活に
+// 伴いGeminiへの入出力が増え、60秒では閉じ切らずVercelのタイムアウトでJSONでない
+// プレーンテキストが返りクライアント側でJSON.parseに失敗する事例が発生したため延長。
+export const maxDuration = 120;
 
 // プロ版はここで初めてGeminiを呼ぶ（1診断あたり1回）。クロール自体の濫用防止用レート
 // リミットとは別に、AIコストが発生するこのエンドポイント専用の厳しめの上限をかける。

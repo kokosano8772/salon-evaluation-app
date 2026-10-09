@@ -136,6 +136,25 @@ const PRIORITY_STYLES: Record<AiCheckRecommendation["priority"], { label: string
 
 const CARD_STYLE: React.CSSProperties = { borderColor: `${ACCENT}33`, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" };
 
+// サーバー関数のタイムアウト等でレスポンスがJSONでないプレーンテキスト（例:
+// Vercelの"An error occurred with your deployment"等）になることがあり、その場合
+// res.json()が生のSyntaxError（"Unexpected token 'A'..."のような分かりにくい文言）を
+// 投げてしまう。ユーザーに分かりやすいメッセージを出すため、先にtextで受けてから
+// 自前でパースする。
+async function parseJsonResponse(res: Response): Promise<{ ok: true; data: Record<string, unknown> } | { ok: false; message: string }> {
+  const text = await res.text();
+  try {
+    return { ok: true, data: JSON.parse(text) };
+  } catch {
+    return {
+      ok: false,
+      message: res.ok
+        ? "サーバーからの応答が不正でした。もう一度お試しください"
+        : "処理に時間がかかりすぎたか、サーバー側で問題が発生しました。しばらく待ってから再度お試しください",
+    };
+  }
+}
+
 export default function AiCheckResultPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -152,9 +171,11 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     fetch(`/api/ai-check/diagnose/${id}`)
       .then(async (res) => {
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "取得に失敗しました");
-        setDiagnosis(json.diagnosis);
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.ok) throw new Error(parsed.message);
+        const json = parsed.data;
+        if (!res.ok) throw new Error((json.error as string | undefined) ?? "取得に失敗しました");
+        setDiagnosis(json.diagnosis as DiagnosisRecord);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "取得に失敗しました"));
   }, [id]);
@@ -274,9 +295,13 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     setSearchCheckError("");
     try {
       const res = await fetch(`/api/ai-check/diagnose/${id}/search-check`, { method: "POST" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "実測に失敗しました");
-      setDiagnosis((d) => (d ? { ...d, search_check_results: json.results, search_check_run_at: new Date().toISOString() } : d));
+      const parsed = await parseJsonResponse(res);
+      if (!parsed.ok) throw new Error(parsed.message);
+      const json = parsed.data;
+      if (!res.ok) throw new Error((json.error as string | undefined) ?? "実測に失敗しました");
+      setDiagnosis((d) =>
+        d ? { ...d, search_check_results: json.results as SearchCheckResult[], search_check_run_at: new Date().toISOString() } : d
+      );
     } catch (err) {
       setSearchCheckError(err instanceof Error ? err.message : "実測に失敗しました");
     } finally {
@@ -300,8 +325,10 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: diagnosis.url, tier: "simple" }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "診断に失敗しました");
+      const parsed = await parseJsonResponse(res);
+      if (!parsed.ok) throw new Error(parsed.message);
+      const json = parsed.data;
+      if (!res.ok) throw new Error((json.error as string | undefined) ?? "診断に失敗しました");
       router.push(`/ai-check/${json.id}`);
     } catch (err) {
       alert(err instanceof Error ? err.message : "診断に失敗しました");
