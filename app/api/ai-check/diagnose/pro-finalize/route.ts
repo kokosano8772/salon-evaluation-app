@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { SiteDataForPrompt } from "@/lib/ai-check/build-ai-check-prompt";
+import { AI_JUDGED_ITEMS, SiteDataForPrompt } from "@/lib/ai-check/build-ai-check-prompt";
 import { generateAiCheckAnalysis } from "@/lib/ai/generateAiCheckAnalysis";
-import { aggregateCategoryScores, applyQuizAnswers, calculateTotalScore } from "@/lib/ai-check/scoring";
+import { aggregateCategoryScores, applyQuizAnswers, buildAiJudgedDiagnosisItems, calculateTotalScore } from "@/lib/ai-check/scoring";
 import { calculateAiCheckRank, DiagnosisItem } from "@/lib/ai-check/types";
 
 export const runtime = "nodejs";
@@ -49,18 +49,21 @@ export async function POST(request: Request) {
   }
 
   const quizItems = applyQuizAnswers(body.quizAnswers);
-  const allItems = [...body.ruleItems, ...quizItems];
-  const categoryScores = aggregateCategoryScores(allItems);
-  const totalScore = calculateTotalScore(categoryScores);
-  const rank = calculateAiCheckRank(totalScore);
+  const partialItems = [...body.ruleItems, ...quizItems];
 
   let aiResponse: Awaited<ReturnType<typeof generateAiCheckAnalysis>>;
   try {
-    aiResponse = await generateAiCheckAnalysis(body.siteDataForPrompt, totalScore, categoryScores, allItems);
+    aiResponse = await generateAiCheckAnalysis(body.siteDataForPrompt, partialItems);
   } catch (error) {
     const message = error instanceof Error ? error.message : "AI分析に失敗しました";
     return NextResponse.json({ error: message }, { status: 502 });
   }
+
+  const aiJudgedItems = buildAiJudgedDiagnosisItems(aiResponse.items, AI_JUDGED_ITEMS);
+  const allItems = [...partialItems, ...aiJudgedItems];
+  const categoryScores = aggregateCategoryScores(allItems);
+  const totalScore = calculateTotalScore(categoryScores);
+  const rank = calculateAiCheckRank(totalScore);
 
   const { data, error: insertError } = await admin
     .from("ai_check_diagnoses")

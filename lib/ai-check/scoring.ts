@@ -1,3 +1,4 @@
+import { AiJudgedItemDefinition } from "./build-ai-check-prompt";
 import { QUIZ_QUESTIONS } from "./quiz-questions";
 import { AI_CHECK_CATEGORY_MAX, AiCheckCategoryId, AiCheckCategoryScore, DiagnosisItem } from "./types";
 
@@ -26,5 +27,29 @@ export function applyQuizAnswers(answers: Record<string, number>): DiagnosisItem
     }
     const status = score === q.maxScore ? "pass" : score === 0 ? "fail" : "partial";
     return { id: q.id, categoryId: q.categoryId, label: q.question, maxScore: q.maxScore, score, status: status as DiagnosisItem["status"] };
+  });
+}
+
+// AI_JUDGED_ITEMS（クロール内容から判定できる24項目）に対するAIのtrue/false判定を
+// DiagnosisItem[]に変換する。配点はAI_JUDGED_ITEMSの固定表に従う決定的な変換のみを行い、
+// スコアの算出自体はAIに委ねない（設計書34章）。AIが判定を返し忘れた・不正な値を返した
+// 項目はunknown（0点、未確認として表示）にし、falseと断定しない。
+export function buildAiJudgedDiagnosisItems(
+  items: Record<string, boolean>,
+  definitions: AiJudgedItemDefinition[]
+): DiagnosisItem[] {
+  return definitions.map((d) => {
+    const judged = items[d.id];
+    if (typeof judged !== "boolean") {
+      return { id: d.id, categoryId: d.categoryId, label: d.label, maxScore: d.maxScore, score: 0, status: "unknown" as const };
+    }
+    return {
+      id: d.id,
+      categoryId: d.categoryId,
+      label: d.label,
+      maxScore: d.maxScore,
+      score: judged ? d.maxScore : 0,
+      status: judged ? ("pass" as const) : ("fail" as const),
+    };
   });
 }

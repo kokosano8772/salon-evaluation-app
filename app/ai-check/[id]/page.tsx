@@ -36,6 +36,7 @@ import {
 } from "@/lib/ai-check/types";
 import AiCheckPrintDocument from "@/components/ai-check/AiCheckPrintDocument";
 import { exportResultToPDF } from "@/lib/pdf";
+import { AI_JUDGED_ITEMS } from "@/lib/ai-check/build-ai-check-prompt";
 import { QUIZ_QUESTIONS } from "@/lib/ai-check/quiz-questions";
 
 // 美容室価値診断と同じシリーズとして、結果画面の「見せ方」（ヘッダー/スコアヒーロー/
@@ -599,7 +600,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                   <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
                     <div className="flex items-center justify-between mb-4">
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-widest">チェック項目の内訳</p>
-                      <span className="text-[11px] text-gray-400">{diagnosis.diagnosis_items.length}項目チェック済み／他{QUIZ_QUESTIONS.length}項目</span>
+                      <span className="text-[11px] text-gray-400">{diagnosis.diagnosis_items.length}項目チェック済み／他{QUIZ_QUESTIONS.length + AI_JUDGED_ITEMS.length}項目</span>
                     </div>
                     <div className="space-y-2">
                       {diagnosis.diagnosis_items.map((it) => {
@@ -615,7 +616,9 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
 
                     <div className="space-y-2 mt-5">
                       {(Object.keys(AI_CHECK_CATEGORY_LABEL) as AiCheckCategoryId[]).map((categoryId) => {
-                        const count = QUIZ_QUESTIONS.filter((q) => q.categoryId === categoryId).length;
+                        const count =
+                          QUIZ_QUESTIONS.filter((q) => q.categoryId === categoryId).length +
+                          AI_JUDGED_ITEMS.filter((d) => d.categoryId === categoryId).length;
                         if (count === 0) return null;
                         return (
                           <div key={categoryId} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 bg-gray-50">
