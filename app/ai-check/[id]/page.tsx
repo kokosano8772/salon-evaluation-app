@@ -796,6 +796,37 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                   </tbody>
                 </table>
               </div>
+
+              {isPro && (
+                <div className="bg-white rounded-2xl border p-5" style={CARD_STYLE}>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-widest">チェック項目の内訳</p>
+                    <span className="text-[11px] text-gray-400">{diagnosis.diagnosis_items.length}項目</span>
+                  </div>
+                  <div className="space-y-5">
+                    {(Object.keys(AI_CHECK_CATEGORY_LABEL) as AiCheckCategoryId[]).map((categoryId) => {
+                      const items = diagnosis.diagnosis_items.filter((it) => it.categoryId === categoryId);
+                      if (items.length === 0) return null;
+                      return (
+                        <div key={categoryId}>
+                          <p className="text-xs font-semibold text-charcoal-700 mb-2">{AI_CHECK_CATEGORY_LABEL[categoryId]}</p>
+                          <div className="space-y-2">
+                            {items.map((it) => {
+                              const s = STATUS_LABEL[it.status];
+                              return (
+                                <div key={it.id} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${s.bg}`}>
+                                  <span className="text-xs text-charcoal-800 flex-1">{it.label}</span>
+                                  <span className="text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>{s.label}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
