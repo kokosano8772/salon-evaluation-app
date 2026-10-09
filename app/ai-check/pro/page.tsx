@@ -534,7 +534,7 @@ function AiCheckProInner() {
               プロ診断を始める
             </motion.button>
           </form>
-          <p className="text-gray-500 text-xs text-center mt-3">所要時間：約5分 ／ 無料 ／ {TOTAL}問の質問に回答</p>
+          <p className="text-gray-500 text-xs text-center mt-3">所要時間：約1分 ／ 無料 ／ {TOTAL}問の質問に回答</p>
         </motion.div>
       </div>
     </main>
