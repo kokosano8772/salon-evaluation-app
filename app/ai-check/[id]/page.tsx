@@ -536,8 +536,10 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
           )}
         </section>
 
-        {/* Tabs */}
-        <div className="sticky top-[57px] z-30 bg-[#F5F8FA] border-b border-gray-100">
+        {/* Tabs。top値は上のヘッダー（sticky top-0）の実際の高さ（49px）に合わせること。
+            ズレるとスクロール時にヘッダーとタブの間に隙間ができ、下のコンテンツが
+            一瞬覗いて見える。 */}
+        <div className="sticky top-[49px] z-30 bg-[#F5F8FA] border-b border-gray-100">
           <div className="flex overflow-x-auto scrollbar-hide">
             {TABS.map((tab) => (
               <button
