@@ -106,6 +106,17 @@ function isPathDisallowed(url: string, disallowedPaths: string[]): boolean {
   return disallowedPaths.some((p) => path.startsWith(p));
 }
 
+// サイトマップインデックス内の子サイトマップURL（post-sitemap.xml等）を、HTMLページ
+// だと誤認してクロール対象に含めないための判定。通常のページURLが.xmlで終わることは
+// 実質無いため、この拡張子だけで十分判別できる。
+function isXmlUrl(url: string): boolean {
+  try {
+    return new URL(url).pathname.toLowerCase().endsWith(".xml");
+  } catch {
+    return false;
+  }
+}
+
 // 重要ページ判定のキーワード（設計書6章準拠）。URLパス・リンクテキストどちらかに
 // 含まれていれば優先的にクロール対象にする。
 const IMPORTANT_KEYWORDS = [
@@ -184,9 +195,15 @@ export async function crawlSite(startUrl: string): Promise<CrawlResult> {
   ]);
   const sitemapUrls = sitemapXml ? extractSitemapUrls(sitemapXml) : [];
 
-  const linkCandidates = extractInternalLinks(topPage.html, baseUrl);
-  // サイトマップ由来のURLも候補に加える（スコアは0=低優先度扱い。キーワード一致があれば加点）
+  const linkCandidates = extractInternalLinks(topPage.html, baseUrl).filter((c) => !isXmlUrl(c.url));
+  // サイトマップ由来のURLも候補に加える（スコアは0=低優先度扱い。キーワード一致があれば加点）。
+  // WordPress等では/sitemap.xmlがページ一覧ではなく「post-sitemap.xml」等の子サイトマップへの
+  // 索引（サイトマップインデックス）になっていることが多く、その<loc>をそのままページ候補として
+  // 扱うと、HTMLページではなくXMLファイル自体をコンテンツとしてクロール・AIに渡してしまう
+  // （実際にbelin.jpで発生し、本文と無関係なノイズとしてAIに渡っていた）。.xmlで終わるURLは
+  // ページ候補から除外する。
   for (const loc of sitemapUrls) {
+    if (isXmlUrl(loc)) continue;
     try {
       const u = new URL(loc);
       if (u.hostname !== baseUrl.hostname) continue;
