@@ -148,4 +148,22 @@ input[type="number"] {
   .ad-report-page-last {
     page-break-after: auto;
   }
+
+  /* Salon AI Check結果画面用の「印刷専用ブロック」。通常の閲覧では画面外
+     （position:absolute;left:-9999px;height:0;overflow:hiddenをインラインstyleで指定）
+     に置いて隠しているが、印刷（PDF保存）時だけ通常のフロー上に戻して表示する
+     （ad-report-print-hideの逆：普段隠す/印刷時だけ見せる）。
+     display:noneではなく位置をずらす方式にしているのは、display:noneだと子要素の
+     offsetHeightが常に0になり、印刷直前にページ高さを測って@pageサイズを決める処理
+     （handlePdf内）が機能しなくなるため（display:noneの要素とその子孫はレイアウト
+     計算そのものから除外される）。インラインstyleは!important無しの author normal
+     扱いのため、ここで!importantを使えば問題なく上書きできる。 */
+  .print-only-block {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
 }

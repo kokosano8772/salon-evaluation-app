@@ -35,7 +35,6 @@ import {
   DiagnosisItemStatus,
 } from "@/lib/ai-check/types";
 import AiCheckPrintDocument from "@/components/ai-check/AiCheckPrintDocument";
-import { exportResultToPDF } from "@/lib/pdf";
 import { AI_JUDGED_ITEMS } from "@/lib/ai-check/build-ai-check-prompt";
 import { QUIZ_QUESTIONS } from "@/lib/ai-check/quiz-questions";
 
@@ -144,13 +143,11 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "detail" | "action">("overview");
   const [displayScore, setDisplayScore] = useState(0);
-  const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [isRetaking, setIsRetaking] = useState(false);
   const [retakeStep, setRetakeStep] = useState(0);
   const [isSearchChecking, setIsSearchChecking] = useState(false);
   const [searchCheckError, setSearchCheckError] = useState("");
   const rafRef = useRef<number | null>(null);
-  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/ai-check/diagnose/${id}`)
@@ -230,15 +227,43 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  const handlePdf = async () => {
-    if (!printRef.current || isPdfLoading) return;
-    setIsPdfLoading(true);
-    try {
-      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-      await exportResultToPDF(printRef.current, `AICheck_${diagnosis.total_score}pt_${diagnosis.rank ?? "simple"}_${date}.pdf`);
-    } finally {
-      setIsPdfLoading(false);
+  // PDF保存はブラウザのネイティブ印刷（window.print）を使う。以前はDOMをまるごと
+  // スクリーンショットしA4の高さ毎に機械的に切っていたため、内容量次第でページ数が
+  // 不可解に増減し「画面を撮っているだけ」の見た目になっていた。ad-report-pageクラス
+  // （広告レポート・成長DBの診断レポートと同じ仕組み、globals.css参照）で明示した
+  // 固定ページ単位をそのまま印刷させることで、ページ数を内容設計側で決定的に制御する。
+  const handlePdf = () => {
+    const originalTitle = document.title;
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    document.title = `AICheck_${diagnosis.total_score}pt_${diagnosis.rank ?? "simple"}_${date}`;
+
+    const pages = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
+    const maxHeight = Math.max(0, ...pages.map((el) => el.offsetHeight));
+    let printSizeStyle: HTMLStyleElement | null = null;
+    const heightOverrides: { el: HTMLElement; original: string }[] = [];
+    if (maxHeight > 0) {
+      pages.forEach((el) => {
+        if (el.offsetHeight < maxHeight) {
+          heightOverrides.push({ el, original: el.style.minHeight });
+          el.style.minHeight = `${maxHeight}px`;
+        }
+      });
+      const printHeight = maxHeight + 3;
+      printSizeStyle = document.createElement("style");
+      printSizeStyle.textContent = `@media print { @page { size: 900px ${printHeight}px; margin: 0; } }`;
+      document.head.appendChild(printSizeStyle);
     }
+
+    const restore = () => {
+      document.title = originalTitle;
+      printSizeStyle?.remove();
+      heightOverrides.forEach(({ el, original }) => {
+        el.style.minHeight = original;
+      });
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
   };
 
   // AI検索実測（プロ版のオプトイン機能）。確定診断とは別にGeminiを質問数ぶん呼ぶため、
@@ -341,6 +366,9 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-[100dvh] bg-[#F5F8FA] flex flex-col">
+      {/* 通常の閲覧UI。印刷（PDF保存）時はad-report-print-hideで非表示にし、
+          代わりにprint-only-block（AiCheckPrintDocument）だけを表示する */}
+      <div className="ad-report-print-hide flex flex-col flex-1">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between sticky top-0 z-40">
         <Link href="/ai-check" className="flex items-center gap-1 text-gray-500">
@@ -838,11 +866,10 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
         <div className="flex gap-2">
           <button
             onClick={handlePdf}
-            disabled={isPdfLoading}
-            className="flex-1 py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="flex-1 py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 flex items-center justify-center gap-1.5"
           >
             <Download size={14} strokeWidth={1.8} />
-            {isPdfLoading ? "生成中..." : "PDF保存"}
+            PDF保存
           </button>
           <button
             onClick={handleShare}
@@ -853,28 +880,32 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
           </button>
         </div>
       </div>
+      </div>
 
-      {/* PDF保存専用の静止レイアウト。画面には表示せず常にDOM上に置いておく */}
-      {/* heightを0+overflow:hiddenにし、中の実コンテンツ（印刷用ドキュメント）自体は
-          通常通りレイアウトさせたまま、ページ全体のスクロール可能領域には影響させない
-          （これが無いと、横に-9999pxずらしていても縦方向の高さ分だけ documentの
-          scrollHeightに加算され、実際のコンテンツより下までスクロールできてしまう） */}
-      <div style={{ position: "absolute", top: 0, left: -9999, width: 480, height: 0, overflow: "hidden" }} aria-hidden="true">
-        <div ref={printRef}>
-          <AiCheckPrintDocument
-            url={diagnosis.url}
-            totalScore={diagnosis.total_score}
-            scoreMax={diagnosis.score_max}
-            rank={diagnosis.rank}
-            summary={diagnosis.summary}
-            target={diagnosis.target}
-            strengths={diagnosis.strengths}
-            weaknesses={diagnosis.weaknesses}
-            recommendations={diagnosis.recommendations}
-            categoryScores={diagnosis.category_scores}
-            createdAt={diagnosis.created_at}
-          />
-        </div>
+      {/* PDF保存専用の静止レイアウト。通常の閲覧では画面外に配置して隠しておき
+          （heightを0+overflow:hiddenにし、ページ全体のスクロール可能領域には影響させない。
+          これが無いと横に-9999pxずらしていても縦方向の高さ分だけdocumentの
+          scrollHeightに加算されてしまう）、印刷（PDF保存）時だけprint-only-block
+          （globals.css）が通常のフロー上に戻し、代わりにad-report-print-hide側
+          （通常の閲覧UI）を非表示にする */}
+      <div
+        className="print-only-block"
+        style={{ position: "absolute", top: 0, left: -9999, width: 900, height: 0, overflow: "hidden" }}
+        aria-hidden="true"
+      >
+        <AiCheckPrintDocument
+          url={diagnosis.url}
+          totalScore={diagnosis.total_score}
+          scoreMax={diagnosis.score_max}
+          rank={diagnosis.rank}
+          summary={diagnosis.summary}
+          target={diagnosis.target}
+          strengths={diagnosis.strengths}
+          weaknesses={diagnosis.weaknesses}
+          recommendations={diagnosis.recommendations}
+          categoryScores={diagnosis.category_scores}
+          createdAt={diagnosis.created_at}
+        />
       </div>
     </div>
   );

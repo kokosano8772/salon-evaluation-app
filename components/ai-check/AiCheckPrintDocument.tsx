@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import {
   AI_CHECK_CATEGORY_LABEL,
   AI_CHECK_RANK_INFO,
@@ -34,11 +35,30 @@ interface AiCheckPrintDocumentProps {
   createdAt: string;
 }
 
-// PDF保存専用の静止レイアウト。価値診断側のDiagnosisPrintDocument.tsxと同じ設計思想
-// （タブは画面用の仕組みなのでPDFには不要、アニメーションも使わず全セクションを
-// 常に完成形で1枚の縦長ドキュメントとして描画する）。lib/pdf.tsのexportResultToPDFは
-// 型に依存しない汎用関数になっているため、このコンポーネントをキャプチャ対象として
-// そのまま渡せる。
+function SectionCard({ children, px = 28, py = 22 }: { children: ReactNode; px?: number; py?: number }) {
+  return (
+    <div className="bg-white rounded-2xl" style={{ padding: `${py}px ${px}px` }}>
+      {children}
+    </div>
+  );
+}
+
+function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <span style={{ width: 6, height: 20, borderRadius: 999, backgroundColor: ACCENT, display: "inline-block" }} />
+      <p style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>{children}</p>
+    </div>
+  );
+}
+
+// PDF保存専用の静止レイアウト。lib/growth-db/store-detail/DiagnosisReportDocument.tsxと
+// 同じ「密度の高い固定ページ」の思想を採用（1ページ=900px幅・可変の最小高さのdivを
+// data-print-sectionではなくad-report-pageクラスで明示し、ブラウザのネイティブ印刷
+// （window.print）でそのままPDF化する）。旧実装（narrow 480px、カードをそのまま縦に
+// 並べてhtml-to-image+jsPDFでA4高さ毎に機械的に切る方式）は、/resultのDiagnosisPrintDocument
+// と同じ「スクリーンショットを撮っているだけ」の見た目になり、内容量次第でページ数が
+// 不可解に増減する問題があったため、ページ数を内容に応じて自分で決める今の方式に変更した。
 export default function AiCheckPrintDocument({
   url,
   totalScore,
@@ -55,226 +75,188 @@ export default function AiCheckPrintDocument({
   const isPro = rank !== null;
   const rankInfo = rank ? AI_CHECK_RANK_INFO[rank] : null;
   const percentage = Math.round((totalScore / scoreMax) * 100);
-  const circumference = 2 * Math.PI * 52;
-  const strokeDashoffset = circumference * (1 - percentage / 100);
+  const dateLabel = new Date(createdAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
+
+  const hasSummaryPage = isPro && (!!summary || strengths.length > 0 || weaknesses.length > 0);
+  const hasRecommendationsPage = isPro && recommendations.length > 0;
+
+  const pageClass = "ad-report-page rounded-3xl px-10 pt-9 pb-5 w-[900px] min-h-[1150px] max-w-none mx-auto flex flex-col justify-center";
 
   return (
-    <div style={{ width: 480, backgroundColor: "#F5F8FA", fontFamily: "'Noto Sans JP', sans-serif" }}>
-      {/* Header */}
-      <div data-print-section style={{ padding: "28px 32px 20px", textAlign: "center" }}>
-        <p style={{ color: ACCENT, fontSize: 11, fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: 6 }}>
-          Salon AI Check
+    <div style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
+      {/* ページ1: ヘッダー・総合スコア・カテゴリ別スコア（常に表示） */}
+      <div className={`${pageClass} ${!hasSummaryPage && !hasRecommendationsPage ? "ad-report-page-last" : ""}`} style={{ background: "#FAF8F3" }}>
+        <p style={{ color: ACCENT, fontSize: 12, fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", textAlign: "center" }}>
+          SALON AI CHECK
         </p>
-        <p style={{ color: "#6b7280", fontSize: 11, wordBreak: "break-all" }}>{url}</p>
-        <p style={{ color: "#9ca3af", fontSize: 11, marginTop: 2 }}>
-          {new Date(createdAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
-        </p>
-      </div>
+        <h1 className="text-[30px] font-extrabold text-center text-charcoal-900 mt-1">
+          {isPro ? "プロ診断" : "基礎診断"}レポート
+        </h1>
+        <p className="text-center text-sm text-gray-500 mt-3 break-all">{url}</p>
+        <p className="text-center text-xs text-gray-400 mt-1">{dateLabel}実施</p>
 
-      {/* Score Hero */}
-      <div data-print-section style={{ padding: "0 32px 28px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{ position: "relative", width: 192, height: 192 }}>
-          <svg viewBox="0 0 120 120" style={{ width: "100%", height: "100%", transform: "rotate(-90deg)" }}>
-            <circle cx="60" cy="60" r="52" fill="none" stroke="#eef2f5" strokeWidth={6} />
-            <circle
-              cx="60" cy="60" r="52" fill="none" stroke={ACCENT} strokeWidth={6}
-              strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
-            />
-          </svg>
-          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: 48, fontWeight: 700, color: ACCENT, lineHeight: 1 }}>
-              {isPro ? totalScore : percentage}
-              {!isPro && <span style={{ fontSize: 24 }}>%</span>}
-            </span>
-            <span style={{ color: "#9ca3af", fontSize: 14, marginTop: 2 }}>
-              {isPro ? `/ ${scoreMax}点` : `基礎項目 ${totalScore}/${scoreMax}点`}
-            </span>
-          </div>
-        </div>
-
-        {rank && rankInfo ? (
-          <div style={{ marginTop: 20, display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div
-              style={{
-                width: 64, height: 64, borderRadius: "50%", display: "flex", alignItems: "center",
-                justifyContent: "center", color: "white", fontSize: 28, fontWeight: 700,
-                background: `linear-gradient(135deg, ${rankInfo.color} 0%, ${rankInfo.color}cc 100%)`,
-              }}
-            >
-              {rank}
+        <div className="mt-6">
+          <SectionCard px={32} py={20}>
+            <div className="flex items-center gap-8">
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center shrink-0 text-white font-extrabold"
+                style={{
+                  fontSize: isPro ? 28 : 22,
+                  background: `linear-gradient(135deg, ${rankInfo ? rankInfo.color : ACCENT} 0%, ${rankInfo ? rankInfo.color : ACCENT}cc 100%)`,
+                }}
+              >
+                {isPro ? rank : `${percentage}%`}
+              </div>
+              <div className="flex-1">
+                <p className="text-2xl font-extrabold" style={{ color: ACCENT }}>
+                  {isPro ? `総合スコア：${totalScore}/${scoreMax}点（${rankInfo?.label}）` : `基礎スコア：${totalScore}/${scoreMax}点`}
+                </p>
+                <p className="text-sm text-charcoal-700 mt-2 leading-relaxed">
+                  {isPro ? rankInfo?.description : "機械的に判定できる項目のみの基礎スコアです（ランク判定はプロ診断で表示されます）"}
+                </p>
+              </div>
             </div>
-            <p style={{ marginTop: 8, fontWeight: 600, color: "#1a1a1a", fontSize: 16 }}>{rankInfo.label}</p>
-            <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4, textAlign: "center", maxWidth: 240 }}>
-              {rankInfo.description}
-            </p>
-          </div>
-        ) : (
-          <p style={{ marginTop: 16, color: "#6b7280", fontSize: 12, textAlign: "center", maxWidth: 280 }}>
-            機械的に判定できる項目のみの基礎スコアです（ランク判定はプロ診断で表示されます）
-          </p>
-        )}
-      </div>
-
-      {/* AIから見たあなたの美容室 */}
-      {summary && (
-        <div data-print-section style={{ padding: "0 20px 24px" }}>
-          <div style={{ background: "white", borderRadius: 20, padding: 20 }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>
-              AIから見たあなたの美容室
-            </p>
-            <p style={{ fontSize: 13, color: "#1f2937", lineHeight: 1.7, marginBottom: 10 }}>{summary}</p>
-            {target && (
-              <p style={{ fontSize: 12, color: "#6b7280" }}>
-                <span style={{ fontWeight: 600, color: "#374151" }}>想定ターゲット：</span>
-                {target}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Strengths / weaknesses */}
-      {(strengths.length > 0 || weaknesses.length > 0) && (
-        <div data-print-section style={{ padding: "0 20px 24px" }}>
-          <div style={{ background: "white", borderRadius: 20, padding: 20 }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 14 }}>
-              強みと弱みのサマリー
-            </p>
-            {strengths.length > 0 && (
-              <p style={{ fontSize: 12, fontWeight: 600, color: "#16a34a", marginBottom: 8 }}>AIが理解できていること</p>
-            )}
-            {strengths.map((s, i) => (
-              <div key={i} style={{ background: "#f0fdf4", borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: "#166534" }}>{s}</span>
-              </div>
-            ))}
-            {weaknesses.length > 0 && (
-              <p style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", marginTop: 14, marginBottom: 8 }}>AIが理解できていないこと</p>
-            )}
-            {weaknesses.map((w, i) => (
-              <div key={i} style={{ background: "#fef2f2", borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: "#991b1b" }}>{w}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Category score table */}
-      <div style={{ padding: "0 20px 24px" }}>
-        <div data-print-section style={{ background: "white", borderRadius: 20, padding: 20, marginBottom: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 16 }}>
-            カテゴリ別スコア
-          </p>
-          {categoryScores.map((c) => {
-            const pct = Math.round((c.score / c.maxScore) * 100);
-            return (
-              <div key={c.categoryId} style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</span>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: ACCENT }}>{c.score}</span>
-                    <span style={{ fontSize: 11, color: "#9ca3af" }}>/ {c.maxScore}</span>
-                  </div>
-                </div>
-                <div style={{ height: 10, backgroundColor: "#f3f4f6", borderRadius: 999, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${pct}%`, backgroundColor: ACCENT, borderRadius: 999 }} />
-                </div>
-                <div style={{ textAlign: "right", marginTop: 2 }}>
-                  <span style={{ fontSize: 11, color: "#9ca3af" }}>{pct}%</span>
-                </div>
-              </div>
-            );
-          })}
+          </SectionCard>
         </div>
 
-        <div data-print-section style={{ background: "white", borderRadius: 20, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#f9fafb" }}>
-                <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>カテゴリ</th>
-                <th style={{ padding: "12px 16px", textAlign: "right", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>スコア</th>
-                <th style={{ padding: "12px 16px", textAlign: "right", fontSize: 11, fontWeight: 600, color: "#6b7280" }}>達成率</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categoryScores.map((c, i) => {
+        <div className="mt-4">
+          <SectionCard px={32} py={22}>
+            <SectionTitle>カテゴリ別スコア</SectionTitle>
+            <div className="grid grid-cols-3 gap-4 mt-3">
+              {categoryScores.map((c) => {
                 const pct = Math.round((c.score / c.maxScore) * 100);
                 return (
-                  <tr key={c.categoryId} style={{ background: i % 2 === 0 ? "white" : "#fafafa" }}>
-                    <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 500, color: "#1a1a1a" }}>{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</td>
-                    <td style={{ padding: "12px 16px", textAlign: "right", fontSize: 13, fontWeight: 700, color: ACCENT }}>
-                      {c.score} <span style={{ color: "#9ca3af", fontWeight: 400, fontSize: 11 }}>/ {c.maxScore}</span>
-                    </td>
-                    <td style={{ padding: "12px 16px", textAlign: "right", fontSize: 13, fontWeight: 700, color: ACCENT }}>
-                      {pct}%
-                    </td>
-                  </tr>
-                );
-              })}
-              <tr style={{ background: "#1a1a1a" }}>
-                <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 700, color: "white" }}>合計</td>
-                <td style={{ padding: "12px 16px", textAlign: "right", fontSize: 13, fontWeight: 700, color: ACCENT }}>
-                  {totalScore} <span style={{ color: "#9ca3af", fontWeight: 400, fontSize: 11 }}>/ {scoreMax}</span>
-                </td>
-                <td style={{ padding: "12px 16px", textAlign: "right", fontSize: 13, fontWeight: 700, color: ACCENT }}>
-                  {Math.round((totalScore / scoreMax) * 100)}%
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Recommendations */}
-      {recommendations.length > 0 && (
-        <div style={{ padding: "0 20px 32px" }}>
-          <p style={{ fontSize: 11, fontWeight: 500, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>
-            改善提案（{recommendations.length}件）
-          </p>
-          {recommendations.map((rec, i) => {
-            const priority = PRIORITY_STYLES[rec.priority];
-            return (
-              <div key={i} data-print-section style={{ background: "white", borderRadius: 16, border: "1px solid #f3f4f6", overflow: "hidden", marginBottom: 12 }}>
-                <div style={{ padding: "16px 20px 12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                    <div style={{ padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 500, color: "white", backgroundColor: ACCENT }}>
-                      {rec.category}
+                  <div key={c.categoryId} className="rounded-xl border border-gray-100 px-4 py-3">
+                    <p className="text-sm font-semibold text-charcoal-900 truncate mb-1.5">{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</p>
+                    <div className="flex items-baseline justify-between mb-1">
+                      <span className="text-xs text-gray-400">
+                        {c.score} / {c.maxScore}
+                      </span>
+                      <span className="text-sm font-bold" style={{ color: ACCENT }}>
+                        {pct}%
+                      </span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 500, color: priority.text, backgroundColor: priority.bg, border: `1px solid ${priority.border}` }}>
-                      <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: priority.dot, display: "inline-block" }} />
-                      {priority.label}
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: ACCENT }} />
                     </div>
                   </div>
-                  <h3 style={{ color: "#1a1a1a", fontWeight: 700, fontSize: 13, lineHeight: 1.4, marginBottom: 8 }}>{rec.problem}</h3>
-                  <p style={{ color: "#4b5563", fontSize: 12, lineHeight: 1.6 }}>{rec.reason}</p>
+                );
+              })}
+            </div>
+          </SectionCard>
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-3">KOKODESIGN</p>
+      </div>
+
+      {/* ページ2: AIコメント・強み弱み（プロ診断のみ） */}
+      {hasSummaryPage && (
+        <div className={`${pageClass} ${!hasRecommendationsPage ? "ad-report-page-last" : ""}`} style={{ background: "#FAF8F3" }}>
+          {summary && (
+            <div className="mb-4">
+              <SectionCard px={32} py={24}>
+                <SectionTitle>AIから見たあなたの美容室</SectionTitle>
+                <p className="text-sm text-charcoal-800 leading-relaxed">{summary}</p>
+                {target && (
+                  <p className="text-xs text-gray-500 mt-3">
+                    <span className="font-semibold text-charcoal-700">想定ターゲット：</span>
+                    {target}
+                  </p>
+                )}
+              </SectionCard>
+            </div>
+          )}
+
+          {(strengths.length > 0 || weaknesses.length > 0) && (
+            <SectionCard px={32} py={24}>
+              <SectionTitle>強みと弱みのサマリー</SectionTitle>
+              <div className="grid grid-cols-2 gap-6 mt-2">
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: "#16a34a" }}>
+                    AIが理解できていること
+                  </p>
+                  <div className="space-y-2">
+                    {strengths.map((s, i) => (
+                      <div key={i} className="rounded-lg px-3 py-2" style={{ background: "#f0fdf4" }}>
+                        <span className="text-xs leading-relaxed" style={{ color: "#166534" }}>
+                          {s}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ margin: "0 16px 16px", background: "#F5F8FA", borderRadius: 12, padding: 12 }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a", marginBottom: 2 }}>今すぐできるアクション</p>
-                  <p style={{ fontSize: 12, color: "#4b5563", lineHeight: 1.6 }}>{rec.solution}</p>
+                <div>
+                  <p className="text-xs font-semibold mb-2" style={{ color: "#ef4444" }}>
+                    AIが理解できていないこと
+                  </p>
+                  <div className="space-y-2">
+                    {weaknesses.map((w, i) => (
+                      <div key={i} className="rounded-lg px-3 py-2" style={{ background: "#fef2f2" }}>
+                        <span className="text-xs leading-relaxed" style={{ color: "#991b1b" }}>
+                          {w}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            );
-          })}
+            </SectionCard>
+          )}
+
+          <p className="text-center text-xs text-gray-400 mt-3">KOKODESIGN</p>
         </div>
       )}
 
-      {/* Footer note（静止ドキュメントのためボタンではなく文章のみ） */}
-      <div style={{ padding: "0 20px 32px" }}>
-        <div data-print-section style={{ background: "#1a1a1a", borderRadius: 20, padding: 24 }}>
-          <p style={{ color: "white", fontSize: 15, fontWeight: 700, lineHeight: 1.5, marginBottom: 8 }}>
-            プロと一緒にAI対策を進めませんか？
-          </p>
-          <p style={{ color: "#9ca3af", fontSize: 12, lineHeight: 1.6, marginBottom: 12 }}>
-            診断結果をもとに、具体的な改善アクションをご提案します。無料相談は30分から。
-          </p>
-          <p style={{ color: ACCENT, fontSize: 12, fontWeight: 600 }}>koko-design.com/contact</p>
-        </div>
-      </div>
+      {/* ページ3: 改善提案（プロ診断のみ・最終ページ） */}
+      {hasRecommendationsPage && (
+        <div className={`${pageClass} ad-report-page-last`} style={{ background: "#FAF8F3" }}>
+          <SectionCard px={32} py={24}>
+            <SectionTitle>改善提案（{recommendations.length}件）</SectionTitle>
+            <div className="grid grid-cols-2 gap-4 mt-3">
+              {recommendations.map((rec, i) => {
+                const priority = PRIORITY_STYLES[rec.priority];
+                return (
+                  <div key={i} className="rounded-xl border border-gray-100 px-4 py-3.5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-medium text-white"
+                        style={{ backgroundColor: ACCENT }}
+                      >
+                        {rec.category}
+                      </span>
+                      <span
+                        className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border"
+                        style={{ color: priority.text, backgroundColor: priority.bg, borderColor: priority.border }}
+                      >
+                        <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: priority.dot, display: "inline-block" }} />
+                        {priority.label}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-charcoal-900 leading-snug mb-1.5">{rec.problem}</p>
+                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{rec.reason}</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      <span className="font-semibold text-charcoal-700">アクション：</span>
+                      {rec.solution}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </SectionCard>
 
-      <div style={{ padding: "0 20px 28px", textAlign: "center" }}>
-        <p style={{ color: "#9ca3af", fontSize: 10, letterSpacing: "0.1em" }}>KOKODESIGN</p>
-      </div>
+          <div className="mt-4 rounded-2xl p-6" style={{ background: "#1a1a1a" }}>
+            <p className="text-white font-bold text-base leading-relaxed mb-1.5">プロと一緒にAI対策を進めませんか？</p>
+            <p className="text-xs leading-relaxed mb-2" style={{ color: "#9ca3af" }}>
+              診断結果をもとに、具体的な改善アクションをご提案します。無料相談は30分から。
+            </p>
+            <p className="text-xs font-semibold" style={{ color: ACCENT }}>
+              koko-design.com/contact
+            </p>
+          </div>
+
+          <p className="text-center text-xs text-gray-400 mt-3">KOKODESIGN</p>
+        </div>
+      )}
     </div>
   );
 }
