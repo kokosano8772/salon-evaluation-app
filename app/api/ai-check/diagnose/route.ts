@@ -22,8 +22,13 @@ interface DiagnoseRequestBody {
 }
 
 // AIに渡すページ数・1ページあたりの文字数を絞り、プロンプトが肥大化しすぎないようにする。
+// 1500文字だと、1ページに全セクション（コンセプト/メニュー/スタイリスト紹介等）を
+// 詰め込む一枚ページ構成のサロンサイトで、スタイリスト紹介やお客様の声が本文の後半
+// （1500文字より後）にあるため丸ごと切れてしまい、AI判定が実態と異なる「無い」判定に
+// なる事例が見つかった（belin.jpで検証）。gemini-2.5-flashは1Mトークンのコンテキスト
+// を持つため、この程度の増量はコスト・性能上問題にならない。
 const AI_MAX_PAGES = 15;
-const AI_MAX_CHARS_PER_PAGE = 1500;
+const AI_MAX_CHARS_PER_PAGE = 8000;
 
 export async function POST(request: Request) {
   let body: DiagnoseRequestBody;
