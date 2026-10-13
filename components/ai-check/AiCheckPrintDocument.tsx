@@ -131,12 +131,17 @@ export default function AiCheckPrintDocument({
             <div className="grid grid-cols-3 gap-4 mt-3">
               {categoryScores.map((c) => {
                 // 簡易版はルールベース項目が0個のカテゴリ（専門性・AI検索対応度等）が
-                // maxScore=0になるため、0%ではなく「プロ版で測定」と表示する。
+                // maxScore=0になるため、0%ではなく「プロ版で測定」と表示する。他のカードと
+                // 同じ構成（タイトル／スコア行／バー）を保ったまま薄くするだけにし、
+                // グリッド内で見た目のバランスが崩れないようにする。
                 if (c.maxScore === 0) {
                   return (
                     <div key={c.categoryId} className="rounded-xl border border-gray-100 px-4 py-3 bg-gray-50">
-                      <p className="text-sm font-medium text-gray-400 truncate mb-1.5">{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</p>
-                      <span className="text-xs text-gray-400">プロ版で測定</span>
+                      <p className="text-sm font-medium text-gray-300 truncate mb-1.5">{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</p>
+                      <div className="flex items-baseline justify-between mb-1">
+                        <span className="text-xs text-gray-300">プロ版で測定</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden" />
                     </div>
                   );
                 }

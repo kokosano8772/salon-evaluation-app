@@ -733,21 +733,29 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                   {diagnosis.category_scores.map((c, i) => {
                     const Icon = CATEGORY_ICON[c.categoryId];
                     // 簡易版では、ルールベース項目が1つも無いカテゴリ（専門性・AI検索対応度等）が
-                    // maxScore=0になる。その場合は0%の棒ではなく「プロ版で測定」を出す
-                    // （0%表示だと、実際は未測定なだけなのに「ダメだった」ように誤解される）。
+                    // maxScore=0になる。その場合は0%の棒ではなく「プロ版で測定」を出すが、
+                    // 他のカテゴリ行と同じ「アイコン＋タイトル／バー／達成率」の3段構成を保った
+                    // まま薄くするだけにする（構成自体を変えると行の高さがバラついて縦のバランスが
+                    // 崩れるため）。
                     if (c.maxScore === 0) {
                       return (
-                        <div key={c.categoryId} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 bg-gray-50">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-gray-200">
-                              <Icon size={14} color="#9ca3af" strokeWidth={1.8} />
+                        <div key={c.categoryId}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-gray-100">
+                                <Icon size={14} color="#c1c7cf" strokeWidth={1.8} />
+                              </div>
+                              <span className="text-sm font-medium text-gray-300">{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</span>
                             </div>
-                            <span className="text-sm font-medium text-gray-400">{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</span>
+                            <span className="flex items-center gap-1 text-xs font-medium text-gray-300 flex-shrink-0">
+                              <Lock size={11} strokeWidth={2} />
+                              プロ版
+                            </span>
                           </div>
-                          <span className="flex items-center gap-1 text-[11px] font-medium text-gray-400 flex-shrink-0">
-                            <Lock size={10} strokeWidth={2} />
-                            プロ版で測定
-                          </span>
+                          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden" />
+                          <div className="flex justify-end mt-0.5">
+                            <span className="text-xs text-gray-300">プロ版で測定</span>
+                          </div>
                         </div>
                       );
                     }
