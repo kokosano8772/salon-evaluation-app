@@ -82,8 +82,11 @@ export async function POST(request: Request) {
   const crawlWarning = crawlResult.pages.length === 0 ? "重要ページをほとんど取得できず、トップページのみで診断しています" : null;
 
   if (body.tier === "simple") {
-    // 簡易版: ルールベースのみ。Geminiは一切呼ばない。
-    const categoryScores = aggregateCategoryScores(ruleItems);
+    // 簡易版: ルールベースのみ。Geminiは一切呼ばない。カテゴリ別スコアの分母は
+    // プロ版の満点（AI_CHECK_CATEGORY_MAX）ではなく、ルールベースで実際に判定した
+    // 項目のmaxScore合計にする（専門性・AI検索対応度等、ルールベース項目が0個の
+    // カテゴリでプロ版基準の分母だと常に0%になってしまうため）。
+    const categoryScores = aggregateCategoryScores(ruleItems, false);
     const totalScore = calculateTotalScore(categoryScores);
     const scoreMax = ruleItems.reduce((sum, i) => sum + i.maxScore, 0);
 

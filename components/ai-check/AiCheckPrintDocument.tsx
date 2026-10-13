@@ -130,6 +130,16 @@ export default function AiCheckPrintDocument({
             <SectionTitle>カテゴリ別スコア</SectionTitle>
             <div className="grid grid-cols-3 gap-4 mt-3">
               {categoryScores.map((c) => {
+                // 簡易版はルールベース項目が0個のカテゴリ（専門性・AI検索対応度等）が
+                // maxScore=0になるため、0%ではなく「プロ版で測定」と表示する。
+                if (c.maxScore === 0) {
+                  return (
+                    <div key={c.categoryId} className="rounded-xl border border-gray-100 px-4 py-3 bg-gray-50">
+                      <p className="text-sm font-medium text-gray-400 truncate mb-1.5">{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</p>
+                      <span className="text-xs text-gray-400">プロ版で測定</span>
+                    </div>
+                  );
+                }
                 const pct = Math.round((c.score / c.maxScore) * 100);
                 return (
                   <div key={c.categoryId} className="rounded-xl border border-gray-100 px-4 py-3">

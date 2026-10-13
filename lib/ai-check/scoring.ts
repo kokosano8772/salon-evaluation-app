@@ -2,13 +2,23 @@ import { AiJudgedItemDefinition } from "./build-ai-check-prompt";
 import { QUIZ_QUESTIONS } from "./quiz-questions";
 import { AI_CHECK_CATEGORY_MAX, AiCheckCategoryId, AiCheckCategoryScore, DiagnosisItem } from "./types";
 
-export function aggregateCategoryScores(items: DiagnosisItem[]): AiCheckCategoryScore[] {
+// useFullCategoryMax=true（デフォルト）は、渡されたitemsがそのカテゴリの全項目
+// （ルールベース＋クイズ＋AI判定）を含んでいる前提で、プロ版の100点満点の内訳として
+// 使う（プロ版確定診断用）。
+// false（簡易版用）は、渡されたitems自体のmaxScore合計を分母にする。簡易版は
+// ルールベースの一部項目しか埋まらないため（例: 専門性・AI検索対応度はルールベース
+// 項目が0個）、プロ版の満点をそのまま分母にすると、サイトの出来に関係なく常に
+// 0%近くになるカテゴリが出てしまっていたため分けた。
+export function aggregateCategoryScores(items: DiagnosisItem[], useFullCategoryMax = true): AiCheckCategoryScore[] {
   const categories = Object.keys(AI_CHECK_CATEGORY_MAX) as AiCheckCategoryId[];
-  return categories.map((categoryId) => ({
-    categoryId,
-    score: items.filter((i) => i.categoryId === categoryId).reduce((sum, i) => sum + i.score, 0),
-    maxScore: AI_CHECK_CATEGORY_MAX[categoryId],
-  }));
+  return categories.map((categoryId) => {
+    const categoryItems = items.filter((i) => i.categoryId === categoryId);
+    return {
+      categoryId,
+      score: categoryItems.reduce((sum, i) => sum + i.score, 0),
+      maxScore: useFullCategoryMax ? AI_CHECK_CATEGORY_MAX[categoryId] : categoryItems.reduce((sum, i) => sum + i.maxScore, 0),
+    };
+  });
 }
 
 export function calculateTotalScore(categoryScores: AiCheckCategoryScore[]): number {

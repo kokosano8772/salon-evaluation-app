@@ -732,6 +732,25 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                 <div className="space-y-4">
                   {diagnosis.category_scores.map((c, i) => {
                     const Icon = CATEGORY_ICON[c.categoryId];
+                    // 簡易版では、ルールベース項目が1つも無いカテゴリ（専門性・AI検索対応度等）が
+                    // maxScore=0になる。その場合は0%の棒ではなく「プロ版で測定」を出す
+                    // （0%表示だと、実際は未測定なだけなのに「ダメだった」ように誤解される）。
+                    if (c.maxScore === 0) {
+                      return (
+                        <div key={c.categoryId} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-gray-200">
+                              <Icon size={14} color="#9ca3af" strokeWidth={1.8} />
+                            </div>
+                            <span className="text-sm font-medium text-gray-400">{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</span>
+                          </div>
+                          <span className="flex items-center gap-1 text-[11px] font-medium text-gray-400 flex-shrink-0">
+                            <Lock size={10} strokeWidth={2} />
+                            プロ版で測定
+                          </span>
+                        </div>
+                      );
+                    }
                     const pct = Math.round((c.score / c.maxScore) * 100);
                     return (
                       <motion.div
@@ -784,6 +803,14 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                   </thead>
                   <tbody>
                     {diagnosis.category_scores.map((c, i) => {
+                      if (c.maxScore === 0) {
+                        return (
+                          <tr key={c.categoryId} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                            <td className="px-4 py-3 text-sm font-medium text-gray-400">{AI_CHECK_CATEGORY_LABEL[c.categoryId]}</td>
+                            <td className="px-4 py-3 text-right text-sm text-gray-400" colSpan={2}>プロ版で測定</td>
+                          </tr>
+                        );
+                      }
                       const pct = Math.round((c.score / c.maxScore) * 100);
                       return (
                         <tr key={c.categoryId} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
