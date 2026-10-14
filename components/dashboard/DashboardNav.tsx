@@ -8,6 +8,7 @@ import {
   Database,
   LineChart,
   FileText,
+  Trophy,
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/stores", label: "成長データベース", icon: Database, exact: false },
   { href: "/dashboard/analysis", label: "月次分析", icon: LineChart, exact: false },
   { href: "/dashboard/reports", label: "レポート", icon: FileText, exact: false },
+  { href: "/dashboard/web-ranking", label: "WEBランキング", icon: Trophy, exact: false },
 ];
 
 export default function DashboardNav() {
