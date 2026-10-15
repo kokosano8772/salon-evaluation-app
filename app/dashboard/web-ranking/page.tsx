@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Globe, ChevronRight } from "lucide-react";
+import { Plus, Globe, ChevronRight, Trophy, Settings2 } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 const ACCENT = "#C4788A";
@@ -12,6 +12,19 @@ const SITE_TYPE_LABEL: Record<string, string> = {
   acquisition_lp: "集客LP",
   recruitment_lp: "採用LP",
 };
+
+interface RankingRow {
+  webAssetId: string;
+  siteType: string;
+  url: string;
+  salonName: string;
+  prefecture: string;
+  city: string;
+  totalScore: number | null;
+  totalMaxScore: number | null;
+  reviewStatus: string | null;
+  diagnosedAt: string | null;
+}
 
 interface WebAsset {
   id: string;
@@ -29,7 +42,125 @@ interface Salon {
   webAssets: WebAsset[];
 }
 
-export default function WebRankingPage() {
+function RankingView() {
+  const [rankings, setRankings] = useState<RankingRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [siteTypeFilter, setSiteTypeFilter] = useState("");
+  const [prefectureFilter, setPrefectureFilter] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/web-ranking/rankings");
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "取得に失敗しました");
+        setRankings(json.rankings ?? []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "取得に失敗しました");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const prefectures = useMemo(
+    () => Array.from(new Set(rankings.map((r) => r.prefecture).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ja")),
+    [rankings]
+  );
+
+  const filtered = rankings.filter(
+    (r) => (!siteTypeFilter || r.siteType === siteTypeFilter) && (!prefectureFilter || r.prefecture === prefectureFilter)
+  );
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        <select
+          value={siteTypeFilter}
+          onChange={(e) => setSiteTypeFilter(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white"
+        >
+          <option value="">サイト種別（全て）</option>
+          <option value="hp">HP</option>
+          <option value="acquisition_lp">集客LP</option>
+          <option value="recruitment_lp">採用LP</option>
+        </select>
+        <select
+          value={prefectureFilter}
+          onChange={(e) => setPrefectureFilter(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white"
+        >
+          <option value="">地域（全て）</option>
+          {prefectures.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-14 rounded-xl bg-gray-50 animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-gray-400">
+          該当するサイトがありません。「登録・管理」からサロン・サイトを登録し、診断を実行してください。
+        </p>
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          {filtered.map((row, i) => (
+            <Link
+              key={row.webAssetId}
+              href={`/dashboard/web-ranking/web-assets/${row.webAssetId}`}
+              className="flex items-center gap-3 px-5 py-4 border-b border-gray-50 last:border-b-0 hover:bg-gray-50"
+            >
+              <span className="w-7 text-center text-sm font-bold text-gray-300 flex-shrink-0">
+                {row.totalScore !== null ? i + 1 : "ー"}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-charcoal-900 truncate">{row.salonName}</span>
+                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">
+                    {SITE_TYPE_LABEL[row.siteType] ?? row.siteType}
+                  </span>
+                  {row.reviewStatus === "unreviewed" && (
+                    <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 flex-shrink-0">未確認</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 truncate mt-0.5">
+                  {row.prefecture}
+                  {row.city} ／ {row.url}
+                </p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                {row.totalScore !== null ? (
+                  <>
+                    <p className="font-bold" style={{ color: ACCENT }}>
+                      {row.totalScore}
+                      <span className="text-xs text-gray-400 font-normal"> / {row.totalMaxScore}</span>
+                    </p>
+                    <p className="text-[11px] text-gray-300">{new Date(row.diagnosedAt!).toLocaleDateString("ja-JP")}</p>
+                  </>
+                ) : (
+                  <p className="text-xs text-gray-300">未診断</p>
+                )}
+              </div>
+              <ChevronRight size={16} strokeWidth={2} className="flex-shrink-0 text-gray-300" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ManageView() {
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -117,21 +248,16 @@ export default function WebRankingPage() {
 
   return (
     <div>
-      <DashboardHeader
-        title="WEBランキング"
-        description={`登録サロン ${salons.length}件（Phase 1: 管理者による手動登録＋HP診断のみ）`}
-        breadcrumbs={[{ label: "ダッシュボード", href: "/dashboard" }, { label: "WEBランキング" }]}
-        actions={
-          <button
-            onClick={() => setShowSalonForm((v) => !v)}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-            style={{ background: ACCENT }}
-          >
-            <Plus size={16} strokeWidth={2} />
-            サロンを登録
-          </button>
-        }
-      />
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => setShowSalonForm((v) => !v)}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
+          style={{ background: ACCENT }}
+        >
+          <Plus size={16} strokeWidth={2} />
+          サロンを登録
+        </button>
+      </div>
 
       {showSalonForm && (
         <form onSubmit={handleCreateSalon} className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 space-y-3">
@@ -258,6 +384,45 @@ export default function WebRankingPage() {
           {salons.length === 0 && <p className="text-sm text-gray-400">まだサロンが登録されていません。</p>}
         </div>
       )}
+    </div>
+  );
+}
+
+export default function WebRankingPage() {
+  const [tab, setTab] = useState<"ranking" | "manage">("ranking");
+
+  return (
+    <div>
+      <DashboardHeader
+        title="WEBランキング"
+        description="Phase 1: 登録済みサイトの中でのスコア順ランキング（全国自動発見は未実装）"
+        breadcrumbs={[{ label: "ダッシュボード", href: "/dashboard" }, { label: "WEBランキング" }]}
+      />
+
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit">
+        <button
+          onClick={() => setTab("ranking")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold ${
+            tab === "ranking" ? "bg-white shadow-sm" : "text-gray-500"
+          }`}
+          style={tab === "ranking" ? { color: ACCENT } : undefined}
+        >
+          <Trophy size={15} strokeWidth={2} />
+          ランキング
+        </button>
+        <button
+          onClick={() => setTab("manage")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold ${
+            tab === "manage" ? "bg-white shadow-sm" : "text-gray-500"
+          }`}
+          style={tab === "manage" ? { color: ACCENT } : undefined}
+        >
+          <Settings2 size={15} strokeWidth={2} />
+          登録・管理
+        </button>
+      </div>
+
+      {tab === "ranking" ? <RankingView /> : <ManageView />}
     </div>
   );
 }
