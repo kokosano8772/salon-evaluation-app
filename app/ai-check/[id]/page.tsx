@@ -311,11 +311,29 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
       // その480pxまで縮んでしまう（window.print()経由ならCSS Paged Mediaの仕様で
       // @pageサイズが新しいcontaining blockになりこの制限を自然に迂回できていたが、
       // 通常のDOM描画であるhtml-to-imageのキャプチャではそうならない）。祖先要素の
-      // max-widthを一時的に解除して回避する。
+      // max-widthを900pxに一時的に固定して回避する（noneにして祖先を実ブラウザ幅
+      // いっぱいまで広げると、ad-report-page自体はmax-w-[900px] mx-autoで900px幅を
+      // 保つものの祖先の中央に寄ってしまい、toCanvasのキャプチャ位置がその分ズレて
+      // 右側が切れてしまう不具合が実機の広い画面幅で発生したため、900px固定にして
+      // 中央寄せの余白自体を無くす。app/ai-check/layout.tsxのラッパーはmx-autoも
+      // 指定しており、祖先の実ブラウザ幅が900pxより広いとそのmargin:autoでラッパー
+      // 自体が中央に寄ってad-report-pageの開始x座標が0でなくなり、toCanvasのキャプチャ
+      // 位置がズレて右側が切れてしまうため、marginも0に固定する。逆に実ブラウザ幅が
+      // 900px未満（スマホ実機でPDF保存ボタンを押した場合）だとmax-widthは単なる上限
+      // でしかなく祖先がその狭い画面幅までしか広がらないため、widthも明示的に900pxへ
+      // 固定し、画面の実幅に関わらず常に印刷用の900pxレイアウトでキャプチャされる
+      // ようにする（この間は見えない状態で操作しているため、横スクロール領域が
+      // 発生しても実害はない）。
       let ancestor = printBlock?.parentElement ?? null;
       while (ancestor && ancestor !== document.body) {
-        widthOverrides.push({ el: ancestor, original: ancestor.style.maxWidth });
-        ancestor.style.maxWidth = "none";
+        widthOverrides.push({
+          el: ancestor,
+          original: `${ancestor.style.width}|${ancestor.style.maxWidth}|${ancestor.style.marginLeft}|${ancestor.style.marginRight}`,
+        });
+        ancestor.style.width = "900px";
+        ancestor.style.maxWidth = "900px";
+        ancestor.style.marginLeft = "0";
+        ancestor.style.marginRight = "0";
         ancestor = ancestor.parentElement;
       }
       if (normalUi) normalUi.style.display = "none";
@@ -359,7 +377,11 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
         printBlock.style.cssText = printBlockOriginalStyle;
       }
       widthOverrides.forEach(({ el, original }) => {
-        el.style.maxWidth = original;
+        const [width, maxWidth, marginLeft, marginRight] = original.split("|");
+        el.style.width = width;
+        el.style.maxWidth = maxWidth;
+        el.style.marginLeft = marginLeft;
+        el.style.marginRight = marginRight;
       });
       setIsGeneratingPdf(false);
     }
