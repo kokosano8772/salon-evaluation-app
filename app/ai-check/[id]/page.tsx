@@ -265,6 +265,33 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  // app/globals.cssに広告レポート用の@page（900px×1400px固定）がグローバルで定義
+  // されている。AI Checkは実コンテンツ量に応じてページ高さを動的に計算したいが、
+  // 新しい<style>タグをappendChildして上書きを試みても（無名@page、!important付き、
+  // 名前付き@pageのいずれも）なぜか常にこのグローバル側の値が勝ってしまうことが
+  // 実機のPDF出力のMediaBoxを調べて判明した（カードの下に大きな余白ができる＝
+  // ユーザー報告の「PDFがぐちゃぐちゃ」の正体）。新しい競合ルールを追加するのではなく、
+  // CSSOM経由でこの既存の@page規則オブジェクト自体のstyle.sizeを直接書き換えると
+  // 確実に反映されることを検証済み。
+  function findGlobalPrintPageRule(): CSSPageRule | null {
+    for (const sheet of Array.from(document.styleSheets)) {
+      let rules: CSSRuleList;
+      try {
+        rules = sheet.cssRules;
+      } catch {
+        continue; // クロスオリジンのstylesheet（Google Fonts等）はcssRulesの読み取りで例外になる
+      }
+      for (const rule of Array.from(rules)) {
+        if (rule instanceof CSSMediaRule && rule.media.mediaText.includes("print")) {
+          for (const inner of Array.from(rule.cssRules)) {
+            if (inner instanceof CSSPageRule) return inner;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   // PDF保存はブラウザのネイティブ印刷（window.print）を使う。以前はDOMをまるごと
   // スクリーンショットしA4の高さ毎に機械的に切っていたため、内容量次第でページ数が
   // 不可解に増減し「画面を撮っているだけ」の見た目になっていた。ad-report-pageクラス
@@ -277,8 +304,12 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
 
     const pages = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
     const maxHeight = Math.max(0, ...pages.map((el) => el.offsetHeight));
-    let printSizeStyle: HTMLStyleElement | null = null;
     const heightOverrides: { el: HTMLElement; original: string }[] = [];
+    const pageRule = findGlobalPrintPageRule();
+    // "size"はPaged Mediaのディスクリプタで標準CSSプロパティではないため、
+    // CSSStyleDeclarationの型定義に無い。setProperty/getPropertyValueは任意の
+    // プロパティ名を受け付けるので、こちらを使う。
+    const originalPageSize = pageRule?.style.getPropertyValue("size") ?? "";
     if (maxHeight > 0) {
       pages.forEach((el) => {
         if (el.offsetHeight < maxHeight) {
@@ -287,14 +318,12 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
         }
       });
       const printHeight = maxHeight + 3;
-      printSizeStyle = document.createElement("style");
-      printSizeStyle.textContent = `@media print { @page { size: 900px ${printHeight}px; margin: 0; } }`;
-      document.head.appendChild(printSizeStyle);
+      pageRule?.style.setProperty("size", `900px ${printHeight}px`);
     }
 
     const restore = () => {
       document.title = originalTitle;
-      printSizeStyle?.remove();
+      pageRule?.style.setProperty("size", originalPageSize);
       heightOverrides.forEach(({ el, original }) => {
         el.style.minHeight = original;
       });
