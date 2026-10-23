@@ -183,6 +183,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   const [retakeStep, setRetakeStep] = useState(0);
   const [isSearchChecking, setIsSearchChecking] = useState(false);
   const [searchCheckError, setSearchCheckError] = useState("");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -265,97 +266,103 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  // app/globals.cssに広告レポート用の@page（900px×1400px固定）がグローバルで定義
-  // されている。AI Checkは実コンテンツ量に応じてページ高さを動的に計算したいが、
-  // 新しい<style>タグをappendChildして上書きを試みても（無名@page、!important付き、
-  // 名前付き@pageのいずれも）なぜか常にこのグローバル側の値が勝ってしまうことが
-  // 実機のPDF出力のMediaBoxを調べて判明した（カードの下に大きな余白ができる＝
-  // ユーザー報告の「PDFがぐちゃぐちゃ」の正体）。新しい競合ルールを追加するのではなく、
-  // CSSOM経由でこの既存の@page規則オブジェクト自体のstyle.sizeを直接書き換えると
-  // 確実に反映されることを検証済み。
-  function findGlobalPrintPageRule(): CSSPageRule | null {
-    for (const sheet of Array.from(document.styleSheets)) {
-      let rules: CSSRuleList;
-      try {
-        rules = sheet.cssRules;
-      } catch {
-        continue; // クロスオリジンのstylesheet（Google Fonts等）はcssRulesの読み取りで例外になる
-      }
-      for (const rule of Array.from(rules)) {
-        if (rule instanceof CSSMediaRule && rule.media.mediaText.includes("print")) {
-          for (const inner of Array.from(rule.cssRules)) {
-            if (inner instanceof CSSPageRule) return inner;
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  // PDF保存はブラウザのネイティブ印刷（window.print）を使う。以前はDOMをまるごと
-  // スクリーンショットしA4の高さ毎に機械的に切っていたため、内容量次第でページ数が
-  // 不可解に増減し「画面を撮っているだけ」の見た目になっていた。ad-report-pageクラス
-  // （広告レポート・成長DBの診断レポートと同じ仕組み、globals.css参照）で明示した
-  // 固定ページ単位をそのまま印刷させることで、ページ数を内容設計側で決定的に制御する。
-  const handlePdf = () => {
-    const originalTitle = document.title;
-    const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    document.title = `AICheck_${diagnosis.total_score}pt_${diagnosis.rank ?? "simple"}_${date}`;
-
-    // ad-report-page（印刷専用レイアウト）は.print-only-block内にあり、通常時は
-    // position:absolute+height:0+overflow:hiddenで画面外に隠されている。この状態の
-    // まま子要素のoffsetHeightを測ると、内容がmin-heightを超えていても常にmin-height
-    // の値（1150px）に固定された値しか返らない（Chromeの絶対配置要素のauto高さ計算が
-    // 絡む挙動と見られる）。これにより「改善提案」等のページが実際には2000px超必要でも
-    // 1150pxとして@pageの高さが決まってしまい、内容が収まりきらず空白の余分なページが
-    // 生成されていた（PDFの中身をMediaBoxごと検証して特定）。@media print時と同じ見た目
-    // （position:static・width/height:auto・overflow:visible）に一時的に戻してから測り、
-    // 測定後は直ちに元の隠し状態へ戻す（visibility:hiddenを足すことで、一瞬でも画面上に
-    // チラつかないようにする）。
+  // PDF保存は以前ブラウザのネイティブ印刷（window.print + @page CSS）を使っていたが、
+  // 実機の印刷ダイアログ（「PDFに保存」含む）がカスタムの@pageサイズを確実には尊重せず、
+  // Letter等の標準用紙にページ全体を縦横比を保ったまま縮小フィットさせてしまうことが
+  // 判明した（本来900px幅で設計している縦長レイアウトがLetterの横長気味の比率に収まる
+  // よう大きく縮小され、左右に大きな余白ができる＝ユーザー報告の「余白が余ってる」現象。
+  // page.pdf()にpreferCSSPageSize:trueを渡した自動テストでは正しく再現できず、
+  // 付けない場合にのみ実機と同じ崩れ方を再現できたことで特定）。
+  // ブラウザの印刷パイプラインに依存せず、html-to-image（lib/pdf.ts参照。html2canvasは
+  // 日本語テキストのベースラインがずれる既知の不具合があるため使わない）で各ページを
+  // canvasとして直接キャプチャし、キャプチャした実寸ぴったりのサイズでjsPDFの各ページを
+  // 作ることで、用紙サイズの判定を完全に自前で制御する。ページ毎に実際必要な高さだけを
+  // 使うため、以前のようにページ間で高さを強制的に揃える処理（短いページに生じる余白）も
+  // 不要になった。
+  const handlePdf = async () => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
     const printBlock = document.querySelector<HTMLElement>(".print-only-block");
+    const normalUi = document.querySelector<HTMLElement>(".ad-report-print-hide");
     const printBlockOriginalStyle = printBlock?.style.cssText ?? null;
-    if (printBlock) {
-      printBlock.style.position = "static";
-      printBlock.style.visibility = "hidden";
-      printBlock.style.width = "auto";
-      printBlock.style.height = "auto";
-      printBlock.style.overflow = "visible";
-    }
+    const normalUiOriginalDisplay = normalUi?.style.display ?? "";
+    const widthOverrides: { el: HTMLElement; original: string }[] = [];
+    try {
+      const [{ default: jsPDF }, { toCanvas }] = await Promise.all([import("jspdf"), import("html-to-image")]);
 
-    const pages = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
-    const maxHeight = Math.max(0, ...pages.map((el) => el.offsetHeight));
+      // Webフォント(Noto Sans JP)がまだ使われていないウェイトだと document.fonts.ready
+      // だけでは不十分なため、実際に使うウェイトを明示的にloadしてから待つ（lib/pdf.tsと同じ）。
+      if (typeof document.fonts?.load === "function") {
+        await Promise.all(
+          [400, 500, 600, 700].map((weight) => document.fonts.load(`${weight} 16px "Noto Sans JP"`).catch(() => {}))
+        );
+      }
+      if (typeof document.fonts?.ready?.then === "function") {
+        await document.fonts.ready;
+      }
 
-    if (printBlock && printBlockOriginalStyle !== null) {
-      printBlock.style.cssText = printBlockOriginalStyle;
-    }
+      // .print-only-block（AiCheckPrintDocument）は通常position:absolute+height:0+
+      // overflow:hiddenで画面外に隠している。この状態のままだと中のad-report-page
+      // （min-h-[1150px]のflexコンテナ）がmin-heightを超えて正しくレイアウト/描画
+      // されないため、キャプチャの間だけ通常のフロー上に戻し、代わりに通常の閲覧UIを隠す。
+      // widthはwindow.print()時と同じくautoにする必要がある（900px固定のままだと
+      // 上記のmin-height超過時の高さ計算バグが再発する）。ただしapp/ai-check/layout.tsx
+      // がmax-w-[480px]でページ全体をスマホ幅に固定しているため、autoのままだと
+      // その480pxまで縮んでしまう（window.print()経由ならCSS Paged Mediaの仕様で
+      // @pageサイズが新しいcontaining blockになりこの制限を自然に迂回できていたが、
+      // 通常のDOM描画であるhtml-to-imageのキャプチャではそうならない）。祖先要素の
+      // max-widthを一時的に解除して回避する。
+      let ancestor = printBlock?.parentElement ?? null;
+      while (ancestor && ancestor !== document.body) {
+        widthOverrides.push({ el: ancestor, original: ancestor.style.maxWidth });
+        ancestor.style.maxWidth = "none";
+        ancestor = ancestor.parentElement;
+      }
+      if (normalUi) normalUi.style.display = "none";
+      if (printBlock) {
+        printBlock.style.position = "static";
+        printBlock.style.width = "auto";
+        printBlock.style.height = "auto";
+        printBlock.style.overflow = "visible";
+      }
 
-    const heightOverrides: { el: HTMLElement; original: string }[] = [];
-    const pageRule = findGlobalPrintPageRule();
-    // "size"はPaged Mediaのディスクリプタで標準CSSプロパティではないため、
-    // CSSStyleDeclarationの型定義に無い。setProperty/getPropertyValueは任意の
-    // プロパティ名を受け付けるので、こちらを使う。
-    const originalPageSize = pageRule?.style.getPropertyValue("size") ?? "";
-    if (maxHeight > 0) {
-      pages.forEach((el) => {
-        if (el.offsetHeight < maxHeight) {
-          heightOverrides.push({ el, original: el.style.minHeight });
-          el.style.minHeight = `${maxHeight}px`;
-        }
+      const pageEls = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
+      const pixelRatio = 2;
+      const pxToPt = 0.75; // 96dpi(css px) -> 72dpi(pt)
+      const canvases = [];
+      for (const el of pageEls) {
+        canvases.push(
+          await toCanvas(el, {
+            pixelRatio,
+            cacheBust: true,
+            backgroundColor: "#FAF8F3",
+            skipFonts: true,
+          })
+        );
+      }
+
+      const firstWidthPt = (canvases[0].width / pixelRatio) * pxToPt;
+      const firstHeightPt = (canvases[0].height / pixelRatio) * pxToPt;
+      const pdf = new jsPDF({ unit: "pt", format: [firstWidthPt, firstHeightPt] });
+      canvases.forEach((canvas, i) => {
+        const widthPt = (canvas.width / pixelRatio) * pxToPt;
+        const heightPt = (canvas.height / pixelRatio) * pxToPt;
+        if (i > 0) pdf.addPage([widthPt, heightPt]);
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, widthPt, heightPt);
       });
-      const printHeight = maxHeight + 3;
-      pageRule?.style.setProperty("size", `900px ${printHeight}px`);
-    }
 
-    const restore = () => {
-      document.title = originalTitle;
-      pageRule?.style.setProperty("size", originalPageSize);
-      heightOverrides.forEach(({ el, original }) => {
-        el.style.minHeight = original;
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      pdf.save(`AICheck_${diagnosis.total_score}pt_${diagnosis.rank ?? "simple"}_${date}.pdf`);
+    } finally {
+      if (normalUi) normalUi.style.display = normalUiOriginalDisplay;
+      if (printBlock && printBlockOriginalStyle !== null) {
+        printBlock.style.cssText = printBlockOriginalStyle;
+      }
+      widthOverrides.forEach(({ el, original }) => {
+        el.style.maxWidth = original;
       });
-      window.removeEventListener("afterprint", restore);
-    };
-    window.addEventListener("afterprint", restore);
-    window.print();
+      setIsGeneratingPdf(false);
+    }
   };
 
   // AI検索実測（プロ版のオプトイン機能）。確定診断とは別にGeminiを質問数ぶん呼ぶため、
@@ -1020,10 +1027,11 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
         <div className="flex gap-2">
           <button
             onClick={handlePdf}
-            className="flex-1 py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 flex items-center justify-center gap-1.5"
+            disabled={isGeneratingPdf}
+            className="flex-1 py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 flex items-center justify-center gap-1.5 disabled:opacity-60"
           >
             <Download size={14} strokeWidth={1.8} />
-            PDF保存
+            {isGeneratingPdf ? "生成中..." : "PDF保存"}
           </button>
           <button
             onClick={handleShare}
