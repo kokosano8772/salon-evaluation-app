@@ -14,7 +14,7 @@ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1時間
 export interface SearchCheckResult {
   query: string;
   mentioned: boolean;
-  excerpt: string;
+  responseText: string;
 }
 
 // AIの自己申告ではなく、実際の回答テキストに店舗名が含まれるかをコード側で
@@ -69,13 +69,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         return {
           query,
           mentioned: containsSalonName(text, diagnosis.salon_name),
-          excerpt: text.slice(0, 300),
+          responseText: text,
         };
       } catch (error) {
         return {
           query,
           mentioned: false,
-          excerpt: error instanceof Error ? `（取得できませんでした: ${error.message}）` : "（取得できませんでした）",
+          responseText: error instanceof Error ? `（取得できませんでした: ${error.message}）` : "（取得できませんでした）",
         };
       }
     })

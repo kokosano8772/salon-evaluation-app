@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -109,6 +109,28 @@ function ItemRow({ item }: { item: DiagnosisItemRow }) {
   );
 }
 
+// AI検索実測の回答全文中、店舗名と一致する箇所を目立たせる。containsSalonName
+// （search-check/route.ts）側は空白除去・小文字化した上で判定しているが、ここでは
+// 表示用に元のテキストの見た目を保ったまま、店舗名の文字列と単純に（大小文字を
+// 区別せず）一致する箇所だけを強調する簡易実装（空白の有無が違う変則的な表記まで
+// 完全に拾うものではない）。
+function highlightSalonName(text: string, salonName: string): ReactNode {
+  const trimmed = salonName.trim();
+  if (!trimmed) return text;
+  const pattern = new RegExp(`(${trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const parts = text.split(pattern);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <mark key={i} className="rounded px-0.5" style={{ backgroundColor: `${ACCENT}25`, color: ACCENT_DARK, fontWeight: 700 }}>
+        {part}
+      </mark>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
+
 interface CategoryScoreRow {
   categoryId: AiCheckCategoryId;
   score: number;
@@ -118,7 +140,7 @@ interface CategoryScoreRow {
 interface SearchCheckResult {
   query: string;
   mentioned: boolean;
-  excerpt: string;
+  responseText: string;
 }
 
 interface DiagnosisRecord {
@@ -732,7 +754,9 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                                     {r.mentioned ? "含まれていた" : "含まれていなかった"}
                                   </span>
                                 </div>
-                                <p className="text-[11px] text-gray-400 leading-relaxed">{r.excerpt}</p>
+                                <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                  {highlightSalonName(r.responseText, diagnosis.salon_name)}
+                                </p>
                               </div>
                             ))}
                           </div>
