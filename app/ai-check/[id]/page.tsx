@@ -302,8 +302,33 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     document.title = `AICheck_${diagnosis.total_score}pt_${diagnosis.rank ?? "simple"}_${date}`;
 
+    // ad-report-page（印刷専用レイアウト）は.print-only-block内にあり、通常時は
+    // position:absolute+height:0+overflow:hiddenで画面外に隠されている。この状態の
+    // まま子要素のoffsetHeightを測ると、内容がmin-heightを超えていても常にmin-height
+    // の値（1150px）に固定された値しか返らない（Chromeの絶対配置要素のauto高さ計算が
+    // 絡む挙動と見られる）。これにより「改善提案」等のページが実際には2000px超必要でも
+    // 1150pxとして@pageの高さが決まってしまい、内容が収まりきらず空白の余分なページが
+    // 生成されていた（PDFの中身をMediaBoxごと検証して特定）。@media print時と同じ見た目
+    // （position:static・width/height:auto・overflow:visible）に一時的に戻してから測り、
+    // 測定後は直ちに元の隠し状態へ戻す（visibility:hiddenを足すことで、一瞬でも画面上に
+    // チラつかないようにする）。
+    const printBlock = document.querySelector<HTMLElement>(".print-only-block");
+    const printBlockOriginalStyle = printBlock?.style.cssText ?? null;
+    if (printBlock) {
+      printBlock.style.position = "static";
+      printBlock.style.visibility = "hidden";
+      printBlock.style.width = "auto";
+      printBlock.style.height = "auto";
+      printBlock.style.overflow = "visible";
+    }
+
     const pages = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
     const maxHeight = Math.max(0, ...pages.map((el) => el.offsetHeight));
+
+    if (printBlock && printBlockOriginalStyle !== null) {
+      printBlock.style.cssText = printBlockOriginalStyle;
+    }
+
     const heightOverrides: { el: HTMLElement; original: string }[] = [];
     const pageRule = findGlobalPrintPageRule();
     // "size"はPaged Mediaのディスクリプタで標準CSSプロパティではないため、
