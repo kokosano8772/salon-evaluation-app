@@ -230,6 +230,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
   const [isSearchChecking, setIsSearchChecking] = useState(false);
   const [searchCheckError, setSearchCheckError] = useState("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [expandedSearchChecks, setExpandedSearchChecks] = useState<Set<number>>(new Set());
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -767,22 +768,48 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                       ) : (
                         <>
                           <div className="space-y-3">
-                            {diagnosis.search_check_results.map((r, i) => (
-                              <div key={i} className="rounded-xl border border-gray-100 p-3">
-                                <div className="flex items-center justify-between gap-2 mb-1.5">
-                                  <p className="text-xs font-medium text-charcoal-800 flex-1">「{r.query}」</p>
-                                  <span
-                                    className="text-[11px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
-                                    style={r.mentioned ? { color: "#16a34a", backgroundColor: "#f0fdf4" } : { color: "#9ca3af", backgroundColor: "#f9fafb" }}
+                            {diagnosis.search_check_results.map((r, i) => {
+                              const isExpanded = expandedSearchChecks.has(i);
+                              // 折りたたみボタンは、折りたたんだ時に実際に省略が
+                              // 発生する程度の長さ（4行分の目安）がある場合だけ出す。
+                              const isLong = r.responseText.length > 160;
+                              return (
+                                <div key={i} className="rounded-xl border border-gray-100 p-3">
+                                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                                    <p className="text-xs font-medium text-charcoal-800 flex-1">「{r.query}」</p>
+                                    <span
+                                      className="text-[11px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                                      style={r.mentioned ? { color: "#16a34a", backgroundColor: "#f0fdf4" } : { color: "#9ca3af", backgroundColor: "#f9fafb" }}
+                                    >
+                                      {r.mentioned ? "含まれていた" : "含まれていなかった"}
+                                    </span>
+                                  </div>
+                                  <p
+                                    className={`text-xs text-gray-600 leading-relaxed whitespace-pre-wrap ${
+                                      isLong && !isExpanded ? "line-clamp-4" : ""
+                                    }`}
                                   >
-                                    {r.mentioned ? "含まれていた" : "含まれていなかった"}
-                                  </span>
+                                    {highlightSalonName(r.responseText, diagnosis.salon_name)}
+                                  </p>
+                                  {isLong && (
+                                    <button
+                                      onClick={() =>
+                                        setExpandedSearchChecks((prev) => {
+                                          const next = new Set(prev);
+                                          if (next.has(i)) next.delete(i);
+                                          else next.add(i);
+                                          return next;
+                                        })
+                                      }
+                                      className="text-[11px] font-semibold mt-1.5"
+                                      style={{ color: ACCENT }}
+                                    >
+                                      {isExpanded ? "閉じる" : "続きを見る"}
+                                    </button>
+                                  )}
                                 </div>
-                                <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
-                                  {highlightSalonName(r.responseText, diagnosis.salon_name)}
-                                </p>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                           <p className="text-[11px] text-gray-400 mt-3">
                             ※これは実施時点でのAIの回答1回分であり、常に同じ結果になるとは限りません。検索順位を保証するものではありません。
