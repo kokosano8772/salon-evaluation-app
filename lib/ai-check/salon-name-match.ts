@@ -9,11 +9,26 @@ export function toHalfWidth(s: string): string {
 // 複数の店舗名が読点等で連結されていることがある。単純な部分一致だと連結文字列
 // 全体でしか判定できず、実際の回答に1つ目の店舗名しか出てこないケースで
 // 「含まれていなかった」と誤判定されるため、個別の候補名に分割する。
+// さらに「名前（よみがな）」の形式は、AI検索実測の回答側が読み仮名を付けずに
+// 「sky, -outi-」のように名前だけで言及することがあるため（逆に読み仮名だけ
+// 言及されることも想定し）、括弧の前後も別候補として追加する。
 export function splitSalonNames(salonName: string): string[] {
-  return salonName
+  const parts = salonName
     .split(/[、,/・\n]/)
     .map((s) => s.trim())
     .filter(Boolean);
+
+  const candidates = new Set<string>();
+  for (const part of parts) {
+    candidates.add(part);
+    const match = part.match(/^(.*?)[（(]([^）)]*)[）)]\s*$/);
+    if (match) {
+      const [, bare, reading] = match;
+      if (bare.trim()) candidates.add(bare.trim());
+      if (reading.trim()) candidates.add(reading.trim());
+    }
+  }
+  return Array.from(candidates);
 }
 
 function normalizeForMatch(s: string): string {
