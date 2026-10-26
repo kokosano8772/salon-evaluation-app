@@ -19,13 +19,21 @@ export function splitSalonNames(salonName: string): string[] {
     .filter(Boolean);
 
   const candidates = new Set<string>();
+  const addWithHyphenVariant = (name: string) => {
+    if (!name) return;
+    candidates.add(name);
+    // "-outi-"のように装飾目的で前後にハイフンを付けた店名は、AIが
+    // ハイフン無し（"outi"）で言及することがあるため、その形も候補に加える。
+    const stripped = name.replace(/^[-‐–—ー]+|[-‐–—ー]+$/g, "");
+    if (stripped && stripped !== name) candidates.add(stripped);
+  };
   for (const part of parts) {
-    candidates.add(part);
+    addWithHyphenVariant(part);
     const match = part.match(/^(.*?)[（(]([^）)]*)[）)]\s*$/);
     if (match) {
       const [, bare, reading] = match;
-      if (bare.trim()) candidates.add(bare.trim());
-      if (reading.trim()) candidates.add(reading.trim());
+      addWithHyphenVariant(bare.trim());
+      addWithHyphenVariant(reading.trim());
     }
   }
   return Array.from(candidates);
