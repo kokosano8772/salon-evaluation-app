@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  Archive,
   ClipboardCheck,
   Database,
   LineChart as LineChartIcon,
@@ -72,6 +73,13 @@ export default function DashboardHubPage() {
           description="複数店舗の総合スコア推移を比較し、成長トレンドを把握します。"
           icon={LineChartIcon}
           color="#6BAB8A"
+        />
+        <HubTile
+          href="/dashboard/vault"
+          title="診断結果の保管庫"
+          description="AIチェック・価値診断の結果を実施順にまとめて確認できます。"
+          icon={Archive}
+          color="#9B7EBD"
         />
       </div>
 
