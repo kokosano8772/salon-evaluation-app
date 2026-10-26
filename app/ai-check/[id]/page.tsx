@@ -37,6 +37,7 @@ import {
 import AiCheckPrintDocument from "@/components/ai-check/AiCheckPrintDocument";
 import { AI_JUDGED_ITEMS } from "@/lib/ai-check/build-ai-check-prompt";
 import { FIX_GUIDES } from "@/lib/ai-check/fix-guides";
+import { splitSalonNames, toHalfWidth } from "@/lib/ai-check/salon-name-match";
 import { QUIZ_QUESTIONS } from "@/lib/ai-check/quiz-questions";
 
 // 美容室価値診断と同じシリーズとして、結果画面の「見せ方」（ヘッダー/スコアヒーロー/
@@ -110,25 +111,48 @@ function ItemRow({ item }: { item: DiagnosisItemRow }) {
 }
 
 // AI検索実測の回答全文中、店舗名と一致する箇所を目立たせる。containsSalonName
-// （search-check/route.ts）側は空白除去・小文字化した上で判定しているが、ここでは
-// 表示用に元のテキストの見た目を保ったまま、店舗名の文字列と単純に（大小文字を
-// 区別せず）一致する箇所だけを強調する簡易実装（空白の有無が違う変則的な表記まで
-// 完全に拾うものではない）。
+// （lib/ai-check/salon-name-match.ts、判定側）と同じく、salon_nameが
+// 「sky（スカイ）、-outi-（オウチ）」のように複数店舗名が連結されている場合は
+// 個別に分割し、全角/半角の表記ゆれ（括弧等）も吸収した上で一致判定する。
+// toHalfWidthは1文字ずつの置換で文字数が変わらないため、変換後の文字列（検索用）
+// から見つかった一致位置をそのまま元のテキスト（表示用、全角のまま）に当てはめられる。
+// 判定側（containsSalonName）は空白を全除去してから比較しているが、ここでは
+// 元のテキストの見た目を保つため空白を除去できない。代わりに名前を1文字ずつの
+// パターンにし、文字と文字の間に任意個の空白が入っても一致するようにする
+// （例: 実際の回答が"sky (スカイ)"のように店名と括弧の間にスペースを挟むことがある）。
 function highlightSalonName(text: string, salonName: string): ReactNode {
-  const trimmed = salonName.trim();
-  if (!trimmed) return text;
-  const pattern = new RegExp(`(${trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-  const parts = text.split(pattern);
-  if (parts.length === 1) return text;
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <mark key={i} className="rounded px-0.5" style={{ backgroundColor: `${ACCENT}25`, color: ACCENT_DARK, fontWeight: 700 }}>
-        {part}
-      </mark>
-    ) : (
-      <span key={i}>{part}</span>
-    )
+  const names = splitSalonNames(salonName).map(toHalfWidth).filter(Boolean);
+  if (names.length === 0) return text;
+  const pattern = new RegExp(
+    `(${names
+      .map((n) =>
+        Array.from(n)
+          .map((ch) => ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .join("\\s*")
+      )
+      .join("|")})`,
+    "gi"
   );
+  const normalizedText = toHalfWidth(text);
+  const segments = normalizedText.split(pattern);
+  if (segments.length === 1) return text;
+
+  const nodes: ReactNode[] = [];
+  let offset = 0;
+  segments.forEach((seg, i) => {
+    const original = text.slice(offset, offset + seg.length);
+    nodes.push(
+      i % 2 === 1 ? (
+        <mark key={i} className="rounded px-0.5" style={{ backgroundColor: `${ACCENT}25`, color: ACCENT_DARK, fontWeight: 700 }}>
+          {original}
+        </mark>
+      ) : (
+        <span key={i}>{original}</span>
+      )
+    );
+    offset += seg.length;
+  });
+  return nodes;
 }
 
 interface CategoryScoreRow {

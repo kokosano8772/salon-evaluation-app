@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getGeminiModel } from "@/lib/ai/gemini";
+import { containsSalonName } from "@/lib/ai-check/salon-name-match";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,15 +16,6 @@ export interface SearchCheckResult {
   query: string;
   mentioned: boolean;
   responseText: string;
-}
-
-// AIの自己申告ではなく、実際の回答テキストに店舗名が含まれるかをコード側で
-// 決定的に判定する（設計書34章の「点数をAIに任せない」原則を実測機能にも適用）。
-function containsSalonName(responseText: string, salonName: string): boolean {
-  const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase();
-  const name = normalize(salonName);
-  if (!name) return false;
-  return normalize(responseText).includes(name);
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
