@@ -21,6 +21,7 @@ import ScoreCounter from "@/components/result/ScoreCounter";
 import CategoryScoreBar from "@/components/result/CategoryScoreBar";
 import ImprovementCard from "@/components/result/ImprovementCard";
 import dynamic from "next/dynamic";
+import CompanyFooter from "@/components/common/CompanyFooter";
 
 const SalonRadarChart = dynamic(() => import("@/components/result/SalonRadarChart"), { ssr: false });
 
@@ -324,6 +325,8 @@ export default function QuickResultPage() {
             </motion.div>
           )}
         </div>
+
+        <CompanyFooter />
       </main>
 
       {/* Bottom Action Bar */}

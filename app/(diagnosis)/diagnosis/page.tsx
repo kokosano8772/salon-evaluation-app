@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { ArrowRight, ArrowDown, ChevronLeft, RotateCcw, Lock, Eye, EyeOff, X, Zap } from "lucide-react";
 import { useDiagnosisStore } from "@/store/diagnosisStore";
 import { CATEGORIES } from "@/lib/scoring";
@@ -11,6 +10,7 @@ import { Category } from "@/lib/types";
 import QuestionCard from "@/components/diagnosis/QuestionCard";
 import ProgressHeader from "@/components/diagnosis/ProgressHeader";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import CompanyFooter from "@/components/common/CompanyFooter";
 
 const ACCESS_CODE = "KOKO2025";
 const AUTH_KEY = "svs-pro-auth";
@@ -424,17 +424,7 @@ export default function DiagnosisPage() {
           </motion.div>
         </section>
 
-        {/* Footer */}
-        <footer className="px-6 py-8 border-t border-gray-200 space-y-3">
-          <div className="flex items-center justify-center gap-4">
-            <Link href="/privacy" className="text-gray-400 text-xs hover:text-gray-600 transition-colors">プライバシーポリシー</Link>
-            <span className="text-gray-300 text-xs">|</span>
-            <Link href="/terms" className="text-gray-400 text-xs hover:text-gray-600 transition-colors">利用規約</Link>
-            <span className="text-gray-300 text-xs">|</span>
-            <a href="https://koko-design.com/contact/" target="_blank" rel="noopener noreferrer" className="text-gray-400 text-xs hover:text-gray-600 transition-colors">お問い合わせ</a>
-          </div>
-          <p className="text-gray-400 text-xs text-center">© 2024 Salon Value Score. All rights reserved.</p>
-        </footer>
+        <CompanyFooter />
 
         {/* Category detail modal */}
         <AnimatePresence>

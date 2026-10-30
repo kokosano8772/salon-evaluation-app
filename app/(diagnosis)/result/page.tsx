@@ -23,6 +23,7 @@ import CategoryScoreBar from "@/components/result/CategoryScoreBar";
 import ImprovementCard from "@/components/result/ImprovementCard";
 import DiagnosisPrintDocument from "@/components/result/DiagnosisPrintDocument";
 import dynamic from "next/dynamic";
+import CompanyFooter from "@/components/common/CompanyFooter";
 
 const SalonRadarChart = dynamic(
   () => import("@/components/result/SalonRadarChart"),
@@ -369,6 +370,8 @@ export default function ResultPage() {
             </motion.div>
           )}
         </div>
+
+        <CompanyFooter />
       </main>
 
       {/* Bottom Action Bar */}

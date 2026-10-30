@@ -7,6 +7,7 @@ import { ArrowDown, ArrowRight, X, Zap } from "lucide-react";
 import { CATEGORIES } from "@/lib/scoring";
 import { Category } from "@/lib/types";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import CompanyFooter from "@/components/common/CompanyFooter";
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -304,29 +305,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 py-8 border-t border-gray-200 space-y-3">
-        <div className="flex items-center justify-center gap-4">
-          <Link href="/privacy" className="text-gray-400 text-xs hover:text-gray-600 transition-colors">
-            プライバシーポリシー
-          </Link>
-          <span className="text-gray-300 text-xs">|</span>
-          <Link href="/terms" className="text-gray-400 text-xs hover:text-gray-600 transition-colors">
-            利用規約
-          </Link>
-          <span className="text-gray-300 text-xs">|</span>
-          <a
-            href="https://koko-design.com/contact/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-400 text-xs hover:text-gray-600 transition-colors"
-          >
-            お問い合わせ
-          </a>
-        </div>
-        <p className="text-gray-400 text-xs text-center">
-          © 2024 Salon Value Score. All rights reserved.
-        </p>
-      </footer>
+      <CompanyFooter />
 
       {/* Category detail modal */}
       <AnimatePresence>

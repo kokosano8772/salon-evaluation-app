@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
+import CompanyFooter from "@/components/common/CompanyFooter";
 
 export const metadata: Metadata = {
   title: "プライバシーポリシー | Salon Value Score",
@@ -114,6 +115,7 @@ export default function PrivacyPage() {
           </p>
         </Section>
       </main>
+      <CompanyFooter />
     </div>
   );
 }

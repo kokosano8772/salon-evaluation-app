@@ -38,6 +38,7 @@ import AiCheckPrintDocument from "@/components/ai-check/AiCheckPrintDocument";
 import { AI_JUDGED_ITEMS } from "@/lib/ai-check/build-ai-check-prompt";
 import { FIX_GUIDES } from "@/lib/ai-check/fix-guides";
 import { splitSalonNames, toHalfWidth } from "@/lib/ai-check/salon-name-match";
+import CompanyFooter from "@/components/common/CompanyFooter";
 import { QUIZ_QUESTIONS } from "@/lib/ai-check/quiz-questions";
 
 // 美容室価値診断と同じシリーズとして、結果画面の「見せ方」（ヘッダー/スコアヒーロー/
@@ -1098,6 +1099,8 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
             </motion.div>
           )}
         </div>
+
+        <CompanyFooter />
       </main>
 
       {/* Bottom Action Bar */}

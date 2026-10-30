@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AI_CHECK_CATEGORY_LABEL, AI_CHECK_CATEGORY_MAX, AI_CHECK_RANK_INFO, AiCheckCategoryId } from "@/lib/ai-check/types";
+import CompanyFooter from "@/components/common/CompanyFooter";
 
 // 美容室価値診断（薔薇色 #C4788A）と同じシリーズだが別物と分かるよう、
 // 「将来性」カテゴリ（lib/scoring.ts）と同じ青系をAI Check専用のアクセントにする。
@@ -468,12 +469,13 @@ export default function AiCheckPage() {
         </div>
       </section>
 
-      <footer className="px-6 py-8 border-t border-gray-200">
+      <footer className="px-6 pt-8 border-t border-gray-200">
         <p className="text-gray-400 text-xs text-center leading-relaxed">
           本診断はAI検索順位を保証するものではありません。AIが店舗の情報を理解・評価するために
           必要と考えられる情報の充実度を、独自基準で診断したものです。
         </p>
       </footer>
+      <CompanyFooter />
     </main>
   );
 }
