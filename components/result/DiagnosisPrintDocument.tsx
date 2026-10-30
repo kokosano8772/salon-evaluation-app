@@ -14,6 +14,12 @@ const PRIORITY_STYLES = {
   low: { label: "優先度：低", bg: "#f0fdf4", text: "#16a34a", border: "#bbf7d0", dot: "#4ade80" },
 };
 
+const CONSULT_TARGET_STYLES = {
+  koko_design: { label: "ココデザインに相談", bg: "#C4788A14", text: "#A85E74", border: "#C4788A55" },
+  dealer: { label: "仕入れ先・メーカーに相談", bg: "#fff7ed", text: "#ea580c", border: "#fed7aa" },
+  self: { label: "院内で対応", bg: "#f9fafb", text: "#6b7280", border: "#e5e7eb" },
+};
+
 interface DiagnosisPrintDocumentProps {
   result: DiagnosisResult;
   salonName?: string;
@@ -192,10 +198,11 @@ export default function DiagnosisPrintDocument({ result, salonName }: DiagnosisP
           const priority = PRIORITY_STYLES[imp.priority];
           const category = CATEGORIES.find((c) => c.id === imp.categoryId);
           const color = category?.color ?? "#999";
+          const consult = CONSULT_TARGET_STYLES[imp.consultTarget];
           return (
             <div key={i} data-print-section style={{ background: "white", borderRadius: 16, border: "1px solid #f3f4f6", overflow: "hidden", marginBottom: 12 }}>
               <div style={{ padding: "16px 20px 12px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 500, color: "white", backgroundColor: color }}>
                     {category && <CategoryIcon icon={category.icon} size={11} color="white" strokeWidth={2} />}
                     <span>{category?.name}</span>
@@ -203,6 +210,9 @@ export default function DiagnosisPrintDocument({ result, salonName }: DiagnosisP
                   <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 500, color: priority.text, backgroundColor: priority.bg, border: `1px solid ${priority.border}` }}>
                     <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: priority.dot, display: "inline-block" }} />
                     {priority.label}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 500, color: consult.text, backgroundColor: consult.bg, border: `1px solid ${consult.border}` }}>
+                    {consult.label}
                   </div>
                 </div>
                 <h3 style={{ color: "#1a1a1a", fontWeight: 700, fontSize: 13, lineHeight: 1.4, marginBottom: 8 }}>{imp.title}</h3>

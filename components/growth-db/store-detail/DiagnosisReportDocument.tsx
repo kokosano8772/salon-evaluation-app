@@ -13,6 +13,12 @@ const PRIORITY_LABEL: Record<Improvement["priority"], { label: string; bg: strin
   low: { label: "優先度：低", bg: "bg-green-50", text: "text-green-600", border: "border-green-200" },
 };
 
+const CONSULT_TARGET_LABEL: Record<Improvement["consultTarget"], { label: string; bg: string; text: string; border: string }> = {
+  koko_design: { label: "ココデザインに相談", bg: "bg-[#C4788A14]", text: "text-[#A85E74]", border: "border-[#C4788A55]" },
+  dealer: { label: "仕入れ先・メーカーに相談", bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-200" },
+  self: { label: "院内で対応", bg: "bg-gray-50", text: "text-gray-500", border: "border-gray-200" },
+};
+
 function SectionCard({ children, px, py }: { children: ReactNode; px?: number; py?: number }) {
   return (
     <div className="bg-white rounded-2xl p-5" style={{ paddingLeft: px, paddingRight: px, paddingTop: py, paddingBottom: py }}>
@@ -191,9 +197,10 @@ export default function DiagnosisReportDocument({
               const category = CATEGORIES.find((c) => c.id === imp.categoryId);
               const color = category?.color ?? "#999";
               const priority = PRIORITY_LABEL[imp.priority];
+              const consult = CONSULT_TARGET_LABEL[imp.consultTarget];
               return (
                 <div key={i} className="rounded-xl border border-gray-100 px-5 py-4">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <div
                       className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-white shrink-0"
                       style={{ backgroundColor: color }}
@@ -205,6 +212,11 @@ export default function DiagnosisReportDocument({
                       className={`text-xs font-medium px-3 py-1 rounded-full border shrink-0 ${priority.bg} ${priority.text} ${priority.border}`}
                     >
                       {priority.label}
+                    </span>
+                    <span
+                      className={`text-xs font-medium px-3 py-1 rounded-full border shrink-0 ${consult.bg} ${consult.text} ${consult.border}`}
+                    >
+                      {consult.label}
                     </span>
                   </div>
                   <p className="text-base font-bold text-charcoal-900 leading-snug mb-1.5">{imp.title}</p>

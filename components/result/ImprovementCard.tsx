@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, MessageCircle, Package, Store } from "lucide-react";
 import { Improvement } from "@/lib/types";
 import { CATEGORIES } from "@/lib/scoring";
 import CategoryIcon from "@/components/ui/CategoryIcon";
@@ -35,10 +35,38 @@ const PRIORITY_STYLES = {
   },
 };
 
+// 改善提案をどこに相談すべきか。商品の仕入れ・メーカー案件をココデザイン（Web制作会社）に
+// 相談されても対応できないため、相談先を明示する。
+export const CONSULT_TARGET_STYLES = {
+  koko_design: {
+    label: "ココデザインに相談",
+    bg: "bg-[#C4788A14]",
+    text: "text-[#A85E74]",
+    border: "border-[#C4788A55]",
+    icon: MessageCircle,
+  },
+  dealer: {
+    label: "仕入れ先・メーカーに相談",
+    bg: "bg-orange-50",
+    text: "text-orange-600",
+    border: "border-orange-200",
+    icon: Package,
+  },
+  self: {
+    label: "院内で対応",
+    bg: "bg-gray-50",
+    text: "text-gray-500",
+    border: "border-gray-200",
+    icon: Store,
+  },
+};
+
 export default function ImprovementCard({ improvement, index }: ImprovementCardProps) {
   const priority = PRIORITY_STYLES[improvement.priority];
   const category = CATEGORIES.find((c) => c.id === improvement.categoryId);
   const color = category?.color ?? "#999";
+  const consult = CONSULT_TARGET_STYLES[improvement.consultTarget];
+  const ConsultIcon = consult.icon;
 
   return (
     <motion.div
@@ -49,7 +77,7 @@ export default function ImprovementCard({ improvement, index }: ImprovementCardP
     >
       {/* Header */}
       <div className="px-5 pt-4 pb-3">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           {/* Category chip */}
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-white"
@@ -67,6 +95,14 @@ export default function ImprovementCard({ improvement, index }: ImprovementCardP
           >
             <div className={`w-1.5 h-1.5 rounded-full ${priority.dot}`} />
             {priority.label}
+          </div>
+
+          {/* Consult target chip */}
+          <div
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${consult.bg} ${consult.text} border ${consult.border}`}
+          >
+            <ConsultIcon size={11} strokeWidth={2} />
+            {consult.label}
           </div>
         </div>
 
