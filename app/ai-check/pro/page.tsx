@@ -515,7 +515,7 @@ function AiCheckProInner() {
             />
 
             <div>
-              <p className="text-xs text-gray-500 mb-2">Googleの情報も入力する（任意）</p>
+              <p className="text-xs text-gray-500 mb-2">Googleビジネスプロフィールの情報も入力する（任意）</p>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
                 <div className="flex gap-2">
                   {([
