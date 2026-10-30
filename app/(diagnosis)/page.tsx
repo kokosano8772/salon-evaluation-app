@@ -66,7 +66,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <Logo variant="light" className="h-7 w-auto mb-2" />
+            <Logo variant="light" className="h-7 w-auto mb-5" />
             <span className="text-[#C4788A] text-xs font-medium tracking-[0.3em] uppercase">
               Salon Value Score
             </span>

@@ -228,7 +228,7 @@ export default function AiCheckPage() {
 
         <header className="relative z-10 px-6 pt-12 pb-4">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <Logo variant="light" className="h-7 w-auto mb-2" />
+            <Logo variant="light" className="h-7 w-auto mb-5" />
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: ACCENT }}>
                 <Bot size={13} color="white" strokeWidth={2} />
