@@ -82,7 +82,10 @@ export interface Database {
           created_at: string;
         };
         Insert: never; // 書き込みは必ずRPC経由
-        Update: Partial<Pick<Database["public"]["Tables"]["diagnosis_results"]["Row"], "status">>;
+        // status: レビュー済みフラグの更新用。store_id: 保管庫からの手動連携（電話番号・氏名の
+        // 自動マッチが外れて別店舗として重複登録された場合の付け替え）専用。それ以外の列は
+        // RPC経由で書き込む想定のため含めない。
+        Update: Partial<Pick<Database["public"]["Tables"]["diagnosis_results"]["Row"], "status" | "store_id">>;
         Relationships: [];
       };
       competitor_research_sessions: {

@@ -90,13 +90,13 @@ export default function DiagnosisVaultPage() {
 
   useEffect(refresh, []);
 
-  const handleLink = async (diagnosisId: string, storeId: string | null) => {
+  const handleLink = async (kind: VaultItem["kind"], diagnosisId: string, storeId: string | null) => {
     setLinkingBusy(true);
     try {
       const res = await fetch("/api/growth-db/diagnosis-vault/link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ diagnosisId, storeId }),
+        body: JSON.stringify({ kind, diagnosisId, storeId }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "連携に失敗しました");
@@ -237,18 +237,16 @@ export default function DiagnosisVaultPage() {
                         成長DB未登録
                       </span>
                     )}
-                    {item.kind === "ai_check" && (
-                      <button
-                        onClick={() => {
-                          setLinkingId(isLinking ? null : item.id);
-                          setLinkSearch("");
-                        }}
-                        title={item.matchedStore ? "連携を変更する" : "店舗と手動で連携する"}
-                        className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 text-charcoal-600 hover:bg-gray-50 shrink-0"
-                      >
-                        <Link2 size={14} strokeWidth={2} />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        setLinkingId(isLinking ? null : item.id);
+                        setLinkSearch("");
+                      }}
+                      title={item.matchedStore ? "連携を変更する" : "店舗と手動で連携する"}
+                      className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 text-charcoal-600 hover:bg-gray-50 shrink-0"
+                    >
+                      <Link2 size={14} strokeWidth={2} />
+                    </button>
                     <Link
                       href={item.href}
                       target="_blank"
@@ -294,7 +292,9 @@ export default function DiagnosisVaultPage() {
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <p className="text-xs font-medium text-gray-500">
-                        連携する店舗を選択（URLが一致しない場合の手動連携）
+                        {item.kind === "ai_check"
+                          ? "連携する店舗を選択（URLが一致しない場合の手動連携）"
+                          : "連携する店舗を選択（電話番号・氏名が一致しない場合の付け替え）"}
                       </p>
                       <button onClick={() => setLinkingId(null)} className="text-gray-400 hover:text-gray-600">
                         <X size={14} strokeWidth={2} />
@@ -309,10 +309,10 @@ export default function DiagnosisVaultPage() {
                       className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-2 outline-none focus:border-[#C4788A]"
                     />
                     <div className="max-h-48 overflow-y-auto space-y-1">
-                      {item.isManuallyLinked && (
+                      {item.kind === "ai_check" && item.isManuallyLinked && (
                         <button
                           disabled={linkingBusy}
-                          onClick={() => handleLink(item.id, null)}
+                          onClick={() => handleLink(item.kind, item.id, null)}
                           className="w-full text-left px-3 py-2 rounded-lg text-xs text-red-500 hover:bg-red-50 disabled:opacity-50"
                         >
                           手動連携を解除する（URL自動連携に戻す）
@@ -325,7 +325,7 @@ export default function DiagnosisVaultPage() {
                           <button
                             key={s.id}
                             disabled={linkingBusy}
-                            onClick={() => handleLink(item.id, s.id)}
+                            onClick={() => handleLink(item.kind, item.id, s.id)}
                             className="w-full text-left px-3 py-2 rounded-lg text-xs text-charcoal-700 hover:bg-gray-50 disabled:opacity-50"
                           >
                             {s.name}
