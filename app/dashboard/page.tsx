@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Archive,
+  Bot,
   ClipboardCheck,
   Database,
   LineChart as LineChartIcon,
@@ -59,6 +60,13 @@ export default function DashboardHubPage() {
           description="約1分でサロンの「選ばれ続ける力」を100点満点で診断します。"
           icon={ClipboardCheck}
           color="#C4788A"
+        />
+        <HubTile
+          href="/ai-check"
+          title="AIチェック"
+          description="サイトがAI検索でおすすめされやすい状態になっているかを診断します。"
+          icon={Bot}
+          color="#5B9BD5"
         />
         <HubTile
           href="/dashboard/stores"
