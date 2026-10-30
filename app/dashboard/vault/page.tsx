@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Bot, ClipboardCheck, Link2, Store as StoreIcon, X } from "lucide-react";
+import { ArrowUpRight, Bot, ClipboardCheck, Link2, Store as StoreIcon, Trash2, X } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 interface VaultItem {
@@ -22,6 +22,21 @@ interface VaultItem {
 interface StoreOption {
   id: string;
   name: string;
+}
+
+const TAG_OPTIONS = [
+  { id: "ai_check_simple", label: "AIチェック（簡易）" },
+  { id: "ai_check_pro", label: "AIチェック（プロ）" },
+  { id: "value_diagnosis", label: "価値診断" },
+  { id: "linked", label: "連携済み" },
+  { id: "unlinked", label: "未登録" },
+] as const;
+
+function getItemTags(item: VaultItem): string[] {
+  const tags: string[] = [];
+  tags.push(item.kind === "ai_check" ? (item.tier === "pro" ? "ai_check_pro" : "ai_check_simple") : "value_diagnosis");
+  tags.push(item.matchedStore ? "linked" : "unlinked");
+  return tags;
 }
 
 function formatDate(iso: string) {
@@ -55,6 +70,10 @@ export default function DiagnosisVaultPage() {
   const [linkingId, setLinkingId] = useState<string | null>(null);
   const [linkSearch, setLinkSearch] = useState("");
   const [linkingBusy, setLinkingBusy] = useState(false);
+  // 削除確認中の診断（kind+id。不可逆な操作なので2段階にする）
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
 
   const refresh = () => {
     setLoading(true);
@@ -91,7 +110,43 @@ export default function DiagnosisVaultPage() {
     }
   };
 
+  const handleDelete = async (kind: VaultItem["kind"], id: string) => {
+    setDeleteBusy(true);
+    try {
+      const res = await fetch("/api/growth-db/diagnosis-vault/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "削除に失敗しました");
+      setDeletingKey(null);
+      setItems((prev) => prev.filter((i) => !(i.kind === kind && i.id === id)));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "削除に失敗しました");
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
+  const toggleTag = (tagId: string) => {
+    setActiveTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tagId)) next.delete(tagId);
+      else next.add(tagId);
+      return next;
+    });
+  };
+
   const filteredStores = stores.filter((s) => s.name.toLowerCase().includes(linkSearch.toLowerCase()));
+
+  const visibleItems = useMemo(() => {
+    if (activeTags.size === 0) return items;
+    return items.filter((item) => {
+      const tags = getItemTags(item);
+      return Array.from(activeTags).every((t) => tags.includes(t));
+    });
+  }, [items, activeTags]);
 
   return (
     <div>
@@ -100,6 +155,33 @@ export default function DiagnosisVaultPage() {
         description="AIチェック・価値診断の結果を、実施順にまとめて確認できます。"
         breadcrumbs={[{ label: "ダッシュボード", href: "/dashboard" }, { label: "診断結果の保管庫" }]}
       />
+
+      {!loading && !error && items.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap mb-5">
+          {TAG_OPTIONS.map((tag) => {
+            const isActive = activeTags.has(tag.id);
+            return (
+              <button
+                key={tag.id}
+                onClick={() => toggleTag(tag.id)}
+                className="text-xs font-medium px-3 py-1.5 rounded-full border transition-colors"
+                style={
+                  isActive
+                    ? { backgroundColor: "#C4788A14", color: "#A85E74", borderColor: "#C4788A55" }
+                    : { backgroundColor: "white", color: "#6b7280", borderColor: "#e5e7eb" }
+                }
+              >
+                {tag.label}
+              </button>
+            );
+          })}
+          {activeTags.size > 0 && (
+            <button onClick={() => setActiveTags(new Set())} className="text-xs text-gray-400 hover:text-gray-600 px-2">
+              絞り込み解除
+            </button>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">
@@ -113,12 +195,18 @@ export default function DiagnosisVaultPage() {
         <div className="card-luxury p-12 text-center text-gray-400 text-sm">
           まだ診断結果がありません。
         </div>
+      ) : visibleItems.length === 0 ? (
+        <div className="card-luxury p-12 text-center text-gray-400 text-sm">
+          条件に一致する診断結果がありません。
+        </div>
       ) : (
         <div className="space-y-3">
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const isLinking = linkingId === item.id;
+            const deleteKey = `${item.kind}-${item.id}`;
+            const isDeleting = deletingKey === deleteKey;
             return (
-              <div key={`${item.kind}-${item.id}`} className="card-luxury p-4">
+              <div key={deleteKey} className="card-luxury p-4">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -169,8 +257,38 @@ export default function DiagnosisVaultPage() {
                     >
                       <ArrowUpRight size={14} strokeWidth={2} />
                     </Link>
+                    <button
+                      onClick={() => setDeletingKey(isDeleting ? null : deleteKey)}
+                      title="削除する"
+                      className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 text-gray-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 shrink-0"
+                    >
+                      <Trash2 size={14} strokeWidth={2} />
+                    </button>
                   </div>
                 </div>
+
+                {isDeleting && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+                    <p className="text-xs text-red-500">
+                      この診断結果をSupabaseから完全に削除します。元に戻せません。本当に削除しますか？
+                    </p>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => setDeletingKey(null)}
+                        className="text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50"
+                      >
+                        キャンセル
+                      </button>
+                      <button
+                        disabled={deleteBusy}
+                        onClick={() => handleDelete(item.kind, item.id)}
+                        className="text-xs font-medium px-3 py-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                      >
+                        {deleteBusy ? "削除中..." : "削除する"}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {isLinking && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
