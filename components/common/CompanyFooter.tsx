@@ -40,7 +40,9 @@ export default function CompanyFooter() {
           </a>
         </p>
       </div>
-      <p className="text-gray-400 text-xs text-center">© 2024 Salon Value Score. All rights reserved.</p>
+      <p className="text-gray-400 text-xs text-center">
+        © {new Date().getFullYear()} Salon Value Score. All rights reserved.
+      </p>
     </footer>
   );
 }
