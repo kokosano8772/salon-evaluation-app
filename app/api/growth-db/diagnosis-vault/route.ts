@@ -19,6 +19,10 @@ interface VaultItem {
   tier: string | null;
   occurredAt: string;
   matchedStore: { id: string; name: string } | null;
+  // URL自動連携ではなく、スタッフが手動で連携した結果かどうか。
+  // trueの場合のみ保管庫側から連携解除できるようにする（自動連携はURL側の情報
+  // そのものなので解除という概念がない）。
+  isManuallyLinked: boolean;
   href: string;
 }
 
@@ -40,7 +44,7 @@ export async function GET() {
     admin.from("stores").select("id, name, homepage_urls"),
     admin
       .from("ai_check_diagnoses")
-      .select("id, url, salon_name, total_score, score_max, rank, tier, created_at"),
+      .select("id, url, salon_name, total_score, score_max, rank, tier, created_at, linked_store_id"),
     admin
       .from("diagnosis_results")
       .select("id, store_id, salon_name, total_score, rank, completed_at"),
@@ -62,10 +66,17 @@ export async function GET() {
   }));
 
   const aiCheckItems: VaultItem[] = (aiCheckRes.data ?? []).map((row) => {
+    // 手動連携（linked_store_id）があればそれを優先し、無い場合だけURL自動連携にフォールバックする。
+    const manualStore = row.linked_store_id ? storesById.get(row.linked_store_id) : undefined;
     const normalizedUrl = normalizeUrlForMatch(row.url);
-    const matched = normalizedUrl
+    const autoMatched = normalizedUrl
       ? normalizedStoreUrls.find((s) => s.normalized.includes(normalizedUrl))
       : undefined;
+    const matchedStore = manualStore
+      ? { id: manualStore.id, name: manualStore.name }
+      : autoMatched
+        ? { id: autoMatched.store.id, name: autoMatched.store.name }
+        : null;
     return {
       kind: "ai_check",
       id: row.id,
@@ -75,7 +86,8 @@ export async function GET() {
       rank: row.rank,
       tier: row.tier,
       occurredAt: row.created_at,
-      matchedStore: matched ? { id: matched.store.id, name: matched.store.name } : null,
+      matchedStore,
+      isManuallyLinked: !!manualStore,
       href: `/ai-check/${row.id}`,
     };
   });
@@ -95,6 +107,7 @@ export async function GET() {
         tier: null,
         occurredAt: row.completed_at,
         matchedStore: store ? { id: store.id, name: store.name } : null,
+        isManuallyLinked: false,
         href: `/dashboard/stores/${row.store_id}/diagnosis/${row.id}`,
       };
     });
@@ -103,5 +116,8 @@ export async function GET() {
     (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
   );
 
-  return NextResponse.json({ results });
+  // 手動連携の店舗選択UI用。件数が少ない（現状数十件）ためid/nameだけ全件返す。
+  const storeOptions = stores.map((s) => ({ id: s.id, name: s.name }));
+
+  return NextResponse.json({ results, stores: storeOptions });
 }

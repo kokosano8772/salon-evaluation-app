@@ -183,6 +183,7 @@ export interface Database {
           crawl_warning: string | null;
           client_ip: string | null;
           created_at: string;
+          linked_store_id: string | null;
         };
         Insert: Partial<Omit<Database["public"]["Tables"]["ai_check_diagnoses"]["Row"], "id" | "created_at">> & {
           url: string;
