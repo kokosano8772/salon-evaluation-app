@@ -40,7 +40,12 @@ export default function DashboardNav() {
   };
 
   return (
-    <aside className="hidden md:flex md:flex-col w-64 flex-shrink-0 border-r border-gray-100 bg-white min-h-screen sticky top-0">
+    // sticky + min-h-screenだと、親のflexレイアウト（align-items:stretchの既定値）に
+    // よって親コンテンツ（ページ本文）の高さまで引き伸ばされてしまい、結果として
+    // フッター（ログアウトボタン）がそのページの最後尾まで押し下げられる不具合が
+    // あった（サイドバー自体はスクロールに追従するように見えても、ログアウトボタンは
+    // 画面内に収まらない）。fixedで確実にビューポート基準の高さに固定する。
+    <aside className="hidden md:flex md:flex-col w-64 flex-shrink-0 border-r border-gray-100 bg-white h-screen fixed top-0 left-0 overflow-y-auto z-20">
       <div className="px-6 pt-8 pb-6">
         <span className="text-[#C4788A] text-[11px] font-medium tracking-[0.25em] uppercase">
           Salon Value Score

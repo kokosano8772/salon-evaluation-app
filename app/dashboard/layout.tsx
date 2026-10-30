@@ -31,7 +31,9 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#FAF8F3] flex">
       <DashboardNav />
-      <div className="flex-1 min-w-0">
+      {/* DashboardNavはmd以上でposition:fixedのため通常のflowから外れる。
+          同じ幅（w-64=16rem）だけ左マージンを空けて本文と重ならないようにする。 */}
+      <div className="flex-1 min-w-0 md:ml-64">
         <DashboardMobileNav />
         <main className="max-w-7xl mx-auto px-5 md:pl-10 md:pr-28 py-8">{children}</main>
       </div>
