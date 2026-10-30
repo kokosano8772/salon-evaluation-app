@@ -9,7 +9,7 @@ export default function CompanyFooter() {
   return (
     <footer className="px-6 py-8 border-t border-gray-200 space-y-4">
       <div className="flex justify-center">
-        <Logo variant="dark" className="h-4 w-auto opacity-70" />
+        <Logo variant="dark" className="h-6 w-auto opacity-90" />
       </div>
       <div className="flex items-center justify-center gap-4 flex-wrap">
         <Link href="/privacy" className="text-gray-400 text-xs hover:text-gray-600 transition-colors">

@@ -264,7 +264,7 @@ export default function DiagnosisPage() {
 
           <header className="relative z-10 px-6 pt-12 pb-4">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-              <Logo variant="light" className="h-4 w-auto mb-2 opacity-90" />
+              <Logo variant="light" className="h-7 w-auto mb-2" />
               <span className="text-[#C4788A] text-xs font-medium tracking-[0.3em] uppercase">
                 Salon Value Score — Pro
               </span>
