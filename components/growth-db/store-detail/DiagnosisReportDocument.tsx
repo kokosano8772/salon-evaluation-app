@@ -15,7 +15,7 @@ const PRIORITY_LABEL: Record<Improvement["priority"], { label: string; bg: strin
 
 const CONSULT_TARGET_LABEL: Record<Improvement["consultTarget"], { label: string; bg: string; text: string; border: string }> = {
   koko_design: { label: "ココデザインに相談", bg: "bg-[#C4788A14]", text: "text-[#A85E74]", border: "border-[#C4788A55]" },
-  dealer: { label: "仕入れ先・メーカーに相談", bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-200" },
+  dealer: { label: "ディーラーに相談", bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-200" },
   self: { label: "院内で対応", bg: "bg-gray-50", text: "text-gray-500", border: "border-gray-200" },
 };
 

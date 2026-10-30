@@ -45,7 +45,7 @@ export interface DiagnosisResult {
 }
 
 // 改善提案の相談先。koko_design＝ココデザインが支援できる領域（Web・SNS・採用広報等）、
-// dealer＝店販商品の仕入れ先・メーカーに相談すべき領域、self＝サロン内で完結する領域。
+// dealer＝店販商品のディーラーに相談すべき領域、self＝サロン内で完結する領域。
 export type ConsultTarget = "koko_design" | "dealer" | "self";
 
 export interface Improvement {

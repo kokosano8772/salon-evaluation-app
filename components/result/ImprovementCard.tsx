@@ -46,7 +46,7 @@ export const CONSULT_TARGET_STYLES = {
     icon: MessageCircle,
   },
   dealer: {
-    label: "仕入れ先・メーカーに相談",
+    label: "ディーラーに相談",
     bg: "bg-orange-50",
     text: "text-orange-600",
     border: "border-orange-200",

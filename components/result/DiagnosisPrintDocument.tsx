@@ -16,7 +16,7 @@ const PRIORITY_STYLES = {
 
 const CONSULT_TARGET_STYLES = {
   koko_design: { label: "ココデザインに相談", bg: "#C4788A14", text: "#A85E74", border: "#C4788A55" },
-  dealer: { label: "仕入れ先・メーカーに相談", bg: "#fff7ed", text: "#ea580c", border: "#fed7aa" },
+  dealer: { label: "ディーラーに相談", bg: "#fff7ed", text: "#ea580c", border: "#fed7aa" },
   self: { label: "院内で対応", bg: "#f9fafb", text: "#6b7280", border: "#e5e7eb" },
 };
 
