@@ -211,6 +211,19 @@ export default function AiCheckProPage() {
   );
 }
 
+// answers状態には選択した選択肢のindexをそのまま保持している（選択中ハイライトの
+// 判定 currentAnswer === index がindex前提のため）。optionScoresが指定された質問
+// （index→得点が1:1でない）については、API送信直前にここで実際の得点へ変換する。
+function toQuizScores(answers: Record<string, number>): Record<string, number> {
+  const scores: Record<string, number> = {};
+  for (const q of QUIZ_QUESTIONS) {
+    const index = answers[q.id];
+    if (index === undefined) continue;
+    scores[q.id] = q.optionScores?.[index] ?? index;
+  }
+  return scores;
+}
+
 // useSearchParams()はSuspense境界内でないとビルド時にエラーになるため、
 // 中身を分離している。
 function AiCheckProInner() {
@@ -298,7 +311,7 @@ function AiCheckProInner() {
       const res = await fetch("/api/ai-check/diagnose/pro-finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...draft, quizAnswers: answers }),
+        body: JSON.stringify({ ...draft, quizAnswers: toQuizScores(answers) }),
       });
       const parsed = await parseJsonResponse(res);
       if (!parsed.ok) throw new Error(parsed.message);
