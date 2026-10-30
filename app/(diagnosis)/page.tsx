@@ -8,6 +8,7 @@ import { CATEGORIES } from "@/lib/scoring";
 import { Category } from "@/lib/types";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import CompanyFooter from "@/components/common/CompanyFooter";
+import Logo from "@/components/common/Logo";
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -65,6 +66,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
+            <Logo variant="light" className="h-4 w-auto mb-2 opacity-90" />
             <span className="text-[#C4788A] text-xs font-medium tracking-[0.3em] uppercase">
               Salon Value Score
             </span>

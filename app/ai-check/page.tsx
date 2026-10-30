@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { AI_CHECK_CATEGORY_LABEL, AI_CHECK_CATEGORY_MAX, AI_CHECK_RANK_INFO, AiCheckCategoryId } from "@/lib/ai-check/types";
 import CompanyFooter from "@/components/common/CompanyFooter";
+import Logo from "@/components/common/Logo";
 
 // 美容室価値診断（薔薇色 #C4788A）と同じシリーズだが別物と分かるよう、
 // 「将来性」カテゴリ（lib/scoring.ts）と同じ青系をAI Check専用のアクセントにする。
@@ -227,6 +228,7 @@ export default function AiCheckPage() {
 
         <header className="relative z-10 px-6 pt-12 pb-4">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <Logo variant="light" className="h-4 w-auto mb-2 opacity-90" />
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: ACCENT }}>
                 <Bot size={13} color="white" strokeWidth={2} />
