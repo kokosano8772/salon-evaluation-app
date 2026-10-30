@@ -12,6 +12,7 @@ import CategoryRankingList from "@/components/growth-db/store-detail/CategoryRan
 import ImprovementPointsList from "@/components/growth-db/store-detail/ImprovementPointsList";
 import AIImprovementSuggestions from "@/components/growth-db/store-detail/AIImprovementSuggestions";
 import LinkedDiagnosisCard from "@/components/growth-db/store-detail/LinkedDiagnosisCard";
+import LinkedAiCheckCard from "@/components/growth-db/store-detail/LinkedAiCheckCard";
 import PeerComparisonSection from "@/components/growth-db/store-detail/PeerComparisonSection";
 import CompetitorResearchCard from "@/components/growth-db/store-detail/CompetitorResearchCard";
 import AdReportCard from "@/components/growth-db/store-detail/AdReportCard";
@@ -70,6 +71,7 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
           <div className="space-y-6">
             <StoreInfoPanel store={store} />
             <LinkedDiagnosisCard storeId={store.id} />
+            <LinkedAiCheckCard storeId={store.id} />
           </div>
           <div className="space-y-6 min-w-0">
             <div className="card-luxury p-12 text-center text-gray-400 text-sm">
@@ -146,6 +148,7 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
         <div className="space-y-6">
           <StoreInfoPanel store={store} />
           <LinkedDiagnosisCard storeId={store.id} />
+          <LinkedAiCheckCard storeId={store.id} />
         </div>
 
         <div className="space-y-6 min-w-0">
