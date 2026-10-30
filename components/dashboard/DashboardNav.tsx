@@ -10,6 +10,7 @@ import {
   FileText,
   Trophy,
   Archive,
+  Bot,
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -18,7 +19,10 @@ const LOGIN_PATH = "/dashboard/login";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "ダッシュボード", icon: LayoutDashboard, exact: true },
-  { href: "/quick", label: "美容室価値診断", icon: ClipboardCheck, exact: false },
+  { href: "/quick", label: "価値診断（簡易）", icon: ClipboardCheck, exact: false },
+  { href: "/diagnosis", label: "価値診断（プロ）", icon: ClipboardCheck, exact: false },
+  { href: "/ai-check", label: "AIチェック（簡易）", icon: Bot, exact: true },
+  { href: "/ai-check/pro", label: "AIチェック（プロ）", icon: Bot, exact: true },
   { href: "/dashboard/stores", label: "成長データベース", icon: Database, exact: false },
   { href: "/dashboard/vault", label: "診断結果の保管庫", icon: Archive, exact: false },
   { href: "/dashboard/analysis", label: "月次分析", icon: LineChart, exact: false },
