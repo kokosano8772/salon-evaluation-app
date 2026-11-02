@@ -39,6 +39,7 @@ import { AI_JUDGED_ITEMS } from "@/lib/ai-check/build-ai-check-prompt";
 import { FIX_GUIDES } from "@/lib/ai-check/fix-guides";
 import { splitSalonNames, toHalfWidth } from "@/lib/ai-check/salon-name-match";
 import CompanyFooter from "@/components/common/CompanyFooter";
+import Logo from "@/components/common/Logo";
 import { QUIZ_QUESTIONS } from "@/lib/ai-check/quiz-questions";
 
 // 美容室価値診断と同じシリーズとして、結果画面の「見せ方」（ヘッダー/スコアヒーロー/
@@ -878,6 +879,24 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                       <LineIcon />
                       LINEでプロ診断について相談する
                     </a>
+                  </div>
+
+                  <div className="rounded-2xl border p-5" style={{ ...CARD_STYLE, borderColor: `${ACCENT}44`, background: `linear-gradient(165deg, white 0%, ${ACCENT}0D 100%)` }}>
+                    <Logo variant="dark" className="h-5 w-auto mb-3" />
+                    <p className="text-charcoal-900 font-bold text-sm mb-1.5 leading-snug">
+                      この結果、どう改善すればいいか迷ったら
+                    </p>
+                    <p className="text-gray-500 text-xs leading-relaxed mb-4">
+                      診断結果をもとに、ココデザインが具体的な改善アクションをご提案します。まずは無料相談から。
+                    </p>
+                    <button
+                      className="w-full py-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-1.5"
+                      style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+                      onClick={() => window.open("https://koko-design.com/contact/", "_blank")}
+                    >
+                      無料相談を申し込む
+                      <ArrowRight size={16} strokeWidth={2} />
+                    </button>
                   </div>
                 </>
               )}
