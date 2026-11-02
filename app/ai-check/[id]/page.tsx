@@ -112,6 +112,52 @@ function ItemRow({ item }: { item: DiagnosisItemRow }) {
   );
 }
 
+// 簡易診断（!isPro）のサマリー・詳細スコア両タブの末尾に出す相談導線。
+// どちらのタブだけ見て離脱してもCTAに辿り着けるよう、同じ内容を両方に出す。
+function ConsultCTAs() {
+  return (
+    <>
+      <div className="rounded-2xl p-5 text-white" style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)" }}>
+        <div className="flex items-center gap-1.5 mb-1">
+          <Sparkles size={14} style={{ color: ACCENT }} />
+          <p className="font-semibold text-sm">さらに詳しく知りたい方へ</p>
+        </div>
+        <p className="text-gray-400 text-xs leading-relaxed mb-4">
+          専門性・口コミなど機械判定できない項目まで含めた100点満点のプロ診断なら、AIがあなたの美容室の強み・改善提案までコメントします。
+        </p>
+        <a
+          href={LINE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1.5 w-full py-3 rounded-xl text-white font-semibold text-sm"
+          style={{ backgroundColor: "#06C755" }}
+        >
+          <LineIcon />
+          LINEでプロ診断について相談する
+        </a>
+      </div>
+
+      <div className="rounded-2xl border p-5" style={{ ...CARD_STYLE, borderColor: `${ACCENT}44`, background: `linear-gradient(165deg, white 0%, ${ACCENT}0D 100%)` }}>
+        <Logo variant="dark" className="h-5 w-auto mb-3" />
+        <p className="text-charcoal-900 font-bold text-sm mb-1.5 leading-snug">
+          この結果、どう改善すればいいか迷ったら
+        </p>
+        <p className="text-gray-500 text-xs leading-relaxed mb-4">
+          診断結果をもとに、ココデザインが具体的な改善アクションをご提案します。まずは無料相談から。
+        </p>
+        <button
+          className="w-full py-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-1.5"
+          style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
+          onClick={() => window.open("https://koko-design.com/contact/", "_blank")}
+        >
+          無料相談を申し込む
+          <ArrowRight size={16} strokeWidth={2} />
+        </button>
+      </div>
+    </>
+  );
+}
+
 // AI検索実測の回答全文中、店舗名と一致する箇所を目立たせる。containsSalonName
 // （lib/ai-check/salon-name-match.ts、判定側）と同じく、salon_nameが
 // 「sky（スカイ）、-outi-（オウチ）」のように複数店舗名が連結されている場合は
@@ -861,43 +907,7 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                     </div>
                   </div>
 
-                  <div className="rounded-2xl p-5 text-white" style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)" }}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Sparkles size={14} style={{ color: ACCENT }} />
-                      <p className="font-semibold text-sm">さらに詳しく知りたい方へ</p>
-                    </div>
-                    <p className="text-gray-400 text-xs leading-relaxed mb-4">
-                      専門性・口コミなど機械判定できない項目まで含めた100点満点のプロ診断なら、AIがあなたの美容室の強み・改善提案までコメントします。
-                    </p>
-                    <a
-                      href={LINE_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1.5 w-full py-3 rounded-xl text-white font-semibold text-sm"
-                      style={{ backgroundColor: "#06C755" }}
-                    >
-                      <LineIcon />
-                      LINEでプロ診断について相談する
-                    </a>
-                  </div>
-
-                  <div className="rounded-2xl border p-5" style={{ ...CARD_STYLE, borderColor: `${ACCENT}44`, background: `linear-gradient(165deg, white 0%, ${ACCENT}0D 100%)` }}>
-                    <Logo variant="dark" className="h-5 w-auto mb-3" />
-                    <p className="text-charcoal-900 font-bold text-sm mb-1.5 leading-snug">
-                      この結果、どう改善すればいいか迷ったら
-                    </p>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-4">
-                      診断結果をもとに、ココデザインが具体的な改善アクションをご提案します。まずは無料相談から。
-                    </p>
-                    <button
-                      className="w-full py-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-1.5"
-                      style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}
-                      onClick={() => window.open("https://koko-design.com/contact/", "_blank")}
-                    >
-                      無料相談を申し込む
-                      <ArrowRight size={16} strokeWidth={2} />
-                    </button>
-                  </div>
+                  <ConsultCTAs />
                 </>
               )}
             </motion.div>
@@ -1047,6 +1057,8 @@ export default function AiCheckResultPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
               )}
+
+              {!isPro && <ConsultCTAs />}
             </motion.div>
           )}
 
