@@ -336,6 +336,105 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["ranking_audit_evidence"]["Row"]>;
         Relationships: [];
       };
+      estimate_catalog_items: {
+        Row: {
+          id: string;
+          category: string;
+          name: string;
+          description: string;
+          unit: string;
+          unit_price: number;
+          sort_order: number;
+          is_active: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["estimate_catalog_items"]["Row"], "id" | "created_at" | "updated_at">> & {
+          name: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["estimate_catalog_items"]["Row"]>;
+        Relationships: [];
+      };
+      estimate_templates: {
+        Row: {
+          id: string;
+          name: string;
+          description: string;
+          sort_order: number;
+          is_active: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["estimate_templates"]["Row"], "id" | "created_at" | "updated_at">> & {
+          name: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["estimate_templates"]["Row"]>;
+        Relationships: [];
+      };
+      estimate_template_items: {
+        Row: {
+          id: string;
+          template_id: string;
+          catalog_item_id: string;
+          default_quantity: number;
+          sort_order: number;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["estimate_template_items"]["Row"], "id">> & {
+          template_id: string;
+          catalog_item_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["estimate_template_items"]["Row"]>;
+        Relationships: [];
+      };
+      estimates: {
+        Row: {
+          id: string;
+          store_id: string | null;
+          client_name: string;
+          client_contact: string;
+          title: string;
+          status: "draft" | "sent" | "accepted" | "rejected";
+          source_template_id: string | null;
+          subtotal: number;
+          tax_rate: number;
+          tax_amount: number;
+          total: number;
+          notes: string;
+          valid_until: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["estimates"]["Row"], "id" | "created_at" | "updated_at">> & {
+          title: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["estimates"]["Row"]>;
+        Relationships: [];
+      };
+      estimate_line_items: {
+        Row: {
+          id: string;
+          estimate_id: string;
+          catalog_item_id: string | null;
+          category: string;
+          name: string;
+          description: string;
+          unit: string;
+          unit_price: number;
+          quantity: number;
+          amount: number;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["estimate_line_items"]["Row"], "id" | "created_at">> & {
+          estimate_id: string;
+          name: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["estimate_line_items"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

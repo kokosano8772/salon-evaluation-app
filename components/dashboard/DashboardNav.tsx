@@ -12,6 +12,7 @@ import {
   Trophy,
   Archive,
   Bot,
+  Receipt,
   ChevronDown,
   LogOut,
   type LucideIcon,
@@ -65,6 +66,16 @@ const NAV_ITEMS: NavEntry[] = [
   { type: "link", href: "/dashboard/analysis", label: "月次分析", icon: LineChart, exact: false },
   { type: "link", href: "/dashboard/reports", label: "レポート", icon: FileText, exact: false },
   { type: "link", href: "/dashboard/web-ranking", label: "WEBランキング", icon: Trophy, exact: false },
+  {
+    type: "group",
+    label: "見積もり作成",
+    icon: Receipt,
+    children: [
+      { href: "/dashboard/estimates", label: "見積もり一覧", exact: true },
+      { href: "/dashboard/estimates/new", label: "新規作成", exact: true },
+      { href: "/dashboard/estimates/catalog", label: "価格表・プリセット管理", exact: false },
+    ],
+  },
 ];
 
 // モバイルの横スクロールナビは開閉のUIが馴染まないため、グループは子項目を
