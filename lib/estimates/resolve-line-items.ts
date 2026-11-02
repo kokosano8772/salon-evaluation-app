@@ -1,8 +1,18 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export type PriceTier = "standard" | "line_registered" | "hp_managed";
+
 export interface LineItemInput {
   catalogItemId?: string | null;
-  // catalogItemIdが無い場合（価格表に無い自由入力行）のみ使う値
+  // catalogItemId付きの行で、3段階料金のうちどれを使うか（省略時はstandard）。
+  // 指定した区分の単価が価格表側で未設定（null）の場合はstandardにフォールバックする。
+  priceTier?: PriceTier;
+  // 既存の見積もり明細をそのまま維持する場合に使う。trueのとき、catalogItemIdの
+  // 有無に関わらず価格表の再取得を行わず、以下の値をそのままスナップショットとして使う
+  // （編集時に「触っていない行の単価が、価格表側の変更で再保存のたびに動いてしまう」
+  // ことを防ぐため。catalogItemIdは追跡用にそのまま残してよい）。
+  keepSnapshot?: boolean;
+  // catalogItemIdが無い場合（価格表に無い自由入力行）、またはkeepSnapshot時に使う値
   name?: string;
   unitPrice?: number;
   unit?: string;
@@ -23,17 +33,37 @@ export interface ResolvedLineItem {
   sort_order: number;
 }
 
-// 見積もり明細の「スナップショット化」を行う。catalogItemId付きの行は、クライアントが
-// 送ってきた名称・単価を一切信用せず、ここでestimate_catalog_itemsを再取得して
-// サーバー側の値をそのまま使う（価格の改ざん・古い表示からの不整合を防ぐため）。
-// catalogItemIdが無い行（価格表に無い自由入力行）だけはクライアント値をそのまま使う。
+function pickTierPrice(
+  catalogItem: { unit_price: number; unit_price_line_registered: number | null; unit_price_hp_managed: number | null },
+  tier: PriceTier | undefined
+): number {
+  if (tier === "line_registered" && catalogItem.unit_price_line_registered !== null) {
+    return catalogItem.unit_price_line_registered;
+  }
+  if (tier === "hp_managed" && catalogItem.unit_price_hp_managed !== null) {
+    return catalogItem.unit_price_hp_managed;
+  }
+  return catalogItem.unit_price;
+}
+
+// 見積もり明細の「スナップショット化」を行う。catalogItemId付きかつkeepSnapshotでない行は、
+// クライアントが送ってきた名称・単価を一切信用せず、ここでestimate_catalog_itemsを
+// 再取得してサーバー側の値（priceTierで指定した区分の単価）をそのまま使う
+// （価格の改ざん・古い表示からの不整合を防ぐため）。catalogItemIdが無い行（自由入力行）、
+// またはkeepSnapshot指定の行（編集時に触っていない既存明細をそのまま維持する場合）は
+// クライアント値をそのまま使う。
 export async function resolveLineItems(
   admin: ReturnType<typeof createAdminClient>,
   inputs: LineItemInput[]
 ): Promise<{ ok: true; lineItems: ResolvedLineItem[]; subtotal: number } | { ok: false; error: string }> {
-  const catalogItemIds = Array.from(new Set(inputs.filter((i) => i.catalogItemId).map((i) => i.catalogItemId!)));
+  const catalogItemIds = Array.from(
+    new Set(inputs.filter((i) => i.catalogItemId && !i.keepSnapshot).map((i) => i.catalogItemId!))
+  );
 
-  const catalogItemById = new Map<string, { id: string; category: string; name: string; description: string; unit: string; unit_price: number }>();
+  const catalogItemById = new Map<
+    string,
+    { id: string; category: string; name: string; description: string; unit: string; unit_price: number; unit_price_line_registered: number | null; unit_price_hp_managed: number | null }
+  >();
   if (catalogItemIds.length > 0) {
     const { data, error } = await admin.from("estimate_catalog_items").select("*").in("id", catalogItemIds);
     if (error) return { ok: false, error: error.message };
@@ -48,20 +78,37 @@ export async function resolveLineItems(
     const quantity = Number.isFinite(input.quantity) && input.quantity > 0 ? Math.round(input.quantity) : 1;
     let resolved: ResolvedLineItem;
 
-    if (input.catalogItemId) {
+    if (input.keepSnapshot) {
+      if (!input.name?.trim()) {
+        return { ok: false, error: "明細には項目名が必要です" };
+      }
+      const unitPrice = Number.isFinite(input.unitPrice) ? Math.round(input.unitPrice!) : 0;
+      resolved = {
+        catalog_item_id: input.catalogItemId ?? null,
+        category: input.category?.trim() ?? "",
+        name: input.name.trim(),
+        description: input.description ?? "",
+        unit: input.unit?.trim() || "式",
+        unit_price: unitPrice,
+        quantity,
+        amount: unitPrice * quantity,
+        sort_order: i,
+      };
+    } else if (input.catalogItemId) {
       const catalogItem = catalogItemById.get(input.catalogItemId);
       if (!catalogItem) {
         return { ok: false, error: "存在しない価格表項目が指定されました" };
       }
+      const unitPrice = pickTierPrice(catalogItem, input.priceTier);
       resolved = {
         catalog_item_id: catalogItem.id,
         category: catalogItem.category,
         name: catalogItem.name,
         description: catalogItem.description,
         unit: catalogItem.unit,
-        unit_price: catalogItem.unit_price,
+        unit_price: unitPrice,
         quantity,
-        amount: catalogItem.unit_price * quantity,
+        amount: unitPrice * quantity,
         sort_order: i,
       };
     } else {

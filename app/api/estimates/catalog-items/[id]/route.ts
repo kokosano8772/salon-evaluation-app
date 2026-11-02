@@ -18,10 +18,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   let body: {
     category?: string;
+    subcategory?: string;
     name?: string;
     description?: string;
     unit?: string;
     unitPrice?: number;
+    unitPriceLineRegistered?: number | null;
+    unitPriceHpManaged?: number | null;
     sortOrder?: number;
     isActive?: boolean;
   };
@@ -33,6 +36,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const update: Partial<CatalogItemRow> = {};
   if (body.category !== undefined) update.category = body.category.trim();
+  if (body.subcategory !== undefined) update.subcategory = body.subcategory.trim();
   if (body.name !== undefined) {
     if (!body.name.trim()) return NextResponse.json({ error: "項目名が必要です" }, { status: 400 });
     update.name = body.name.trim();
@@ -40,6 +44,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body.description !== undefined) update.description = body.description;
   if (body.unit !== undefined) update.unit = body.unit.trim() || "式";
   if (body.unitPrice !== undefined) update.unit_price = Math.round(body.unitPrice);
+  if (body.unitPriceLineRegistered !== undefined) {
+    update.unit_price_line_registered =
+      body.unitPriceLineRegistered === null || !Number.isFinite(body.unitPriceLineRegistered)
+        ? null
+        : Math.round(body.unitPriceLineRegistered);
+  }
+  if (body.unitPriceHpManaged !== undefined) {
+    update.unit_price_hp_managed =
+      body.unitPriceHpManaged === null || !Number.isFinite(body.unitPriceHpManaged) ? null : Math.round(body.unitPriceHpManaged);
+  }
   if (body.sortOrder !== undefined) update.sort_order = body.sortOrder;
   if (body.isActive !== undefined) update.is_active = body.isActive;
 

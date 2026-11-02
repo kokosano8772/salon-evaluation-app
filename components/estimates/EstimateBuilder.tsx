@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import FormSection from "@/components/growth-db/forms/FormSection";
 import CatalogChecklist from "./CatalogChecklist";
 import PresetButtons from "./PresetButtons";
+import SelectedLinesCart from "./SelectedLinesCart";
 import StickyTotalBar from "./StickyTotalBar";
 import StoreOrClientPicker from "./StoreOrClientPicker";
-import { CatalogItem, LineItem, StoreOption, Template } from "./types";
+import { CartLine, CatalogItem, LineItem, LineItemPayload, PriceTier, StoreOption, Template, availableTiers } from "./types";
 
 interface EstimateBuilderInitial {
   title: string;
@@ -26,6 +27,28 @@ interface EstimateBuilderProps {
   initial?: EstimateBuilderInitial;
 }
 
+function buildInitialCart(lineItems: LineItem[] | undefined): Map<string, CartLine> {
+  const map = new Map<string, CartLine>();
+  (lineItems ?? []).forEach((li, i) => {
+    const key = li.id ?? `existing-${i}`;
+    // priceTier: null は「価格表から選び直したものではなく、既存の明細をそのまま
+    // 維持している」という意味。保存時はkeepSnapshotとして送り、価格表の現在値での
+    // 再計算を行わない（編集のたびに無関係な行の単価が動いてしまうのを防ぐため）。
+    map.set(key, {
+      key,
+      catalogItemId: li.catalogItemId,
+      priceTier: null,
+      category: li.category,
+      name: li.name,
+      description: li.description,
+      unit: li.unit,
+      unitPrice: li.unitPrice,
+      quantity: li.quantity,
+    });
+  });
+  return map;
+}
+
 export default function EstimateBuilder({ mode, estimateId, initial }: EstimateBuilderProps) {
   const router = useRouter();
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
@@ -35,13 +58,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const [selected, setSelected] = useState<Map<string, number>>(() => {
-    const map = new Map<string, number>();
-    for (const li of initial?.lineItems ?? []) {
-      if (li.catalogItemId) map.set(li.catalogItemId, li.quantity);
-    }
-    return map;
-  });
+  const [cart, setCart] = useState<Map<string, CartLine>>(() => buildInitialCart(initial?.lineItems));
   const [pickerMode, setPickerMode] = useState<"store" | "client">(initial?.storeId ? "store" : "client");
   const [storeId, setStoreId] = useState<string | null>(initial?.storeId ?? null);
   const [clientName, setClientName] = useState(initial?.clientName ?? "");
@@ -52,11 +69,8 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
   const [taxRate] = useState(initial?.taxRate ?? 0.1);
 
   useEffect(() => {
-    // 編集時は、すでに非公開化された価格表項目を参照している明細があっても
-    // 正しく表示・金額計算できるよう、非公開項目も含めて取得する。
-    const catalogUrl = mode === "edit" ? "/api/estimates/catalog-items?includeInactive=1" : "/api/estimates/catalog-items";
     Promise.all([
-      fetch(catalogUrl).then((r) => r.json()),
+      fetch("/api/estimates/catalog-items").then((r) => r.json()),
       fetch("/api/estimates/templates").then((r) => r.json()),
       fetch("/api/estimates/stores").then((r) => r.json()),
     ])
@@ -66,49 +80,82 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
         setStores(storesRes.stores ?? []);
       })
       .finally(() => setLoading(false));
-  }, [mode]);
+  }, []);
 
-  const handleToggle = (item: CatalogItem) => {
-    setSelected((prev) => {
+  const handleAddFromCatalog = (item: CatalogItem, tier: PriceTier, quantity: number) => {
+    const tiers = availableTiers(item);
+    const tierInfo = tiers.find((t) => t.tier === tier) ?? tiers[0];
+    const key = `${item.id}:${tierInfo.tier}`;
+    setCart((prev) => {
       const next = new Map(prev);
-      if (next.has(item.id)) next.delete(item.id);
-      else next.set(item.id, 1);
+      const existing = next.get(key);
+      next.set(key, {
+        key,
+        catalogItemId: item.id,
+        priceTier: tierInfo.tier,
+        category: item.category,
+        name: item.name,
+        description: item.description,
+        unit: item.unit,
+        unitPrice: tierInfo.unitPrice,
+        quantity: (existing?.quantity ?? 0) + quantity,
+      });
       return next;
     });
   };
 
-  const handleQuantityChange = (catalogItemId: string, quantity: number) => {
-    setSelected((prev) => {
+  const handleRemove = (key: string) => {
+    setCart((prev) => {
       const next = new Map(prev);
-      next.set(catalogItemId, quantity);
+      next.delete(key);
       return next;
     });
   };
 
-  // プリセット適用は現在の選択への追加。すでにチェック済みの項目は上書きしない
-  // （数量を個別調整済みの場合に失わないため）。非公開化された項目はスキップする。
+  const handleQuantityChange = (key: string, quantity: number) => {
+    setCart((prev) => {
+      const next = new Map(prev);
+      const line = next.get(key);
+      if (line) next.set(key, { ...line, quantity });
+      return next;
+    });
+  };
+
+  // プリセット適用は現在のカートへの追加。すでに同じ項目・料金区分がカートにある場合は
+  // 上書きしない（数量を個別調整済みの場合に失わないため）。非公開化された項目はスキップ。
+  // プリセットは常に「基本作業料」区分として適用する（プリセット自体に料金区分の概念を
+  // 持たせていないため）。
   const handleApplyTemplate = (template: Template) => {
-    setSelected((prev) => {
+    setCart((prev) => {
       const next = new Map(prev);
       for (const item of template.items) {
         if (!item.catalogItemIsActive) continue;
-        if (!next.has(item.catalogItemId)) next.set(item.catalogItemId, item.defaultQuantity);
+        const key = `${item.catalogItemId}:standard`;
+        if (next.has(key)) continue;
+        next.set(key, {
+          key,
+          catalogItemId: item.catalogItemId,
+          priceTier: "standard",
+          category: item.category,
+          name: item.name,
+          description: "",
+          unit: item.unit,
+          unitPrice: item.unitPrice,
+          quantity: item.defaultQuantity,
+        });
       }
       return next;
     });
   };
 
-  const catalogItemById = useMemo(() => new Map(catalogItems.map((c) => [c.id, c])), [catalogItems]);
-
   const { subtotal, taxAmount, total } = useMemo(() => {
     let sum = 0;
-    selected.forEach((qty, id) => {
-      const item = catalogItemById.get(id);
-      if (item) sum += item.unitPrice * qty;
+    cart.forEach((line) => {
+      sum += line.unitPrice * line.quantity;
     });
     const tax = Math.round(sum * taxRate);
     return { subtotal: sum, taxAmount: tax, total: sum + tax };
-  }, [selected, catalogItemById, taxRate]);
+  }, [cart, taxRate]);
 
   const handleSave = async () => {
     setError("");
@@ -124,17 +171,27 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
       setError("クライアントを選択してください");
       return;
     }
-    if (selected.size === 0) {
-      setError("明細を1件以上選択してください");
+    if (cart.size === 0) {
+      setError("明細を1件以上追加してください");
       return;
     }
 
     setSaving(true);
     try {
-      const lineItems = Array.from(selected.entries()).map(([catalogItemId, quantity]) => ({
-        catalogItemId,
-        quantity,
-      }));
+      const lineItems: LineItemPayload[] = Array.from(cart.values()).map((line) =>
+        line.priceTier
+          ? { catalogItemId: line.catalogItemId, priceTier: line.priceTier, quantity: line.quantity }
+          : {
+              catalogItemId: line.catalogItemId,
+              keepSnapshot: true,
+              category: line.category,
+              name: line.name,
+              description: line.description,
+              unit: line.unit,
+              unitPrice: line.unitPrice,
+              quantity: line.quantity,
+            }
+      );
       const body = {
         storeId: pickerMode === "store" ? storeId : null,
         clientName: pickerMode === "client" ? clientName : "",
@@ -223,15 +280,18 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
 
       <PresetButtons templates={templates} onApply={handleApplyTemplate} />
 
-      <CatalogChecklist
-        catalogItems={catalogItems}
-        selected={selected}
-        onToggle={handleToggle}
-        onQuantityChange={handleQuantityChange}
-      />
+      <div>
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">選択中の明細</p>
+        <SelectedLinesCart lines={Array.from(cart.values())} onRemove={handleRemove} onQuantityChange={handleQuantityChange} />
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">価格表から追加</p>
+        <CatalogChecklist catalogItems={catalogItems} onAdd={handleAddFromCatalog} />
+      </div>
 
       <StickyTotalBar
-        itemCount={selected.size}
+        itemCount={cart.size}
         subtotal={subtotal}
         taxRate={taxRate}
         taxAmount={taxAmount}

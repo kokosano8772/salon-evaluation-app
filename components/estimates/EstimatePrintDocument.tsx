@@ -1,4 +1,4 @@
-import { EstimateHeader, LineItem, groupLineItemsByCategory } from "./types";
+import { EstimateHeader, LineItem, groupByCategory } from "./types";
 
 interface EstimatePrintDocumentProps {
   estimate: EstimateHeader;
@@ -15,7 +15,7 @@ function yen(value: number): string {
 // 高さを切り分ける）を踏襲する。成長DB（デスクトップ幅の管理画面）配下の機能のため、
 // 480px固定だった公開ページ側と違い、明細テーブルが読みやすいよう600px幅にしている。
 export default function EstimatePrintDocument({ estimate, clientLabel, lineItems }: EstimatePrintDocumentProps) {
-  const groups = groupLineItemsByCategory(lineItems);
+  const groups = groupByCategory(lineItems);
   const issuedDateLabel = new Date(estimate.createdAt).toLocaleDateString("ja-JP", {
     year: "numeric",
     month: "long",

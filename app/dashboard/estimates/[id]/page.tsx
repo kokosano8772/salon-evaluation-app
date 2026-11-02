@@ -7,7 +7,7 @@ import { Download, Pencil, Trash2 } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import EstimateBuilder from "@/components/estimates/EstimateBuilder";
 import EstimatePrintDocument from "@/components/estimates/EstimatePrintDocument";
-import { EstimateHeader, LineItem, StoreOption, formatYen, groupLineItemsByCategory } from "@/components/estimates/types";
+import { EstimateHeader, LineItem, StoreOption, formatYen, groupByCategory } from "@/components/estimates/types";
 import { exportResultToPDF } from "@/lib/pdf";
 
 const STATUS_OPTIONS: { value: EstimateHeader["status"]; label: string }[] = [
@@ -142,7 +142,7 @@ export default function EstimateDetailPage({ params }: { params: Promise<{ id: s
     );
   }
 
-  const groups = groupLineItemsByCategory(lineItems);
+  const groups = groupByCategory(lineItems);
 
   return (
     <div>

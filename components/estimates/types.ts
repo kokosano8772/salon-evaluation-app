@@ -1,12 +1,47 @@
+export type PriceTier = "standard" | "line_registered" | "hp_managed";
+
+export const PRICE_TIER_LABEL: Record<PriceTier, string> = {
+  standard: "基本作業料",
+  line_registered: "公式ライン登録",
+  hp_managed: "HP管理企業様",
+};
+
 export interface CatalogItem {
   id: string;
+  category: string;
+  subcategory: string;
+  name: string;
+  description: string;
+  unit: string;
+  unitPrice: number;
+  unitPriceLineRegistered: number | null;
+  unitPriceHpManaged: number | null;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+// その項目で選べる料金区分と単価の一覧（nullの区分は選択肢から除く）。
+export function availableTiers(item: CatalogItem): { tier: PriceTier; unitPrice: number }[] {
+  const tiers: { tier: PriceTier; unitPrice: number }[] = [{ tier: "standard", unitPrice: item.unitPrice }];
+  if (item.unitPriceLineRegistered !== null) tiers.push({ tier: "line_registered", unitPrice: item.unitPriceLineRegistered });
+  if (item.unitPriceHpManaged !== null) tiers.push({ tier: "hp_managed", unitPrice: item.unitPriceHpManaged });
+  return tiers;
+}
+
+// 見積もりビルダーで「選択済み（カート）」として積み上げる1行。価格表＋料金区分から
+// 追加した時点の表示用の値をそのまま持つ（編集時に既存の明細をそのまま維持する場合は
+// catalogItemIdはあってもpriceTierがnullになりうる＝価格表から新たに選び直したものではない、
+// という意味。送信時はkeepSnapshot:trueとして扱い、価格表の再取得を行わない）。
+export interface CartLine {
+  key: string;
+  catalogItemId: string | null;
+  priceTier: PriceTier | null;
   category: string;
   name: string;
   description: string;
   unit: string;
   unitPrice: number;
-  sortOrder: number;
-  isActive: boolean;
+  quantity: number;
 }
 
 export interface TemplateItem {
@@ -47,6 +82,23 @@ export interface StoreOption {
   name: string;
 }
 
+// POST/PATCH /api/estimates(/[id])に送る明細1件分。サーバー側のLineItemInput
+// （lib/estimates/resolve-line-items.ts）と同じ形だが、そちらはservice_role
+// クライアントを扱うサーバー専用モジュールを import しているため、クライアント
+// コンポーネントからはこちらの独立した型を使う（誤ってservice_roleキーを含む
+// モジュールをクライアントバンドルに引き込まないため）。
+export interface LineItemPayload {
+  catalogItemId: string | null;
+  priceTier?: PriceTier;
+  keepSnapshot?: boolean;
+  category?: string;
+  name?: string;
+  description?: string;
+  unit?: string;
+  unitPrice?: number;
+  quantity: number;
+}
+
 export interface EstimateHeader {
   id: string;
   storeId: string | null;
@@ -69,11 +121,11 @@ export function formatYen(value: number): string {
   return `¥${value.toLocaleString("ja-JP")}`;
 }
 
-// 明細をカテゴリ別にグルーピングする。渡される配列はsort_order順である前提で、
-// 最初に出てきたカテゴリの順番をそのままグループの並び順にする
-// （EstimatePrintDocument・見積もり詳細画面の両方で使う共通ロジック）。
-export function groupLineItemsByCategory(items: LineItem[]): { category: string; items: LineItem[] }[] {
-  const groups: { category: string; items: LineItem[] }[] = [];
+// category（文字列）を持つ配列をカテゴリ別にグルーピングする。渡される配列はsort_order順
+// である前提で、最初に出てきたカテゴリの順番をそのままグループの並び順にする
+// （EstimatePrintDocument・見積もり詳細画面・カート表示など複数箇所で使う共通ロジック）。
+export function groupByCategory<T extends { category: string }>(items: T[]): { category: string; items: T[] }[] {
+  const groups: { category: string; items: T[] }[] = [];
   const indexByCategory = new Map<string, number>();
   for (const item of items) {
     const key = item.category || "その他";

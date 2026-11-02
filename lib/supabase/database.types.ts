@@ -340,10 +340,13 @@ export interface Database {
         Row: {
           id: string;
           category: string;
+          subcategory: string;
           name: string;
           description: string;
           unit: string;
           unit_price: number;
+          unit_price_line_registered: number | null;
+          unit_price_hp_managed: number | null;
           sort_order: number;
           is_active: boolean;
           created_by: string | null;
