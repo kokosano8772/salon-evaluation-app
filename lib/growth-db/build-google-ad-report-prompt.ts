@@ -9,7 +9,7 @@ import { AdReport, AgeGroup, AGE_GROUPS } from "./ad-report-types";
 import { AdReportComparison, GrowthLinkComparison, MetricComparison } from "./ad-report-analysis";
 import { YoyTrend } from "./ad-report-trend";
 import { NamedUrl } from "./types";
-import { formatMonthLabel, formatNumber, formatPercent, formatYen } from "./format";
+import { formatMonthLabel, formatMonthShortLabel, formatNumber, formatPercent, formatYen } from "./format";
 
 // 支店名付きURLの配列を「- 種別（支店名）: URL」形式の行に変換する。
 // 支店名が空（単一店舗）の場合は「- 種別: URL」とする。
@@ -55,6 +55,9 @@ export function buildGoogleAdReportAnalysisPrompt(
   const isRecruitment = report.category === "recruitment";
   const buttonLabel = isRecruitment ? "お問い合わせボタン" : "ご予約ボタン";
   const lines: string[] = [];
+  // レポート生成は翌月に行われるため「今月」は常に対象月とずれる（例: 11月に10月分を
+  // 生成する）。相対表現は使わせず、必ずこの月数字（西暦なし）で言わせる。
+  const monthLabel = formatMonthShortLabel(report.yearMonth);
 
   lines.push(`# ${formatMonthLabel(report.yearMonth)}のGoogle広告実績データ（すべて計算済みの確定値）`);
   lines.push("");
@@ -77,7 +80,7 @@ export function buildGoogleAdReportAnalysisPrompt(
   if (ageRows.length > 0) {
     const bestByRate = ageRows.reduce((a, b) => (b.rate > a.rate ? b : a));
     lines.push("");
-    lines.push(`## 年代別${buttonLabel}を押した割合（今月）`);
+    lines.push(`## 年代別${buttonLabel}を押した割合（${monthLabel}）`);
     for (const r of ageRows) {
       lines.push(`- ${ageGroupLabelForPrompt(r.ageGroup)}歳: ${r.rate.toFixed(2)}%（${r.conversions}件）`);
     }
@@ -87,7 +90,7 @@ export function buildGoogleAdReportAnalysisPrompt(
   const breakdown = report.conversionActionBreakdown ?? [];
   if (breakdown.length > 0) {
     lines.push("");
-    lines.push(`## ${buttonLabel}の内訳（今月）`);
+    lines.push(`## ${buttonLabel}の内訳（${monthLabel}）`);
     for (const b of breakdown) {
       lines.push(`- ${b.name}: ${b.conversions}件`);
     }
@@ -95,7 +98,7 @@ export function buildGoogleAdReportAnalysisPrompt(
 
   if (!isRecruitment && report.searchTerms && report.searchTerms.length > 0) {
     lines.push("");
-    lines.push("## クリックが多かった検索語句（今月・上位）");
+    lines.push(`## クリックが多かった検索語句（${monthLabel}・上位）`);
     for (const s of report.searchTerms.slice(0, 3)) {
       lines.push(`- ${s.term}（${s.clicks}クリック）`);
     }
@@ -153,7 +156,8 @@ export function buildGoogleAdReportAnalysisPrompt(
       "・CTR・CVRのような専門用語を並べず、クリック数・年代・検索語句など、オーナーが直感的にイメージできる言葉で語る。\n" +
       "・断定的な命令口調は使わない。\n" +
       '・「〜についてご報告いたします」のような形式的な前置き・挨拶文で書き出さない。1文目からすぐ本題に入ること。\n' +
-      '・月に言及する際、西暦（「2026年7月」等の4桁の年）は書かないこと。「7月は」「今月は」のように月だけ、または相対的な言い方にする。\n' +
+      `・月に言及する際は、西暦（「2026年7月」等の4桁の年）を書かず、必ず「${monthLabel}は」のように月の数字だけで言うこと。` +
+      "「今月は」「先月は」「先月に引き続き」「今回は」のような相対的な言い方は、レポート作成月と対象月がずれて誤りになるため絶対に使わないこと。\n" +
       "・広告クリエイティブ（画像・動画の中身やデザイン）については一切データを渡していないため、その中身に関する言及・提案は絶対に書かないこと。\n" +
       "・出力はすべてプレーンテキストで、Markdown記法（**太字**、*斜体*、# 見出し、- 箇条書き等）は一切使わないこと" +
       "（見出しやアクション行を指示する \"## 〜\" \"- \" は、後述する構成マーカーとして使う場合のみ許可する）。\n" +
@@ -163,7 +167,7 @@ export function buildGoogleAdReportAnalysisPrompt(
   lines.push("");
   lines.push(
     '1部目: 1行目に "## 運用状況" とだけ書いた見出しを置き、2行目に1文、どうしても足りない場合のみ2文で、合計50字程度・絶対に60字を超えないように、' +
-      "前月比較を踏まえた今月の運用状況の要約を書く。良かった点・気になる点の両方に触れてよいが、1文に収まらないなら" +
+      `前月比較を踏まえた${monthLabel}の運用状況の要約を書く。良かった点・気になる点の両方に触れてよいが、1文に収まらないなら` +
       "気になる点は省略してよい。文字数を優先し、内容を削ってでも必ず60字以内に収めること。" +
       "気になる点（減少・悪化）に触れる場合は必ず先に述べ、文末は良かった点・安定している点で締めくくること。" +
       "文末をネガティブな内容（「減少しました」「悪化しました」等）で終わらせてはならない。" +

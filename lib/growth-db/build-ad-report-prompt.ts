@@ -5,7 +5,7 @@
 
 import { AdReport, AGE_GROUPS } from "./ad-report-types";
 import { AdReportComparison, CampaignAnalysis, GrowthLinkComparison, MetricComparison } from "./ad-report-analysis";
-import { formatMonthLabel, formatPercent, formatYen, formatNumber } from "./format";
+import { formatMonthLabel, formatMonthShortLabel, formatPercent, formatYen, formatNumber } from "./format";
 
 function formatChange(comparison: MetricComparison, format: "yen" | "number" | "percent"): string {
   const value = format === "yen" ? formatYen(comparison.current) : format === "percent" ? formatPercent(comparison.current) : formatNumber(comparison.current);
@@ -32,6 +32,9 @@ export function buildAdReportAnalysisPrompt(
   growthComparison: GrowthLinkComparison
 ): string {
   const lines: string[] = [];
+  // レポート生成は翌月に行われるため「今月」は常に対象月とずれる（例: 11月に10月分を
+  // 生成する）。相対表現は使わせず、必ずこの月数字（西暦なし）で言わせる。
+  const monthLabel = formatMonthShortLabel(report.yearMonth);
 
   // Meta広告はコンバージョン数を自動取得できず、手入力（未入力なら0）に頼っているため
   // 数値として信用できない。「0件」を実態の不振と誤解してAIが指摘してしまうのを防ぐため、
@@ -59,7 +62,7 @@ export function buildAdReportAnalysisPrompt(
   if (report.ageGroupClicks && report.ageGroupClicks.length > 0) {
     const best = [...report.ageGroupClicks].sort((a, b) => b.clicks - a.clicks)[0];
     lines.push("");
-    lines.push("## 年齢層別クリック数（今月）");
+    lines.push(`## 年齢層別クリック数（${monthLabel}）`);
     for (const group of AGE_GROUPS) {
       const entry = report.ageGroupClicks.find((e) => e.ageGroup === group);
       if (entry) lines.push(`- ${group}歳: ${entry.clicks}回`);
@@ -127,7 +130,8 @@ export function buildAdReportAnalysisPrompt(
       "・CPA・CVR・CPCのような専門用語を並べず、年齢層・クリエイティブ（画像/動画）・ターゲット設定など、オーナーが直感的にイメージできる言葉で語る。\n" +
       "・断定的な命令口調は使わない。\n" +
       '・「〜についてご報告いたします」のような形式的な前置き・挨拶文で書き出さない。1文目からすぐ本題（状況分析）に入ること。\n' +
-      '・月に言及する際、西暦（「2026年7月」等の4桁の年）は書かないこと。「7月は」「今月は」「先月に引き続き」のように月だけ、または相対的な言い方にする。'
+      `・月に言及する際は、西暦（「2026年7月」等の4桁の年）を書かず、必ず「${monthLabel}は」のように月の数字だけで言うこと。` +
+      "「今月は」「先月は」「先月に引き続き」「今回は」のような相対的な言い方は、レポート作成月と対象月がずれて誤りになるため絶対に使わないこと。"
   );
   lines.push("");
   lines.push(
