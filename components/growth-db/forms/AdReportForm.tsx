@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, Check, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
 import { getAdSyncDefault, saveAdSyncDefault } from "@/lib/growth-db/ad-sync-defaults";
+import { findCategoryMismatch } from "@/lib/growth-db/ad-report-category-check";
 import { formatMonthLabel } from "@/lib/growth-db/format";
 import {
   AD_PLATFORM_LABEL,
@@ -254,6 +255,10 @@ export default function AdReportForm({
     return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
   }
 
+  // 保存済み・同期直後どちらの表示でも、実際のキャンペーン名と選んでいる区分が
+  // 食い違っていないかをその場で確認できるようにする。
+  const categoryMismatchWarning = findCategoryMismatch(draft.campaigns, category);
+
   const patch = <K extends keyof AdReportDraft>(key: K, value: AdReportDraft[K]) =>
     setDraft((prev) => (prev ? { ...prev, [key]: value } : prev));
 
@@ -418,6 +423,15 @@ export default function AdReportForm({
 
   return (
     <div className="space-y-6 pb-24">
+      {categoryMismatchWarning && (
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-50 border border-red-200">
+          <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" strokeWidth={2} />
+          <p className="text-xs text-red-600">
+            <span className="font-semibold">区分の設定ミスの可能性があります：</span>
+            {categoryMismatchWarning}
+          </p>
+        </div>
+      )}
       {(platform === "meta" || platform === "google") && (
         <div className="card-luxury p-6">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">

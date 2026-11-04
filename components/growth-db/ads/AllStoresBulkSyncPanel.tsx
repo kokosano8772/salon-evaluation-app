@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Check, Loader2, RefreshCw, Store as StoreIcon, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, Loader2, RefreshCw, Store as StoreIcon, X } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
 import { getStores } from "@/lib/growth-db/repository";
 import { AdSyncDefault, listAdSyncDefaults } from "@/lib/growth-db/ad-sync-defaults";
 import { AdPlatform, AdReportCategory } from "@/lib/growth-db/ad-report-types";
+import { findCategoryMismatch } from "@/lib/growth-db/ad-report-category-check";
 
 interface AllStoresBulkSyncPanelProps {
   platform: AdPlatform;
@@ -23,6 +24,7 @@ interface StoreRow {
   status: StoreStatus;
   message?: string;
   campaignCount?: number;
+  categoryWarning?: string | null; // 実キャンペーン名と選択中の区分が食い違っている場合の警告
 }
 
 const STATUS_BADGE: Record<StoreStatus, { label: string; className: string }> = {
@@ -119,10 +121,11 @@ export default function AllStoresBulkSyncPanel({ platform, category, yearMonth, 
         }
 
         await repo.upsertAdReport(row.storeId, yearMonth, platform, { ...json.data, accountId: syncDefault.accountId }, category);
+        const categoryWarning = findCategoryMismatch(json.data.campaigns ?? [], category);
         setRows((prev) =>
           prev.map((r) =>
             r.storeId === row.storeId
-              ? { ...r, status: "success", campaignCount: json.data.campaigns?.length ?? 0 }
+              ? { ...r, status: "success", campaignCount: json.data.campaigns?.length ?? 0, categoryWarning }
               : r
           )
         );
@@ -199,24 +202,32 @@ export default function AllStoresBulkSyncPanel({ platform, category, yearMonth, 
               {rows.map((r) => {
                 const badge = STATUS_BADGE[r.status];
                 return (
-                  <div key={r.storeId} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                    <span className="text-sm text-charcoal-700 truncate">{r.storeName}</span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {r.message && r.status === "error" && (
-                        <span className="text-xs text-red-400 max-w-xs truncate" title={r.message}>
-                          {r.message}
+                  <div key={r.storeId} className="px-4 py-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm text-charcoal-700 truncate">{r.storeName}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {r.message && r.status === "error" && (
+                          <span className="text-xs text-red-400 max-w-xs truncate" title={r.message}>
+                            {r.message}
+                          </span>
+                        )}
+                        {r.status === "success" && (
+                          <span className="text-xs text-gray-400">キャンペーン{r.campaignCount}件</span>
+                        )}
+                        <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${badge.className}`}>
+                          {r.status === "syncing" && <Loader2 size={11} className="animate-spin" />}
+                          {r.status === "success" && <Check size={11} />}
+                          {r.status === "error" && <X size={11} />}
+                          {badge.label}
                         </span>
-                      )}
-                      {r.status === "success" && (
-                        <span className="text-xs text-gray-400">キャンペーン{r.campaignCount}件</span>
-                      )}
-                      <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${badge.className}`}>
-                        {r.status === "syncing" && <Loader2 size={11} className="animate-spin" />}
-                        {r.status === "success" && <Check size={11} />}
-                        {r.status === "error" && <X size={11} />}
-                        {badge.label}
-                      </span>
+                      </div>
                     </div>
+                    {r.categoryWarning && (
+                      <p className="flex items-start gap-1.5 mt-1.5 text-xs text-red-500">
+                        <AlertTriangle size={13} className="shrink-0 mt-0.5" strokeWidth={2} />
+                        {r.categoryWarning}
+                      </p>
+                    )}
                   </div>
                 );
               })}

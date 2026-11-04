@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Loader2, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, Check, Loader2, RefreshCw, X } from "lucide-react";
 import * as repo from "@/lib/growth-db/ad-report-repository";
 import { getAdSyncDefault, saveAdSyncDefault } from "@/lib/growth-db/ad-sync-defaults";
 import { AdPlatform, AdReportCategory } from "@/lib/growth-db/ad-report-types";
 import { currentYearMonth, formatMonthLabel, shiftYearMonth } from "@/lib/growth-db/format";
+import { findCategoryMismatch } from "@/lib/growth-db/ad-report-category-check";
 
 interface AdReportBulkSyncPanelProps {
   storeId: string;
@@ -20,6 +21,7 @@ interface MonthResult {
   status: "pending" | "syncing" | "success" | "skipped" | "error";
   message?: string;
   campaignCount?: number;
+  categoryWarning?: string | null;
 }
 
 function monthsInRange(start: string, end: string): string[] {
@@ -112,10 +114,11 @@ export default function AdReportBulkSyncPanel({
 
         await repo.upsertAdReport(storeId, yearMonth, platform, { ...json.data, accountId }, category);
         succeededOnce = true;
+        const categoryWarning = findCategoryMismatch(json.data.campaigns ?? [], category);
         setResults((prev) =>
           prev.map((r) =>
             r.yearMonth === yearMonth
-              ? { ...r, status: "success", campaignCount: json.data.campaigns?.length ?? 0 }
+              ? { ...r, status: "success", campaignCount: json.data.campaigns?.length ?? 0, categoryWarning }
               : r
           )
         );
@@ -223,22 +226,30 @@ export default function AdReportBulkSyncPanel({
       {results.length > 0 && (
         <div className="mt-4 space-y-1.5">
           {results.map((r) => (
-            <div key={r.yearMonth} className="flex items-center gap-2 text-xs">
-              <span className="w-16 text-gray-500">{formatMonthLabel(r.yearMonth)}</span>
-              {r.status === "pending" && <span className="text-gray-300">待機中</span>}
-              {r.status === "syncing" && <Loader2 size={12} className="animate-spin text-[#C4788A]" />}
-              {r.status === "success" && (
-                <span className="flex items-center gap-1 text-[#6BAB8A]">
-                  <Check size={12} />
-                  完了（キャンペーン{r.campaignCount}件）
-                </span>
-              )}
-              {r.status === "skipped" && <span className="text-gray-400">スキップ（キャンペーン開始前）</span>}
-              {r.status === "error" && (
-                <span className="flex items-center gap-1 text-red-500">
-                  <X size={12} />
-                  {r.message}
-                </span>
+            <div key={r.yearMonth}>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-16 text-gray-500">{formatMonthLabel(r.yearMonth)}</span>
+                {r.status === "pending" && <span className="text-gray-300">待機中</span>}
+                {r.status === "syncing" && <Loader2 size={12} className="animate-spin text-[#C4788A]" />}
+                {r.status === "success" && (
+                  <span className="flex items-center gap-1 text-[#6BAB8A]">
+                    <Check size={12} />
+                    完了（キャンペーン{r.campaignCount}件）
+                  </span>
+                )}
+                {r.status === "skipped" && <span className="text-gray-400">スキップ（キャンペーン開始前）</span>}
+                {r.status === "error" && (
+                  <span className="flex items-center gap-1 text-red-500">
+                    <X size={12} />
+                    {r.message}
+                  </span>
+                )}
+              </div>
+              {r.categoryWarning && (
+                <p className="flex items-start gap-1.5 mt-1 ml-[72px] text-xs text-red-500">
+                  <AlertTriangle size={12} className="shrink-0 mt-0.5" strokeWidth={2} />
+                  {r.categoryWarning}
+                </p>
               )}
             </div>
           ))}

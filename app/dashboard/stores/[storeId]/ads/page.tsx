@@ -11,6 +11,9 @@ import { useStore, useMonthlyMetrics } from "@/lib/growth-db/hooks";
 import { useAdReports } from "@/lib/growth-db/ad-report-hooks";
 import { currentYearMonth, shiftYearMonth } from "@/lib/growth-db/format";
 import { AD_PLATFORM_LABEL, AD_REPORT_CATEGORY_LABEL, AdPlatform, AdReportCategory } from "@/lib/growth-db/ad-report-types";
+import { findCategoryMismatch } from "@/lib/growth-db/ad-report-category-check";
+import { AlertTriangle } from "lucide-react";
+import { formatMonthLabel } from "@/lib/growth-db/format";
 
 const PLATFORMS: AdPlatform[] = ["google", "meta"];
 const CATEGORIES: AdReportCategory[] = ["acquisition", "recruitment"];
@@ -104,6 +107,30 @@ export default function StoreAdsPage({ params }: { params: Promise<{ storeId: st
           </button>
         ))}
       </div>
+
+      {(() => {
+        // この集客/求人タブで同期済みの全月分について、実際のキャンペーン名と
+        // 選んでいる区分が食い違っていないか確認する（FLEUVE等で実際に8ヶ月以上
+        // 気付かれなかった手入力ミスを、この画面で即座に見えるようにする）。
+        const mismatches = adReports
+          .filter((r) => r.platform === platform && r.category === category)
+          .map((r) => ({ yearMonth: r.yearMonth, warning: findCategoryMismatch(r.campaigns, category) }))
+          .filter((m): m is { yearMonth: string; warning: string } => m.warning !== null);
+        if (mismatches.length === 0) return null;
+        return (
+          <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 mb-6">
+            <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" strokeWidth={2} />
+            <div className="text-xs text-red-600 space-y-1">
+              <p className="font-semibold">区分の設定ミスの可能性があります</p>
+              {mismatches.map((m) => (
+                <p key={m.yearMonth}>
+                  {formatMonthLabel(m.yearMonth)}: {m.warning}
+                </p>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <AdReportBulkSyncPanel
         key={`${platform}-${category}`}
