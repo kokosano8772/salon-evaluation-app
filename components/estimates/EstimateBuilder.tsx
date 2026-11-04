@@ -8,7 +8,17 @@ import PresetButtons from "./PresetButtons";
 import SelectedLinesCart from "./SelectedLinesCart";
 import StickyTotalBar from "./StickyTotalBar";
 import StoreOrClientPicker from "./StoreOrClientPicker";
-import { CartLine, CatalogItem, LineItem, LineItemPayload, PriceTier, StoreOption, Template, availableTiers } from "./types";
+import {
+  CartLine,
+  CatalogItem,
+  LineItem,
+  LineItemPayload,
+  PRICE_TIER_DISCOUNT_LABEL,
+  PriceTier,
+  StoreOption,
+  Template,
+  availableTiers,
+} from "./types";
 
 interface EstimateBuilderInitial {
   title: string;
@@ -44,6 +54,8 @@ function buildInitialCart(lineItems: LineItem[] | undefined): Map<string, CartLi
       unit: li.unit,
       unitPrice: li.unitPrice,
       procurementCost: li.procurementCost,
+      discount: li.discountAmount,
+      discountLabel: li.discountLabel,
       quantity: li.quantity,
     });
   });
@@ -100,6 +112,8 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
         unit: item.unit,
         unitPrice: tierInfo.unitPrice,
         procurementCost: existing?.procurementCost ?? 0,
+        discount: tierInfo.discount,
+        discountLabel: PRICE_TIER_DISCOUNT_LABEL[tierInfo.tier],
         quantity: (existing?.quantity ?? 0) + quantity,
       });
       return next;
@@ -153,6 +167,8 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
           unit: item.unit,
           unitPrice: item.unitPrice,
           procurementCost: 0,
+          discount: 0,
+          discountLabel: "",
           quantity: item.defaultQuantity,
         });
       }
@@ -208,6 +224,8 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
               unitPrice: line.unitPrice,
               quantity: line.quantity,
               procurementCost: line.procurementCost,
+              discountAmount: line.discount,
+              discountLabel: line.discountLabel,
             }
       );
       const body = {

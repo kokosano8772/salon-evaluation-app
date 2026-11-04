@@ -6,6 +6,15 @@ export const PRICE_TIER_LABEL: Record<PriceTier, string> = {
   hp_managed: "HP管理企業様",
 };
 
+// 見積もり上で割引行として表示する際のラベル（lib/estimates/resolve-line-items.tsの
+// TIER_DISCOUNT_LABELと同じ文言。サーバー側はservice_roleを扱う別モジュールのため
+// クライアントからは直接importできず、ここに複製している）。
+export const PRICE_TIER_DISCOUNT_LABEL: Record<PriceTier, string> = {
+  standard: "",
+  line_registered: "公式ライン登録特別値引き",
+  hp_managed: "HP管理企業様特別値引き",
+};
+
 export interface CatalogItem {
   id: string;
   category: string;
@@ -51,6 +60,10 @@ export interface CartLine {
   // 仕入れ料金（印刷費など）。デザイン・作業料金とは別に、数量に比例せず定額で
   // 加算される実費。価格表には無いため、明細ごとに手入力する。
   procurementCost: number;
+  // 表示用。unitPriceは既に割引後の単価なので、割引前の単価は
+  // unitPrice+discount。amountの計算には使わない（unitPriceが既に割引後のため）。
+  discount: number;
+  discountLabel: string;
   quantity: number;
 }
 
@@ -83,6 +96,8 @@ export interface LineItem {
   unit: string;
   unitPrice: number;
   procurementCost: number;
+  discountAmount: number;
+  discountLabel: string;
   quantity: number;
   amount: number;
   sortOrder: number;
@@ -109,6 +124,8 @@ export interface LineItemPayload {
   unitPrice?: number;
   quantity: number;
   procurementCost?: number;
+  discountAmount?: number;
+  discountLabel?: string;
 }
 
 export interface EstimateHeader {

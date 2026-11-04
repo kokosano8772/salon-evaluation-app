@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { EstimateHeader, LineItem, groupByCategory } from "./types";
 
 interface EstimatePrintDocumentProps {
@@ -61,26 +62,42 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                 </tr>
               </thead>
               <tbody>
-                {group.items.map((item, i) => (
-                  <tr key={i} style={{ borderBottom: i < group.items.length - 1 ? "1px solid #f9fafb" : "none" }}>
-                    <td style={{ padding: "10px 18px", fontSize: 12, color: "#1a1a1a" }}>
-                      {item.name}
-                      {item.description && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{item.description}</div>}
-                      {item.procurementCost > 0 && (
-                        <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>仕入れ料金 {yen(item.procurementCost)}</div>
+                {group.items.map((item, i) => {
+                  const undiscountedUnitPrice = item.unitPrice + item.discountAmount;
+                  const isLast = i === group.items.length - 1 && item.discountAmount <= 0;
+                  return (
+                    <Fragment key={i}>
+                      <tr style={{ borderBottom: isLast ? "none" : "1px solid #f9fafb" }}>
+                        <td style={{ padding: "10px 18px", fontSize: 12, color: "#1a1a1a" }}>
+                          {item.name}
+                          {item.description && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{item.description}</div>}
+                          {item.procurementCost > 0 && (
+                            <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>仕入れ料金 {yen(item.procurementCost)}</div>
+                          )}
+                        </td>
+                        <td style={{ padding: "10px 12px", fontSize: 12, color: "#4b5563", textAlign: "right", whiteSpace: "nowrap" }}>
+                          {item.quantity} {item.unit}
+                        </td>
+                        <td style={{ padding: "10px 12px", fontSize: 12, color: "#4b5563", textAlign: "right", whiteSpace: "nowrap" }}>
+                          {yen(undiscountedUnitPrice)}
+                        </td>
+                        <td style={{ padding: "10px 18px", fontSize: 12, fontWeight: 600, color: "#1a1a1a", textAlign: "right", whiteSpace: "nowrap" }}>
+                          {yen(undiscountedUnitPrice * item.quantity)}
+                        </td>
+                      </tr>
+                      {item.discountAmount > 0 && (
+                        <tr style={{ borderBottom: i < group.items.length - 1 ? "1px solid #f9fafb" : "none" }}>
+                          <td colSpan={3} style={{ padding: "6px 18px", fontSize: 12, color: "#dc2626" }}>
+                            {item.discountLabel}
+                          </td>
+                          <td style={{ padding: "6px 18px", fontSize: 12, fontWeight: 600, color: "#dc2626", textAlign: "right", whiteSpace: "nowrap" }}>
+                            -{yen(item.discountAmount * item.quantity)}
+                          </td>
+                        </tr>
                       )}
-                    </td>
-                    <td style={{ padding: "10px 12px", fontSize: 12, color: "#4b5563", textAlign: "right", whiteSpace: "nowrap" }}>
-                      {item.quantity} {item.unit}
-                    </td>
-                    <td style={{ padding: "10px 12px", fontSize: 12, color: "#4b5563", textAlign: "right", whiteSpace: "nowrap" }}>
-                      {yen(item.unitPrice)}
-                    </td>
-                    <td style={{ padding: "10px 18px", fontSize: 12, fontWeight: 600, color: "#1a1a1a", textAlign: "right", whiteSpace: "nowrap" }}>
-                      {yen(item.amount)}
-                    </td>
-                  </tr>
-                ))}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

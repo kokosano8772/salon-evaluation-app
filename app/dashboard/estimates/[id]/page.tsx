@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { Fragment, use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Download, Pencil, Trash2 } from "lucide-react";
@@ -215,24 +215,41 @@ export default function EstimateDetailPage({ params }: { params: Promise<{ id: s
             </div>
             <table className="w-full">
               <tbody>
-                {group.items.map((item, i) => (
-                  <tr key={item.id ?? i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
-                    <td className="px-5 py-3 text-sm text-charcoal-900">
-                      {item.name}
-                      {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
-                      {item.procurementCost > 0 && (
-                        <p className="text-xs text-gray-400 mt-0.5">仕入れ料金 {formatYen(item.procurementCost)}</p>
+                {group.items.map((item, i) => {
+                  const undiscountedUnitPrice = item.unitPrice + item.discountAmount;
+                  return (
+                    <Fragment key={item.id ?? i}>
+                      <tr className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                        <td className="px-5 py-3 text-sm text-charcoal-900">
+                          {item.name}
+                          {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
+                          {item.procurementCost > 0 && (
+                            <p className="text-xs text-gray-400 mt-0.5">仕入れ料金 {formatYen(item.procurementCost)}</p>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-500 text-right whitespace-nowrap">
+                          {item.quantity} {item.unit}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-500 text-right whitespace-nowrap">
+                          {formatYen(undiscountedUnitPrice)}
+                        </td>
+                        <td className="px-5 py-3 text-sm font-semibold text-charcoal-900 text-right whitespace-nowrap">
+                          {formatYen(undiscountedUnitPrice * item.quantity)}
+                        </td>
+                      </tr>
+                      {item.discountAmount > 0 && (
+                        <tr className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                          <td className="px-5 py-2 text-sm text-red-500" colSpan={3}>
+                            {item.discountLabel}
+                          </td>
+                          <td className="px-5 py-2 text-sm font-semibold text-red-500 text-right whitespace-nowrap">
+                            -{formatYen(item.discountAmount * item.quantity)}
+                          </td>
+                        </tr>
                       )}
-                    </td>
-                    <td className="px-3 py-3 text-sm text-gray-500 text-right whitespace-nowrap">
-                      {item.quantity} {item.unit}
-                    </td>
-                    <td className="px-3 py-3 text-sm text-gray-500 text-right whitespace-nowrap">{formatYen(item.unitPrice)}</td>
-                    <td className="px-5 py-3 text-sm font-semibold text-charcoal-900 text-right whitespace-nowrap">
-                      {formatYen(item.amount)}
-                    </td>
-                  </tr>
-                ))}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -62,6 +62,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       unit: li.unit,
       unitPrice: li.unit_price,
       procurementCost: li.procurement_cost,
+      discountAmount: li.discount_amount,
+      discountLabel: li.discount_label,
       quantity: li.quantity,
       amount: li.amount,
       sortOrder: li.sort_order,

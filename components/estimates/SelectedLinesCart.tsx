@@ -33,8 +33,13 @@ export default function SelectedLinesCart({ lines, onRemove, onQuantityChange, o
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-charcoal-900">{line.name}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      デザイン料金 {formatYen(line.unitPrice)} / {line.unit}
+                      デザイン料金 {formatYen(line.unitPrice + line.discount)} / {line.unit}
                     </p>
+                    {line.discount > 0 && (
+                      <p className="text-xs text-red-500 mt-0.5">
+                        {line.discountLabel} -{formatYen(line.discount * line.quantity)}
+                      </p>
+                    )}
                   </div>
                   <input
                     type="number"

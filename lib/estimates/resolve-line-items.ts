@@ -2,6 +2,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type PriceTier = "standard" | "line_registered" | "hp_managed";
 
+const TIER_DISCOUNT_LABEL: Record<PriceTier, string> = {
+  standard: "",
+  line_registered: "公式ライン登録特別値引き",
+  hp_managed: "HP管理企業様特別値引き",
+};
+
 export interface LineItemInput {
   catalogItemId?: string | null;
   // catalogItemId付きの行で、3段階料金のうちどれを使うか（省略時はstandard）。
@@ -23,6 +29,13 @@ export interface LineItemInput {
   // 案件ごとに業者見積もりを取って手入力する性質のものなので、価格表には持たせず
   // 明細ごとに自由入力させる。数量に比例させず定額のまま加算する。
   procurementCost?: number;
+  // 表示用の割引額・割引ラベル（keepSnapshot時のみクライアント値を使う。
+  // catalogItemId＋priceTier解決時はサーバー側で価格表から計算し直す）。
+  // unit_priceは常に「選んだ料金区分での単価＝割引後の値」のままで、
+  // discountAmountは「割引前の単価はunitPrice+discountAmountだった」ことを
+  // 表示側で再現するための付随情報（amountの計算には使わない）。
+  discountAmount?: number;
+  discountLabel?: string;
 }
 
 export interface ResolvedLineItem {
@@ -33,22 +46,32 @@ export interface ResolvedLineItem {
   unit: string;
   unit_price: number;
   procurement_cost: number;
+  discount_amount: number;
+  discount_label: string;
   quantity: number;
   amount: number;
   sort_order: number;
 }
 
-function pickTierPrice(
+function pickTier(
   catalogItem: { unit_price: number; unit_price_line_registered: number | null; unit_price_hp_managed: number | null },
   tier: PriceTier | undefined
-): number {
+): { unitPrice: number; discountAmount: number; discountLabel: string } {
   if (tier === "line_registered" && catalogItem.unit_price_line_registered !== null) {
-    return catalogItem.unit_price_line_registered;
+    return {
+      unitPrice: catalogItem.unit_price_line_registered,
+      discountAmount: catalogItem.unit_price - catalogItem.unit_price_line_registered,
+      discountLabel: TIER_DISCOUNT_LABEL.line_registered,
+    };
   }
   if (tier === "hp_managed" && catalogItem.unit_price_hp_managed !== null) {
-    return catalogItem.unit_price_hp_managed;
+    return {
+      unitPrice: catalogItem.unit_price_hp_managed,
+      discountAmount: catalogItem.unit_price - catalogItem.unit_price_hp_managed,
+      discountLabel: TIER_DISCOUNT_LABEL.hp_managed,
+    };
   }
-  return catalogItem.unit_price;
+  return { unitPrice: catalogItem.unit_price, discountAmount: 0, discountLabel: "" };
 }
 
 function resolveProcurementCost(input: LineItemInput): number {
@@ -57,12 +80,11 @@ function resolveProcurementCost(input: LineItemInput): number {
 
 // 見積もり明細の「スナップショット化」を行う。catalogItemId付きかつkeepSnapshotでない行は、
 // クライアントが送ってきた名称・単価を一切信用せず、ここでestimate_catalog_itemsを
-// 再取得してサーバー側の値（priceTierで指定した区分の単価）をそのまま使う
-// （価格の改ざん・古い表示からの不整合を防ぐため）。catalogItemIdが無い行（自由入力行）、
+// 再取得してサーバー側の値（priceTierで指定した区分の単価・割引額）をそのまま使う
+// （価格の改ざん・古い表示との不整合を防ぐため）。catalogItemIdが無い行（自由入力行）、
 // またはkeepSnapshot指定の行（編集時に触っていない既存明細をそのまま維持する場合）は
 // クライアント値をそのまま使う。仕入れ料金（procurementCost）は価格表に存在しない
-// 手入力値のため、どのケースでもクライアント値をそのまま信用する（数量×単価のような
-// 価格表由来の改ざん防止対象ではないため）。
+// 手入力値のため、どのケースでもクライアント値をそのまま信用する。
 export async function resolveLineItems(
   admin: ReturnType<typeof createAdminClient>,
   inputs: LineItemInput[]
@@ -103,6 +125,8 @@ export async function resolveLineItems(
         unit: input.unit?.trim() || "式",
         unit_price: unitPrice,
         procurement_cost: procurementCost,
+        discount_amount: Number.isFinite(input.discountAmount) && input.discountAmount! > 0 ? Math.round(input.discountAmount!) : 0,
+        discount_label: input.discountLabel?.trim() ?? "",
         quantity,
         amount: unitPrice * quantity + procurementCost,
         sort_order: i,
@@ -112,7 +136,7 @@ export async function resolveLineItems(
       if (!catalogItem) {
         return { ok: false, error: "存在しない価格表項目が指定されました" };
       }
-      const unitPrice = pickTierPrice(catalogItem, input.priceTier);
+      const { unitPrice, discountAmount, discountLabel } = pickTier(catalogItem, input.priceTier);
       resolved = {
         catalog_item_id: catalogItem.id,
         category: catalogItem.category,
@@ -121,6 +145,8 @@ export async function resolveLineItems(
         unit: catalogItem.unit,
         unit_price: unitPrice,
         procurement_cost: procurementCost,
+        discount_amount: discountAmount,
+        discount_label: discountLabel,
         quantity,
         amount: unitPrice * quantity + procurementCost,
         sort_order: i,
@@ -138,6 +164,8 @@ export async function resolveLineItems(
         unit: input.unit?.trim() || "式",
         unit_price: unitPrice,
         procurement_cost: procurementCost,
+        discount_amount: 0,
+        discount_label: "",
         quantity,
         amount: unitPrice * quantity + procurementCost,
         sort_order: i,
