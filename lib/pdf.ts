@@ -63,13 +63,20 @@ export async function exportResultToPDF(
   let renderedPx = 0;
   let pageIndex = 0;
   while (renderedPx < canvas.height) {
-    const maxSliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+    const remainingPx = canvas.height - renderedPx;
+    // 残り全部が1ページに収まる場合（最後のスライス）は、ページ高さによる強制的な
+    // 改ページが発生していないので、セクション境界で手前に切る必要が無い。これを
+    // 区別せずに常にsafeCutを探すと、残りがどれだけ短くても「内部にセクション境界が
+    // あるから」という理由だけで手前で切ってしまい、何も入っていない（あるいは
+    // ほとんど入っていない）ページが最後に追加されてしまう不具合があった。
+    const isConstrainedByPageHeight = remainingPx > pageHeightPx;
+    const maxSliceHeightPx = Math.min(pageHeightPx, remainingPx);
     const idealCut = renderedPx + maxSliceHeightPx;
     // このページに収まる範囲で一番下にあるセクション境界を探し、そこで改ページする。
     // 1セクションが1ページより大きい場合は境界が見つからないので、従来通り固定高さで切る。
-    const safeCut = sectionBoundaries
-      .filter((y) => y > renderedPx && y <= idealCut)
-      .pop();
+    const safeCut = isConstrainedByPageHeight
+      ? sectionBoundaries.filter((y) => y > renderedPx && y <= idealCut).pop()
+      : undefined;
     const sliceHeightPx = (safeCut ?? idealCut) - renderedPx;
     sliceCanvas.height = sliceHeightPx;
     ctx.clearRect(0, 0, sliceCanvas.width, sliceHeightPx);

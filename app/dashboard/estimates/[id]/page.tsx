@@ -308,7 +308,7 @@ export default function EstimateDetailPage({ params }: { params: Promise<{ id: s
 
       {/* PDF保存専用の静止レイアウト。常にDOM上に置き、見た目には表示しない
           （app/(diagnosis)/result/page.tsxと同じ方式）。 */}
-      <div style={{ position: "absolute", top: 0, left: -9999, width: 600, height: 0, overflow: "hidden" }} aria-hidden="true">
+      <div style={{ position: "absolute", top: 0, left: -9999, width: 640, height: 0, overflow: "hidden" }} aria-hidden="true">
         <div ref={printRef}>
           <EstimatePrintDocument estimate={estimate} clientLabel={clientLabel || "お客様"} lineItems={lineItems} />
         </div>

@@ -47,14 +47,16 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
           <p style={{ fontSize: 12, color: "#4b5563" }}>見積日：{issuedDateLabel}</p>
         </div>
 
-        {/* 件名等（左）・自社情報（右） */}
+        {/* 件名等（左）・自社情報（右）。件名が長い場合でも右側の会社情報が画面外に
+            はみ出さないよう、両側ともwhiteSpace:nowrapにせず折り返し可能にし、
+            minWidth:0でflexアイテムが縮められるようにしている。 */}
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, gap: 24 }}>
-          <div style={{ fontSize: 12.5, lineHeight: 2 }}>
+          <div style={{ fontSize: 12.5, lineHeight: 2, minWidth: 0, flex: "1 1 auto" }}>
             <p>下記のとおり、御見積り申し上げます。</p>
             <p>件名：{estimate.title}</p>
             {productionDateLabel && <p>制作日：{productionDateLabel}</p>}
           </div>
-          <div style={{ fontSize: 11.5, color: "#4b5563", lineHeight: 1.8, textAlign: "right", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 11.5, color: "#4b5563", lineHeight: 1.8, textAlign: "right", minWidth: 0, flexShrink: 0 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: INK }}>株式会社　ココデザイン</p>
             <p>〒460-0012</p>
             <p>愛知県名古屋市中区千代田3丁目11-32 5F</p>
