@@ -24,17 +24,18 @@ export interface LineItemInput {
   unit?: string;
   description?: string;
   category?: string;
+  // 数量は表記（見積書に「100枚」「4回」等と載せるための情報）のみで、金額計算には
+  // 一切使わない。単価・割引・仕入れ料金はいずれも明細1行につき定額で、数量を
+  // 掛けたり按分したりしない。
   quantity: number;
   // 仕入れ料金（印刷費など）。価格表の単価はデザイン・作業料金のみで、実際の仕入れは
   // 案件ごとに業者見積もりを取って手入力する性質のものなので、価格表には持たせず
-  // 明細ごとに自由入力させる。数量に比例させず定額のまま加算する。
+  // 明細ごとに自由入力させる。
   procurementCost?: number;
   // 割引額・割引ラベル（keepSnapshot時のみクライアント値を使う。catalogItemId＋
   // priceTier解決時はサーバー側で価格表から計算し直す）。unit_priceは常に
-  // 「基本作業料＝割引前の単価」のまま（数量に比例させる対象）。discountAmountは
-  // 数量に関係なく明細1行につき定額で1回だけ差し引く割引（例: 特別値引きは
-  // 2個注文しても2倍にはならない）。amount = unit_price×quantity - discountAmount
-  // + procurementCost。
+  // 「基本作業料＝割引前の単価」のまま。amount = unit_price - discountAmount
+  // + procurementCost（数量は計算に使わない）。
   discountAmount?: number;
   discountLabel?: string;
 }
@@ -54,10 +55,8 @@ export interface ResolvedLineItem {
   sort_order: number;
 }
 
-// unitPriceは常に基本作業料（割引前）を返す。割引額は数量に関係なく定額で
-// 1回だけ差し引くものとして別に返す（呼び出し側でunitPrice×quantity - discountAmount
-// とする。unitPrice自体を割引後の値にしてquantityを掛けると、数量が2以上のときに
-// 割引まで一緒に数量倍されてしまうため）。
+// unitPriceは常に基本作業料（割引前）を返す。割引額は定額で1回だけ差し引くものとして
+// 別に返す（呼び出し側でunitPrice - discountAmountとする。数量は計算に使わない）。
 function pickTier(
   catalogItem: { unit_price: number; unit_price_line_registered: number | null; unit_price_hp_managed: number | null },
   tier: PriceTier | undefined
@@ -134,7 +133,7 @@ export async function resolveLineItems(
         discount_amount: discountAmount,
         discount_label: input.discountLabel?.trim() ?? "",
         quantity,
-        amount: unitPrice * quantity - discountAmount + procurementCost,
+        amount: unitPrice - discountAmount + procurementCost,
         sort_order: i,
       };
     } else if (input.catalogItemId) {
@@ -154,7 +153,7 @@ export async function resolveLineItems(
         discount_amount: discountAmount,
         discount_label: discountLabel,
         quantity,
-        amount: unitPrice * quantity - discountAmount + procurementCost,
+        amount: unitPrice - discountAmount + procurementCost,
         sort_order: i,
       };
     } else {
@@ -173,7 +172,7 @@ export async function resolveLineItems(
         discount_amount: 0,
         discount_label: "",
         quantity,
-        amount: unitPrice * quantity + procurementCost,
+        amount: unitPrice + procurementCost,
         sort_order: i,
       };
     }

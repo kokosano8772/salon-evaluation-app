@@ -49,7 +49,7 @@ export default function SelectedLinesCart({ lines, onRemove, onQuantityChange, o
                     className="w-16 px-2 py-1 rounded-lg border border-gray-200 text-sm text-right outline-none focus:border-[#C4788A] shrink-0"
                   />
                   <p className="text-sm font-semibold text-charcoal-900 w-24 text-right shrink-0">
-                    {formatYen(line.unitPrice * line.quantity - line.discount + line.procurementCost)}
+                    {formatYen(line.unitPrice - line.discount + line.procurementCost)}
                   </p>
                   <button
                     onClick={() => onRemove(line.key)}

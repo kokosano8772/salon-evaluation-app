@@ -81,7 +81,7 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                           {yen(item.unitPrice)}
                         </td>
                         <td style={{ padding: "10px 18px", fontSize: 12, fontWeight: 600, color: "#1a1a1a", textAlign: "right", whiteSpace: "nowrap" }}>
-                          {yen(item.unitPrice * item.quantity)}
+                          {yen(item.unitPrice)}
                         </td>
                       </tr>
                       {item.discountAmount > 0 && (

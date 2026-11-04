@@ -230,7 +230,7 @@ export default function EstimateDetailPage({ params }: { params: Promise<{ id: s
                       </td>
                       <td className="px-3 py-3 text-sm text-gray-500 text-right whitespace-nowrap">{formatYen(item.unitPrice)}</td>
                       <td className="px-5 py-3 text-sm font-semibold text-charcoal-900 text-right whitespace-nowrap">
-                        {formatYen(item.unitPrice * item.quantity)}
+                        {formatYen(item.unitPrice)}
                       </td>
                     </tr>
                     {item.discountAmount > 0 && (

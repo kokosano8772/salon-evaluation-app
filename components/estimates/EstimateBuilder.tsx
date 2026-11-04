@@ -181,7 +181,8 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
   const { subtotal, taxAmount, total } = useMemo(() => {
     let sum = 0;
     cart.forEach((line) => {
-      sum += line.unitPrice * line.quantity - line.discount + line.procurementCost;
+      // 数量は表記のみで金額計算には使わない（単価・割引・仕入れ料金は数量に関わらず定額）。
+      sum += line.unitPrice - line.discount + line.procurementCost;
     });
     const tax = Math.round(sum * taxRate);
     return { subtotal: sum, taxAmount: tax, total: sum + tax };
