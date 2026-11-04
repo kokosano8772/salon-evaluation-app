@@ -30,6 +30,7 @@ export async function GET(request: Request) {
     unitPrice: row.unit_price,
     unitPriceLineRegistered: row.unit_price_line_registered,
     unitPriceHpManaged: row.unit_price_hp_managed,
+    orderType: row.order_type,
     sortOrder: row.sort_order,
     isActive: row.is_active,
   }));
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
     unitPrice?: number;
     unitPriceLineRegistered?: number | null;
     unitPriceHpManaged?: number | null;
+    orderType?: "first_time" | "revision" | "resubmission" | null;
     sortOrder?: number;
   };
   try {
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
       unit_price: Number.isFinite(body.unitPrice) ? Math.round(body.unitPrice!) : 0,
       unit_price_line_registered: Number.isFinite(body.unitPriceLineRegistered) ? Math.round(body.unitPriceLineRegistered!) : null,
       unit_price_hp_managed: Number.isFinite(body.unitPriceHpManaged) ? Math.round(body.unitPriceHpManaged!) : null,
+      order_type: body.orderType ?? null,
       sort_order: Number.isFinite(body.sortOrder) ? body.sortOrder! : 0,
       created_by: user.email ?? user.id,
     })

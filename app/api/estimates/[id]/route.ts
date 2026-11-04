@@ -48,7 +48,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       taxAmount: estimate.tax_amount,
       total: estimate.total,
       notes: estimate.notes,
-      validUntil: estimate.valid_until,
+      productionDate: estimate.production_date,
       createdAt: estimate.created_at,
       updatedAt: estimate.updated_at,
     },
@@ -89,7 +89,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     title?: string;
     status?: string;
     notes?: string;
-    validUntil?: string | null;
+    productionDate?: string | null;
     taxRate?: number;
     lineItems?: LineItemInput[];
   };
@@ -122,7 +122,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     update.status = body.status as (typeof allowedStatuses)[number];
   }
   if (body.notes !== undefined) update.notes = body.notes;
-  if (body.validUntil !== undefined) update.valid_until = body.validUntil;
+  if (body.productionDate !== undefined) update.production_date = body.productionDate;
 
   const taxRate = Number.isFinite(body.taxRate) ? body.taxRate! : current.tax_rate;
 

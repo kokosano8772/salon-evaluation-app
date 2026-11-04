@@ -22,8 +22,8 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
     month: "long",
     day: "numeric",
   });
-  const validUntilLabel = estimate.validUntil
-    ? new Date(estimate.validUntil).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })
+  const productionDateLabel = estimate.productionDate
+    ? new Date(estimate.productionDate).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })
     : null;
 
   return (
@@ -39,7 +39,7 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
           <p style={{ fontSize: 16, fontWeight: 700, color: "#1a1a1a" }}>{clientLabel} 御中</p>
           <div style={{ textAlign: "right" }}>
             <p style={{ fontSize: 11, color: "#6b7280" }}>発行日: {issuedDateLabel}</p>
-            {validUntilLabel && <p style={{ fontSize: 11, color: "#6b7280" }}>有効期限: {validUntilLabel}</p>}
+            {productionDateLabel && <p style={{ fontSize: 11, color: "#6b7280" }}>制作日: {productionDateLabel}</p>}
           </div>
         </div>
         <p style={{ fontSize: 13, color: "#4b5563", marginTop: 12 }}>件名: {estimate.title}</p>

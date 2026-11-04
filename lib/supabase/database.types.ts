@@ -347,6 +347,7 @@ export interface Database {
           unit_price: number;
           unit_price_line_registered: number | null;
           unit_price_hp_managed: number | null;
+          order_type: "first_time" | "revision" | "resubmission" | null;
           sort_order: number;
           is_active: boolean;
           created_by: string | null;
@@ -405,7 +406,7 @@ export interface Database {
           tax_amount: number;
           total: number;
           notes: string;
-          valid_until: string | null;
+          production_date: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;

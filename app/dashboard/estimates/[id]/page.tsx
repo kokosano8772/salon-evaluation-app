@@ -130,7 +130,7 @@ export default function EstimateDetailPage({ params }: { params: Promise<{ id: s
           initial={{
             title: estimate.title,
             notes: estimate.notes,
-            validUntil: estimate.validUntil,
+            productionDate: estimate.productionDate,
             taxRate: estimate.taxRate,
             storeId: estimate.storeId,
             clientName: estimate.clientName,
@@ -200,10 +200,10 @@ export default function EstimateDetailPage({ params }: { params: Promise<{ id: s
               <p className="text-sm text-charcoal-700">{estimate.clientContact}</p>
             </div>
           )}
-          {estimate.validUntil && (
+          {estimate.productionDate && (
             <div>
-              <p className="text-[11px] text-gray-400">見積有効期限</p>
-              <p className="text-sm text-charcoal-700">{estimate.validUntil}</p>
+              <p className="text-[11px] text-gray-400">制作日</p>
+              <p className="text-sm text-charcoal-700">{estimate.productionDate}</p>
             </div>
           )}
         </div>

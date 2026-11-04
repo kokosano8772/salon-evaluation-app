@@ -23,7 +23,7 @@ import {
 interface EstimateBuilderInitial {
   title: string;
   notes: string;
-  validUntil: string | null;
+  productionDate: string | null;
   taxRate: number;
   storeId: string | null;
   clientName: string;
@@ -78,7 +78,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
   const [clientContact, setClientContact] = useState(initial?.clientContact ?? "");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
-  const [validUntil, setValidUntil] = useState(initial?.validUntil ?? "");
+  const [productionDate, setProductionDate] = useState(initial?.productionDate ?? "");
   const [taxRate] = useState(initial?.taxRate ?? 0.1);
 
   useEffect(() => {
@@ -234,7 +234,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
         clientContact,
         title,
         notes,
-        validUntil: validUntil || null,
+        productionDate: productionDate || null,
         taxRate,
         lineItems,
       };
@@ -283,11 +283,11 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">見積有効期限（任意）</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">制作日（任意）</label>
           <input
             type="date"
-            value={validUntil}
-            onChange={(e) => setValidUntil(e.target.value)}
+            value={productionDate}
+            onChange={(e) => setProductionDate(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
           />
         </div>

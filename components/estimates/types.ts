@@ -15,6 +15,14 @@ export const PRICE_TIER_DISCOUNT_LABEL: Record<PriceTier, string> = {
   hp_managed: "HP管理企業様特別値引き",
 };
 
+export type OrderType = "first_time" | "revision" | "resubmission";
+
+export const ORDER_TYPE_LABEL: Record<OrderType, string> = {
+  first_time: "初回",
+  revision: "一部修正",
+  resubmission: "再入稿・リピート",
+};
+
 export interface CatalogItem {
   id: string;
   category: string;
@@ -25,6 +33,9 @@ export interface CatalogItem {
   unitPrice: number;
   unitPriceLineRegistered: number | null;
   unitPriceHpManaged: number | null;
+  // 初回／一部修正／再入稿・リピートの区分。区分の無い項目（WEB制作のオプション・
+  // 月額プラン等）はnull。
+  orderType: OrderType | null;
   sortOrder: number;
   isActive: boolean;
 }
@@ -141,7 +152,7 @@ export interface EstimateHeader {
   taxAmount: number;
   total: number;
   notes: string;
-  validUntil: string | null;
+  productionDate: string | null;
   createdAt: string;
   updatedAt: string;
 }

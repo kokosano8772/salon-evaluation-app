@@ -1,11 +1,14 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, Plus, Search } from "lucide-react";
-import { CatalogItem, PriceTier, PRICE_TIER_LABEL, availableTiers, formatYen, groupByCategory } from "./types";
+import { Plus, Search } from "lucide-react";
+import { CatalogItem, ORDER_TYPE_LABEL, OrderType, PriceTier, PRICE_TIER_LABEL, availableTiers, formatYen, groupByCategory } from "./types";
 
 interface CatalogChecklistProps {
   catalogItems: CatalogItem[];
   onAdd: (item: CatalogItem, tier: PriceTier, quantity: number) => void;
 }
+
+const NO_ORDER_TYPE = "none" as const;
+type OrderTypeFilterValue = OrderType | typeof NO_ORDER_TYPE;
 
 function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogItem, tier: PriceTier, quantity: number) => void }) {
   const tiers = useMemo(() => availableTiers(item), [item]);
@@ -14,9 +17,17 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
 
   return (
     <div className={`px-4 py-3 ${!item.isActive ? "opacity-50" : ""}`}>
-      <p className="text-sm font-medium text-charcoal-900 flex items-center gap-1.5">
+      <p className="text-sm font-medium text-charcoal-900 flex items-center gap-1.5 flex-wrap">
         {item.name}
+        {item.orderType && (
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#C4788A14] text-[#A85E74]">
+            {ORDER_TYPE_LABEL[item.orderType]}
+          </span>
+        )}
         {!item.isActive && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-400">非公開</span>}
+      </p>
+      <p className="text-xs text-gray-400 mt-0.5">
+        {item.category} ／ {item.subcategory || "その他"}
       </p>
       {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
 
@@ -60,22 +71,48 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
 
 export default function CatalogChecklist({ catalogItems, onAdd }: CatalogChecklistProps) {
   const [search, setSearch] = useState("");
-  const [openCategory, setOpenCategory] = useState<string | null>(null);
-  const [openSubcategory, setOpenSubcategory] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<Set<string>>(new Set());
+  const [orderTypeFilter, setOrderTypeFilter] = useState<Set<OrderTypeFilterValue>>(new Set());
 
-  const categoryGroups = useMemo(() => groupByCategory(catalogItems), [catalogItems]);
+  const categories = useMemo(() => Array.from(new Set(catalogItems.map((i) => i.category))), [catalogItems]);
 
-  const searchResults = useMemo(() => {
-    if (!search.trim()) return null;
+  const toggleCategory = (category: string) => {
+    setCategoryFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  };
+
+  const toggleOrderType = (value: OrderTypeFilterValue) => {
+    setOrderTypeFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  };
+
+  const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return catalogItems.filter(
-      (i) =>
-        i.name.toLowerCase().includes(q) ||
-        i.description.toLowerCase().includes(q) ||
-        i.category.toLowerCase().includes(q) ||
-        i.subcategory.toLowerCase().includes(q)
-    );
-  }, [catalogItems, search]);
+    return catalogItems.filter((item) => {
+      if (categoryFilter.size > 0 && !categoryFilter.has(item.category)) return false;
+      if (orderTypeFilter.size > 0) {
+        const value: OrderTypeFilterValue = item.orderType ?? NO_ORDER_TYPE;
+        if (!orderTypeFilter.has(value)) return false;
+      }
+      if (!q) return true;
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q) ||
+        item.subcategory.toLowerCase().includes(q)
+      );
+    });
+  }, [catalogItems, search, categoryFilter, orderTypeFilter]);
+
+  const groups = useMemo(() => groupByCategory(filteredItems), [filteredItems]);
 
   if (catalogItems.length === 0) {
     return (
@@ -86,84 +123,93 @@ export default function CatalogChecklist({ catalogItems, onAdd }: CatalogCheckli
   }
 
   return (
-    <div className="card-luxury overflow-hidden">
-      <div className="p-4 border-b border-gray-100">
+    <div className="space-y-3">
+      <div className="card-luxury p-4 space-y-3">
         <div className="relative">
           <Search size={14} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="項目名で検索、または下のカテゴリから選ぶ"
+            placeholder="項目名・カテゴリで検索（例: 名刺 両面 シンプル）"
             className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
           />
         </div>
+
+        <div>
+          <p className="text-[11px] text-gray-400 mb-1.5">今回は？</p>
+          <div className="flex flex-wrap gap-1.5">
+            {(
+              [
+                ["first_time", ORDER_TYPE_LABEL.first_time],
+                ["revision", ORDER_TYPE_LABEL.revision],
+                ["resubmission", ORDER_TYPE_LABEL.resubmission],
+                [NO_ORDER_TYPE, "区分なし（オプション等）"],
+              ] as [OrderTypeFilterValue, string][]
+            ).map(([value, label]) => {
+              const active = orderTypeFilter.has(value);
+              return (
+                <button
+                  key={value}
+                  onClick={() => toggleOrderType(value)}
+                  className="text-xs font-medium px-3 py-1.5 rounded-full border transition-colors"
+                  style={
+                    active
+                      ? { backgroundColor: "#C4788A14", color: "#A85E74", borderColor: "#C4788A55" }
+                      : { backgroundColor: "white", color: "#6b7280", borderColor: "#e5e7eb" }
+                  }
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] text-gray-400 mb-1.5">分類</p>
+          <div className="flex flex-wrap gap-1.5">
+            {categories.map((category) => {
+              const active = categoryFilter.has(category);
+              return (
+                <button
+                  key={category}
+                  onClick={() => toggleCategory(category)}
+                  className="text-xs font-medium px-3 py-1.5 rounded-full border transition-colors"
+                  style={
+                    active
+                      ? { backgroundColor: "#C4788A14", color: "#A85E74", borderColor: "#C4788A55" }
+                      : { backgroundColor: "white", color: "#6b7280", borderColor: "#e5e7eb" }
+                  }
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {searchResults ? (
-        <div className="divide-y divide-gray-50">
-          {searchResults.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">該当する項目がありません</p>
-          ) : (
-            searchResults.map((item) => <ItemPicker key={item.id} item={item} onAdd={onAdd} />)
-          )}
-        </div>
-      ) : (
-        <div className="divide-y divide-gray-50">
-          {categoryGroups.map((catGroup) => {
-            const isCatOpen = openCategory === catGroup.category;
-            const subGroups = groupByCategory(
-              catGroup.items.map((i) => ({ ...i, category: i.subcategory || "その他" }))
-            );
-            return (
-              <div key={catGroup.category}>
-                <button
-                  onClick={() => {
-                    setOpenCategory(isCatOpen ? null : catGroup.category);
-                    setOpenSubcategory(null);
-                  }}
-                  className="w-full flex items-center justify-between gap-2 px-4 py-3.5 hover:bg-gray-50"
-                >
-                  <span className="text-sm font-semibold text-charcoal-900">{catGroup.category}</span>
-                  <span className="flex items-center gap-2 text-xs text-gray-400">
-                    {catGroup.items.length}項目
-                    <ChevronRight size={14} strokeWidth={2} className={`transition-transform ${isCatOpen ? "rotate-90" : ""}`} />
-                  </span>
-                </button>
-
-                {isCatOpen && (
-                  <div className="bg-gray-50/60 divide-y divide-gray-100">
-                    {subGroups.map((subGroup) => {
-                      const isSubOpen = openSubcategory === subGroup.category;
-                      return (
-                        <div key={subGroup.category}>
-                          <button
-                            onClick={() => setOpenSubcategory(isSubOpen ? null : subGroup.category)}
-                            className="w-full flex items-center justify-between gap-2 pl-7 pr-4 py-3 hover:bg-gray-100/60"
-                          >
-                            <span className="text-xs font-medium text-charcoal-700">{subGroup.category}</span>
-                            <span className="flex items-center gap-2 text-[11px] text-gray-400">
-                              {subGroup.items.length}項目
-                              <ChevronRight size={12} strokeWidth={2} className={`transition-transform ${isSubOpen ? "rotate-90" : ""}`} />
-                            </span>
-                          </button>
-                          {isSubOpen && (
-                            <div className="bg-white divide-y divide-gray-50">
-                              {subGroup.items.map((item) => (
-                                <ItemPicker key={item.id} item={item} onAdd={onAdd} />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+      <div className="card-luxury overflow-hidden">
+        {filteredItems.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-8">該当する項目がありません</p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {groups.map((group) => (
+              <div key={group.category}>
+                <div className="px-4 py-2 bg-gray-50">
+                  <p className="text-xs font-semibold text-charcoal-700">{group.category}</p>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {group.items.map((item) => (
+                    <ItemPicker key={item.id} item={item} onAdd={onAdd} />
+                  ))}
+                </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

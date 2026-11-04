@@ -13,7 +13,7 @@ interface EstimateListItem {
   clientName: string;
   storeId: string | null;
   total: number;
-  validUntil: string | null;
+  productionDate: string | null;
   createdAt: string;
 }
 

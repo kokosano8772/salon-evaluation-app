@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     clientName: e.store_id ? storeNameById.get(e.store_id) ?? e.client_name : e.client_name,
     storeId: e.store_id,
     total: e.total,
-    validUntil: e.valid_until,
+    productionDate: e.production_date,
     createdAt: e.created_at,
   }));
 
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     clientContact?: string;
     title?: string;
     notes?: string;
-    validUntil?: string | null;
+    productionDate?: string | null;
     taxRate?: number;
     sourceTemplateId?: string | null;
     lineItems?: LineItemInput[];
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       tax_amount: taxAmount,
       total,
       notes: body.notes ?? "",
-      valid_until: body.validUntil ?? null,
+      production_date: body.productionDate ?? null,
       created_by: user.email ?? user.id,
     })
     .select("id")

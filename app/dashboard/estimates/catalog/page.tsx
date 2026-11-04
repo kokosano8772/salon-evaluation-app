@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import { CatalogItem, Template, formatYen, groupByCategory } from "@/components/estimates/types";
+import { CatalogItem, ORDER_TYPE_LABEL, OrderType, Template, formatYen, groupByCategory } from "@/components/estimates/types";
 
 type Tab = "catalog" | "templates";
 
@@ -18,6 +18,7 @@ const EMPTY_ITEM_FORM = {
   // （最終単価を直接入力すると何円引かれているか分かりにくいため）。
   discountLineRegistered: "" as number | "",
   discountHpManaged: "" as number | "",
+  orderType: "" as OrderType | "",
 };
 
 export default function EstimateCatalogPage() {
@@ -133,6 +134,7 @@ function CatalogTab({ items, onChanged }: { items: CatalogItem[]; onChanged: () 
       unitPrice: item.unitPrice,
       discountLineRegistered: item.unitPriceLineRegistered === null ? "" : item.unitPrice - item.unitPriceLineRegistered,
       discountHpManaged: item.unitPriceHpManaged === null ? "" : item.unitPrice - item.unitPriceHpManaged,
+      orderType: item.orderType ?? "",
     });
     setAdding(false);
     setEditingId(item.id);
@@ -160,6 +162,7 @@ function CatalogTab({ items, onChanged }: { items: CatalogItem[]; onChanged: () 
         unitPrice: form.unitPrice,
         unitPriceLineRegistered: form.discountLineRegistered === "" ? null : form.unitPrice - form.discountLineRegistered,
         unitPriceHpManaged: form.discountHpManaged === "" ? null : form.unitPrice - form.discountHpManaged,
+        orderType: form.orderType === "" ? null : form.orderType,
       };
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
@@ -229,6 +232,16 @@ function CatalogTab({ items, onChanged }: { items: CatalogItem[]; onChanged: () 
           placeholder="単位（例: 式・ページ・月）"
           className="px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
         />
+        <select
+          value={form.orderType}
+          onChange={(e) => setForm({ ...form, orderType: e.target.value as OrderType | "" })}
+          className="px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A] bg-white"
+        >
+          <option value="">区分なし（オプション等）</option>
+          <option value="first_time">{ORDER_TYPE_LABEL.first_time}</option>
+          <option value="revision">{ORDER_TYPE_LABEL.revision}</option>
+          <option value="resubmission">{ORDER_TYPE_LABEL.resubmission}</option>
+        </select>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
@@ -326,6 +339,11 @@ function CatalogTab({ items, onChanged }: { items: CatalogItem[]; onChanged: () 
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-charcoal-900">
                             {item.name}
+                            {item.orderType && (
+                              <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#C4788A14] text-[#A85E74]">
+                                {ORDER_TYPE_LABEL[item.orderType]}
+                              </span>
+                            )}
                             {!item.isActive && (
                               <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-400">
                                 非公開

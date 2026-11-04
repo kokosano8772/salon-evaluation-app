@@ -25,6 +25,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     unitPrice?: number;
     unitPriceLineRegistered?: number | null;
     unitPriceHpManaged?: number | null;
+    orderType?: "first_time" | "revision" | "resubmission" | null;
     sortOrder?: number;
     isActive?: boolean;
   };
@@ -54,6 +55,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     update.unit_price_hp_managed =
       body.unitPriceHpManaged === null || !Number.isFinite(body.unitPriceHpManaged) ? null : Math.round(body.unitPriceHpManaged);
   }
+  if (body.orderType !== undefined) update.order_type = body.orderType;
   if (body.sortOrder !== undefined) update.sort_order = body.sortOrder;
   if (body.isActive !== undefined) update.is_active = body.isActive;
 
