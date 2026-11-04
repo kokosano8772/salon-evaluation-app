@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { ChevronRight, Plus, Search } from "lucide-react";
 import { CatalogItem, ORDER_TYPE_LABEL, OrderType, PriceTier, PRICE_TIER_LABEL, availableTiers, formatYen, groupByCategory } from "./types";
 
 interface CatalogChecklistProps {
@@ -25,9 +25,6 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
           </span>
         )}
         {!item.isActive && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-400">非公開</span>}
-      </p>
-      <p className="text-xs text-gray-400 mt-0.5">
-        {item.category} ／ {item.subcategory || "その他"}
       </p>
       {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
 
@@ -73,6 +70,20 @@ export default function CatalogChecklist({ catalogItems, onAdd }: CatalogCheckli
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<Set<string>>(new Set());
   const [orderTypeFilter, setOrderTypeFilter] = useState<Set<OrderTypeFilterValue>>(new Set());
+  // 中分類ごとに折りたたんでおき、クリックした分だけ開く（商品一覧が縦に長くなりすぎる
+  // のを防ぐ）。検索中はヒットした項目をすぐ見せたいので、折りたたみ状態に関わらず
+  // 常に展開する。
+  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+  const isSearching = search.trim().length > 0;
+
+  const toggleSubcategory = (key: string) => {
+    setExpandedSubcategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const categories = useMemo(() => Array.from(new Set(catalogItems.map((i) => i.category))), [catalogItems]);
 
@@ -195,18 +206,43 @@ export default function CatalogChecklist({ catalogItems, onAdd }: CatalogCheckli
           <p className="text-sm text-gray-400 text-center py-8">該当する項目がありません</p>
         ) : (
           <div className="divide-y divide-gray-100">
-            {groups.map((group) => (
-              <div key={group.category}>
-                <div className="px-4 py-2 bg-gray-50">
-                  <p className="text-xs font-semibold text-charcoal-700">{group.category}</p>
+            {groups.map((group) => {
+              const subGroups = groupByCategory(group.items.map((i) => ({ ...i, category: i.subcategory || "その他" })));
+              return (
+                <div key={group.category}>
+                  <div className="px-4 py-2 bg-gray-50">
+                    <p className="text-xs font-semibold text-charcoal-700">{group.category}</p>
+                  </div>
+                  <div className="divide-y divide-gray-50">
+                    {subGroups.map((subGroup) => {
+                      const key = `${group.category}:::${subGroup.category}`;
+                      const isOpen = isSearching || expandedSubcategories.has(key);
+                      return (
+                        <div key={key}>
+                          <button
+                            onClick={() => toggleSubcategory(key)}
+                            className="w-full flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-gray-50"
+                          >
+                            <span className="text-xs font-medium text-charcoal-700">{subGroup.category}</span>
+                            <span className="flex items-center gap-2 text-[11px] text-gray-400">
+                              {subGroup.items.length}項目
+                              <ChevronRight size={12} strokeWidth={2} className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                            </span>
+                          </button>
+                          {isOpen && (
+                            <div className="divide-y divide-gray-50 bg-gray-50/40">
+                              {subGroup.items.map((item) => (
+                                <ItemPicker key={item.id} item={item} onAdd={onAdd} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="divide-y divide-gray-50">
-                  {group.items.map((item) => (
-                    <ItemPicker key={item.id} item={item} onAdd={onAdd} />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
