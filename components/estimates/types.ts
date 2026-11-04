@@ -21,10 +21,17 @@ export interface CatalogItem {
 }
 
 // その項目で選べる料金区分と単価の一覧（nullの区分は選択肢から除く）。
-export function availableTiers(item: CatalogItem): { tier: PriceTier; unitPrice: number }[] {
-  const tiers: { tier: PriceTier; unitPrice: number }[] = [{ tier: "standard", unitPrice: item.unitPrice }];
-  if (item.unitPriceLineRegistered !== null) tiers.push({ tier: "line_registered", unitPrice: item.unitPriceLineRegistered });
-  if (item.unitPriceHpManaged !== null) tiers.push({ tier: "hp_managed", unitPrice: item.unitPriceHpManaged });
+// discountは基本作業料（unitPrice）からの割引額。基本作業料自身は0。
+export function availableTiers(item: CatalogItem): { tier: PriceTier; unitPrice: number; discount: number }[] {
+  const tiers: { tier: PriceTier; unitPrice: number; discount: number }[] = [
+    { tier: "standard", unitPrice: item.unitPrice, discount: 0 },
+  ];
+  if (item.unitPriceLineRegistered !== null) {
+    tiers.push({ tier: "line_registered", unitPrice: item.unitPriceLineRegistered, discount: item.unitPrice - item.unitPriceLineRegistered });
+  }
+  if (item.unitPriceHpManaged !== null) {
+    tiers.push({ tier: "hp_managed", unitPrice: item.unitPriceHpManaged, discount: item.unitPrice - item.unitPriceHpManaged });
+  }
   return tiers;
 }
 

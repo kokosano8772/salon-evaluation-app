@@ -14,8 +14,10 @@ const EMPTY_ITEM_FORM = {
   description: "",
   unit: "式",
   unitPrice: 0,
-  unitPriceLineRegistered: "" as number | "",
-  unitPriceHpManaged: "" as number | "",
+  // 公式ライン登録・HP管理企業様は、基本作業料からの「割引額」で入力する
+  // （最終単価を直接入力すると何円引かれているか分かりにくいため）。
+  discountLineRegistered: "" as number | "",
+  discountHpManaged: "" as number | "",
 };
 
 export default function EstimateCatalogPage() {
@@ -129,8 +131,8 @@ function CatalogTab({ items, onChanged }: { items: CatalogItem[]; onChanged: () 
       description: item.description,
       unit: item.unit,
       unitPrice: item.unitPrice,
-      unitPriceLineRegistered: item.unitPriceLineRegistered ?? "",
-      unitPriceHpManaged: item.unitPriceHpManaged ?? "",
+      discountLineRegistered: item.unitPriceLineRegistered === null ? "" : item.unitPrice - item.unitPriceLineRegistered,
+      discountHpManaged: item.unitPriceHpManaged === null ? "" : item.unitPrice - item.unitPriceHpManaged,
     });
     setAdding(false);
     setEditingId(item.id);
@@ -156,8 +158,8 @@ function CatalogTab({ items, onChanged }: { items: CatalogItem[]; onChanged: () 
         description: form.description,
         unit: form.unit,
         unitPrice: form.unitPrice,
-        unitPriceLineRegistered: form.unitPriceLineRegistered === "" ? null : form.unitPriceLineRegistered,
-        unitPriceHpManaged: form.unitPriceHpManaged === "" ? null : form.unitPriceHpManaged,
+        unitPriceLineRegistered: form.discountLineRegistered === "" ? null : form.unitPrice - form.discountLineRegistered,
+        unitPriceHpManaged: form.discountHpManaged === "" ? null : form.unitPrice - form.discountHpManaged,
       };
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
@@ -239,24 +241,30 @@ function CatalogTab({ items, onChanged }: { items: CatalogItem[]; onChanged: () 
           />
         </div>
         <div>
-          <label className="block text-[11px] text-gray-400 mb-1">公式ライン登録（任意・円）</label>
+          <label className="block text-[11px] text-gray-400 mb-1">公式ライン登録（基本料金からの割引額・任意）</label>
           <input
             type="number"
-            value={form.unitPriceLineRegistered}
-            onChange={(e) => setForm({ ...form, unitPriceLineRegistered: e.target.value === "" ? "" : Number(e.target.value) })}
-            placeholder="未設定なら空欄"
+            value={form.discountLineRegistered}
+            onChange={(e) => setForm({ ...form, discountLineRegistered: e.target.value === "" ? "" : Number(e.target.value) })}
+            placeholder="割引なしなら空欄"
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
           />
+          {form.discountLineRegistered !== "" && (
+            <p className="text-[11px] text-gray-400 mt-1">→ {formatYen(form.unitPrice - form.discountLineRegistered)}</p>
+          )}
         </div>
         <div>
-          <label className="block text-[11px] text-gray-400 mb-1">HP管理企業様（任意・円）</label>
+          <label className="block text-[11px] text-gray-400 mb-1">HP管理企業様（基本料金からの割引額・任意）</label>
           <input
             type="number"
-            value={form.unitPriceHpManaged}
-            onChange={(e) => setForm({ ...form, unitPriceHpManaged: e.target.value === "" ? "" : Number(e.target.value) })}
-            placeholder="未設定なら空欄"
+            value={form.discountHpManaged}
+            onChange={(e) => setForm({ ...form, discountHpManaged: e.target.value === "" ? "" : Number(e.target.value) })}
+            placeholder="割引なしなら空欄"
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
           />
+          {form.discountHpManaged !== "" && (
+            <p className="text-[11px] text-gray-400 mt-1">→ {formatYen(form.unitPrice - form.discountHpManaged)}</p>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -330,9 +338,11 @@ function CatalogTab({ items, onChanged }: { items: CatalogItem[]; onChanged: () 
                           <p className="text-sm text-gray-700">{formatYen(item.unitPrice)}</p>
                           {(item.unitPriceLineRegistered !== null || item.unitPriceHpManaged !== null) && (
                             <p className="text-[11px] text-gray-400">
-                              {item.unitPriceLineRegistered !== null && `ライン:${formatYen(item.unitPriceLineRegistered)}`}
+                              {item.unitPriceLineRegistered !== null &&
+                                `ライン:${formatYen(item.unitPriceLineRegistered)}(-${formatYen(item.unitPrice - item.unitPriceLineRegistered)})`}
                               {item.unitPriceLineRegistered !== null && item.unitPriceHpManaged !== null && " / "}
-                              {item.unitPriceHpManaged !== null && `HP管理:${formatYen(item.unitPriceHpManaged)}`}
+                              {item.unitPriceHpManaged !== null &&
+                                `HP管理:${formatYen(item.unitPriceHpManaged)}(-${formatYen(item.unitPrice - item.unitPriceHpManaged)})`}
                             </p>
                           )}
                         </div>

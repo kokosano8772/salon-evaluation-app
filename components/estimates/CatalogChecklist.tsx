@@ -30,6 +30,7 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
             }`}
           >
             {PRICE_TIER_LABEL[t.tier]} {formatYen(t.unitPrice)}
+            {t.discount > 0 && <span className="opacity-70"> (-{formatYen(t.discount)})</span>}
           </button>
         ))}
       </div>
