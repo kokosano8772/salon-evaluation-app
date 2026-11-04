@@ -18,8 +18,8 @@ const LINE = "#d4d4d4";
 // （lib/pdf.tsのexportResultToPDF、html-to-image+jsPDFでdata-print-section単位に
 // 高さを切り分ける）を踏襲する。デザインは実際にユーザーが使っている紙の見積書
 // （御見積書・白地に罫線・合計金額の強調ボックス・摘要＝カテゴリを●見出しでまとめる・
-// 値引きは摘要側に赤字で別行表示）の見た目にできるだけ合わせている。数量は金額計算には
-// 使わない表記情報のため、単価列は設けず「摘要／数量／金額」の3列構成にしている。
+// 値引きは摘要側に赤字で別行表示・単価/数量/金額の4列表）の見た目にできるだけ合わせている。
+// 数量は金額計算には使わない表記情報のため、単価欄は参考として列だけ残し、値は入れない。
 export default function EstimatePrintDocument({ estimate, clientLabel, lineItems }: EstimatePrintDocumentProps) {
   const groups = groupByCategory(lineItems);
   const issuedDateLabel = new Date(estimate.createdAt).toLocaleDateString("ja-JP", {
@@ -39,12 +39,20 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
           <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "0.5em", margin: 0 }}>御見積書</h1>
         </div>
 
-        {/* 宛先・見積日 */}
+        {/* 宛先・見積番号・見積日 */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 20 }}>
-          <p style={{ fontSize: 17, fontWeight: 700, borderBottom: `2px solid ${INK}`, paddingBottom: 4, minWidth: 220 }}>
-            {clientLabel} 御中
-          </p>
-          <p style={{ fontSize: 12, color: "#4b5563" }}>見積日：{issuedDateLabel}</p>
+          <div style={{ minWidth: 220 }}>
+            <p style={{ fontSize: 17, fontWeight: 700, borderBottom: `2px solid ${INK}`, paddingBottom: 4 }}>
+              {clientLabel} 御中
+            </p>
+            {estimate.clientContact && (
+              <p style={{ fontSize: 12.5, marginTop: 6 }}>ご担当　{estimate.clientContact}　様</p>
+            )}
+          </div>
+          <div style={{ fontSize: 12, color: "#4b5563", textAlign: "right", lineHeight: 1.9 }}>
+            <p>見積番号：</p>
+            <p>見積日：{issuedDateLabel}</p>
+          </div>
         </div>
 
         {/* 件名等（左）・自社情報（右）。件名が長い場合でも右側の会社情報が画面外に
@@ -54,7 +62,10 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
           <div style={{ fontSize: 12.5, lineHeight: 2, minWidth: 0, flex: "1 1 auto" }}>
             <p>下記のとおり、御見積り申し上げます。</p>
             <p>件名：{estimate.title}</p>
+            <p>納期：</p>
+            <p>支払条件：</p>
             {productionDateLabel && <p>制作日：{productionDateLabel}</p>}
+            <p>有効期限：御見積後４週間</p>
           </div>
           <div style={{ fontSize: 11.5, color: "#4b5563", lineHeight: 1.8, textAlign: "right", minWidth: 0, flexShrink: 0 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: INK }}>株式会社　ココデザイン</p>
@@ -82,47 +93,68 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
           <thead>
             <tr style={{ borderTop: `2px solid ${INK}`, borderBottom: `2px solid ${INK}` }}>
               <th style={{ textAlign: "left", padding: "8px 6px", fontWeight: 700 }}>摘要</th>
-              <th style={{ textAlign: "center", padding: "8px 6px", fontWeight: 700, width: 90 }}>数量</th>
-              <th style={{ textAlign: "right", padding: "8px 6px", fontWeight: 700, width: 110 }}>金額</th>
+              <th style={{ textAlign: "center", padding: "8px 6px", fontWeight: 700, width: 80 }}>数量</th>
+              <th style={{ textAlign: "right", padding: "8px 6px", fontWeight: 700, width: 90 }}>単価</th>
+              <th style={{ textAlign: "right", padding: "8px 6px", fontWeight: 700, width: 100 }}>金額</th>
             </tr>
           </thead>
           <tbody>
             {groups.map((group) => (
               <Fragment key={group.category}>
                 <tr data-print-section>
-                  <td colSpan={3} style={{ padding: "10px 6px 4px", fontWeight: 700 }}>
+                  <td colSpan={4} style={{ padding: "10px 6px 4px", fontWeight: 700 }}>
                     ●{group.category}
                   </td>
                 </tr>
-                {group.items.map((item, i) => (
-                  <Fragment key={i}>
-                    <tr data-print-section style={{ borderBottom: `1px solid ${LINE}` }}>
-                      <td style={{ padding: "8px 6px" }}>
-                        ・{item.name}
-                        {item.description && <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>　{item.description}</div>}
-                        {item.procurementCost > 0 && (
-                          <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>　仕入れ料金 {yen(item.procurementCost)}</div>
-                        )}
-                      </td>
-                      <td style={{ padding: "8px 6px", textAlign: "center", whiteSpace: "nowrap" }}>
-                        {item.quantity}　{item.unit}
-                      </td>
-                      <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>
-                        {yen(item.unitPrice)}
-                      </td>
-                    </tr>
-                    {item.discountAmount > 0 && (
-                      <tr style={{ borderBottom: `1px solid ${LINE}` }}>
-                        <td colSpan={2} style={{ padding: "6px 6px", color: "#dc2626" }}>
-                          　{item.discountLabel}
+                {group.items.map((item, i) => {
+                  const descLines = item.description ? item.description.split("\n") : [];
+                  // 項目のまとまりの最後の行にだけ罫線を引く（完成系の見積書と同様、
+                  // 名称行と補足説明の間は罫線無しでひと塊に見せる）。
+                  const hasTrailingRows = descLines.length > 0 || item.procurementCost > 0 || item.discountAmount > 0;
+                  return (
+                    <Fragment key={i}>
+                      <tr data-print-section style={hasTrailingRows ? undefined : { borderBottom: `1px solid ${LINE}` }}>
+                        <td style={{ padding: "8px 6px" }}>・{item.name}</td>
+                        <td style={{ padding: "8px 6px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          {item.quantity}　{item.unit}
                         </td>
-                        <td style={{ padding: "6px 6px", textAlign: "right", fontWeight: 600, color: "#dc2626", whiteSpace: "nowrap" }}>
-                          -{yen(item.discountAmount)}
+                        <td style={{ padding: "8px 6px" }} />
+                        <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          {yen(item.unitPrice)}
                         </td>
                       </tr>
-                    )}
-                  </Fragment>
-                ))}
+                      {/* サイズ・用紙・カラー等の補足説明は、完成系の見積書と同様に
+                          1行ずつ独立した行として表示する（改行区切りで複数行入れられる）。 */}
+                      {descLines.map((line, li) => {
+                        const isLast = li === descLines.length - 1 && item.procurementCost === 0 && item.discountAmount === 0;
+                        return (
+                          <tr key={`desc-${li}`} style={isLast ? { borderBottom: `1px solid ${LINE}` } : undefined}>
+                            <td colSpan={4} style={{ padding: "4px 6px", fontSize: 11, color: "#6b7280" }}>
+                              　{line}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {item.procurementCost > 0 && (
+                        <tr style={item.discountAmount === 0 ? { borderBottom: `1px solid ${LINE}` } : undefined}>
+                          <td colSpan={4} style={{ padding: "4px 6px", fontSize: 11, color: "#6b7280" }}>
+                            　仕入れ料金 {yen(item.procurementCost)}
+                          </td>
+                        </tr>
+                      )}
+                      {item.discountAmount > 0 && (
+                        <tr style={{ borderBottom: `1px solid ${LINE}` }}>
+                          <td colSpan={3} style={{ padding: "6px 6px", color: "#dc2626" }}>
+                            　{item.discountLabel}
+                          </td>
+                          <td style={{ padding: "6px 6px", textAlign: "right", fontWeight: 600, color: "#dc2626", whiteSpace: "nowrap" }}>
+                            -{yen(item.discountAmount)}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </Fragment>
             ))}
           </tbody>
