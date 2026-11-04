@@ -250,7 +250,7 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                       {row.quantity}　{row.unit}
                     </td>
                     <td style={{ border: CELL_BORDER }} />
-                    <td style={{ padding: "0 6px", textAlign: "right", fontWeight: 400, whiteSpace: "nowrap", border: CELL_BORDER }}>
+                    <td style={{ padding: "0 6px", textAlign: "right", verticalAlign: "middle", fontSize: 11.5, fontWeight: 400, whiteSpace: "nowrap", border: CELL_BORDER }}>
                       {yen(row.unitPrice)}
                     </td>
                   </tr>
@@ -272,7 +272,7 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                     <td style={{ padding: "0 6px", color: "#dc2626", textAlign: "right", border: CELL_BORDER }}>{row.label}</td>
                     <td style={{ border: CELL_BORDER }} />
                     <td style={{ border: CELL_BORDER }} />
-                    <td style={{ padding: "0 6px", textAlign: "right", fontWeight: 400, color: "#dc2626", whiteSpace: "nowrap", border: CELL_BORDER }}>
+                    <td style={{ padding: "0 6px", textAlign: "right", verticalAlign: "middle", fontSize: 11.5, fontWeight: 400, color: "#dc2626", whiteSpace: "nowrap", border: CELL_BORDER }}>
                       -{yen(row.amount)}
                     </td>
                   </tr>
@@ -300,47 +300,29 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
               );
             })}
 
-            {/* 小計・消費税・合計。摘要・数量列は罫線の無い空白のまま、ラベルは
-                数量列の下で中央揃え（枠なし）、金額は単価+金額列を合わせた幅の
-                枠に右寄せで収める。同じ<table>内の行にすることで、別テーブルに
+            {/* 小計・消費税・合計。項目名は金額枠の外（数量列の下、罫線なし）に
+                中央揃えで配置し、単価+金額列を合わせた枠の中には数字だけを
+                右寄せで入れる。同じ<table>内の行にすることで、別テーブルに
                 分けた場合に起きる罫線の二重描画（太く見える問題）も避けられる。 */}
             <tr data-print-section style={{ height: DETAIL_ROW_HEIGHT }}>
-              <td colSpan={2} />
-              <td colSpan={2} style={{ padding: 0, border: CELL_BORDER }}>
-                <div style={{ display: "flex", height: "100%" }}>
-                  <div style={{ width: QTY_COL, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
-                    小計
-                  </div>
-                  <div style={{ flex: 1, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "flex-end", fontWeight: 400 }}>
-                    {yen(estimate.subtotal)}
-                  </div>
-                </div>
+              <td />
+              <td style={{ textAlign: "center", verticalAlign: "middle", fontWeight: 700 }}>小計</td>
+              <td colSpan={2} style={{ padding: "0 6px", textAlign: "right", verticalAlign: "middle", fontSize: 12.5, fontWeight: 400, border: CELL_BORDER }}>
+                {yen(estimate.subtotal)}
               </td>
             </tr>
             <tr data-print-section style={{ height: DETAIL_ROW_HEIGHT }}>
-              <td colSpan={2} />
-              <td colSpan={2} style={{ padding: 0, border: CELL_BORDER }}>
-                <div style={{ display: "flex", height: "100%" }}>
-                  <div style={{ width: QTY_COL, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
-                    消費税
-                  </div>
-                  <div style={{ flex: 1, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "flex-end", fontWeight: 400 }}>
-                    {yen(estimate.taxAmount)}
-                  </div>
-                </div>
+              <td />
+              <td style={{ textAlign: "center", verticalAlign: "middle", fontWeight: 700 }}>消費税</td>
+              <td colSpan={2} style={{ padding: "0 6px", textAlign: "right", verticalAlign: "middle", fontSize: 12.5, fontWeight: 400, border: CELL_BORDER }}>
+                {yen(estimate.taxAmount)}
               </td>
             </tr>
             <tr data-print-section style={{ height: DETAIL_ROW_HEIGHT }}>
-              <td colSpan={2} />
-              <td colSpan={2} style={{ padding: 0, border: CELL_BORDER }}>
-                <div style={{ display: "flex", height: "100%" }}>
-                  <div style={{ width: QTY_COL, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
-                    合計
-                  </div>
-                  <div style={{ flex: 1, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "flex-end", fontWeight: 700 }}>
-                    {yen(estimate.total)}
-                  </div>
-                </div>
+              <td />
+              <td style={{ textAlign: "center", verticalAlign: "middle", fontWeight: 700 }}>合計</td>
+              <td colSpan={2} style={{ padding: "0 6px", textAlign: "right", verticalAlign: "middle", fontSize: 13.5, fontWeight: 700, border: CELL_BORDER }}>
+                {yen(estimate.total)}
               </td>
             </tr>
           </tbody>
