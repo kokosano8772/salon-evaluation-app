@@ -22,14 +22,16 @@ const LINE = "#d4d4d4";
 // 数量は金額計算には使わない表記情報のため、単価欄は参考として列だけ残し、値は入れない。
 export default function EstimatePrintDocument({ estimate, clientLabel, lineItems }: EstimatePrintDocumentProps) {
   const groups = groupByCategory(lineItems);
-  const issuedDateLabel = new Date(estimate.createdAt).toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  const productionDateLabel = estimate.productionDate
-    ? new Date(estimate.productionDate).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })
-    : null;
+  // 完成系の参考画像は「2026/08/27」のスラッシュ区切り表記のため、それに合わせる
+  // （toLocaleDateStringのlong表記だと「2026年8月27日」になってしまい見た目が違う）。
+  const formatSlashDate = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+  };
+  const issuedDateLabel = formatSlashDate(estimate.createdAt);
+  // 参考画像に「制作日」の行は無く、「納期」の行に日付が入る形なので、
+  // ビルダー側で入力する制作日（productionDate）をここでは「納期」として表示する。
+  const productionDateLabel = estimate.productionDate ? formatSlashDate(estimate.productionDate) : null;
 
   return (
     <div style={{ width: 640, backgroundColor: "white", fontFamily: "'Noto Sans JP', sans-serif", color: INK }}>
@@ -62,9 +64,8 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
           <div style={{ fontSize: 12.5, lineHeight: 2, minWidth: 0, flex: "1 1 auto" }}>
             <p>下記のとおり、御見積り申し上げます。</p>
             <p>件名：{estimate.title}</p>
-            <p>納期：</p>
+            <p>納期：{productionDateLabel ?? ""}</p>
             <p>支払条件：</p>
-            {productionDateLabel && <p>制作日：{productionDateLabel}</p>}
             <p>有効期限：御見積後４週間</p>
           </div>
           <div style={{ fontSize: 11.5, color: "#4b5563", lineHeight: 1.8, textAlign: "right", minWidth: 0, flexShrink: 0 }}>
