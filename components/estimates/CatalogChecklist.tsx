@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { ChevronRight, Plus, Search } from "lucide-react";
 import { CatalogItem, ORDER_TYPE_LABEL, OrderType, PriceTier, PRICE_TIER_LABEL, availableTiers, formatYen, groupByCategory } from "./types";
 
 interface CatalogChecklistProps {
@@ -124,26 +124,29 @@ function FilterChipRow({
 
 export default function CatalogChecklist({ catalogItems, onAdd }: CatalogChecklistProps) {
   const [search, setSearch] = useState("");
-  // 1つの見積もり明細を追加するのに複数の分類・区分を組み合わせて絞り込むことは無いため、
+  // 1つの見積もり明細を追加するのに複数の区分を組み合わせて絞り込むことは無いため、
   // タグは複数選択ではなく1つだけ選べる（別のタグを選ぶと前のタグは自動で外れる）。
-  // 大分類→中分類はタグを選ぶだけで絞り込める（アコーディオンのクリック展開は廃止）。
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  // 大分類（WEB制作／その他／印刷物制作／月額運用プラン）はアコーディオンで折りたたみ、
+  // 開いた大分類の中で詳細（中分類）タグで絞り込む。検索中はこの折りたたみを無視し、
+  // 全カテゴリ横断でヒットした項目をそのまま見せる。
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [subcategoryFilter, setSubcategoryFilter] = useState<string | null>(null);
   const [orderTypeFilter, setOrderTypeFilter] = useState<OrderTypeFilterValue | null>(null);
+  const isSearching = search.trim().length > 0;
 
   const categories = useMemo(() => Array.from(new Set(catalogItems.map((i) => i.category))), [catalogItems]);
   const subcategories = useMemo(() => {
-    if (!categoryFilter) return [];
-    return Array.from(new Set(catalogItems.filter((i) => i.category === categoryFilter).map((i) => i.subcategory || "その他")));
-  }, [catalogItems, categoryFilter]);
+    if (!expandedCategory) return [];
+    return Array.from(new Set(catalogItems.filter((i) => i.category === expandedCategory).map((i) => i.subcategory || "その他")));
+  }, [catalogItems, expandedCategory]);
 
-  // 大分類を変えたら、もう存在しない中分類タグが選ばれたままにならないようにリセットする。
+  // 開いている大分類を変えたら、もう存在しない中分類タグが選ばれたままにならないようにする。
   useEffect(() => {
     setSubcategoryFilter(null);
-  }, [categoryFilter]);
+  }, [expandedCategory]);
 
-  const toggleCategory = (category: string) => {
-    setCategoryFilter((prev) => (prev === category ? null : category));
+  const toggleExpandedCategory = (category: string) => {
+    setExpandedCategory((prev) => (prev === category ? null : category));
   };
 
   const toggleSubcategory = (subcategory: string) => {
@@ -154,27 +157,36 @@ export default function CatalogChecklist({ catalogItems, onAdd }: CatalogCheckli
     setOrderTypeFilter((prev) => (prev === value ? null : (value as OrderTypeFilterValue)));
   };
 
-  const filteredItems = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return catalogItems.filter((item) => {
-      if (categoryFilter !== null && item.category !== categoryFilter) return false;
-      if (subcategoryFilter !== null && (item.subcategory || "その他") !== subcategoryFilter) return false;
-      if (orderTypeFilter !== null) {
-        const value: OrderTypeFilterValue = item.orderType ?? NO_ORDER_TYPE;
-        if (value !== orderTypeFilter) return false;
-      }
-      if (!q) return true;
-      return (
-        item.name.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q) ||
-        item.subcategory.toLowerCase().includes(q)
-      );
-    });
-  }, [catalogItems, search, categoryFilter, subcategoryFilter, orderTypeFilter]);
+  const matchesOrderType = (item: CatalogItem) => {
+    if (orderTypeFilter === null) return true;
+    const value: OrderTypeFilterValue = item.orderType ?? NO_ORDER_TYPE;
+    return value === orderTypeFilter;
+  };
 
-  const groups = useMemo(() => groupByCategory(filteredItems), [filteredItems]);
-  const hasAnyFilter = search.trim().length > 0 || categoryFilter !== null || orderTypeFilter !== null;
+  // 検索中：大分類の折りたたみを無視し、全項目から検索語＋今回は？タグに一致するものを
+  // そのまま見せる。検索していない間：開いている大分類＋選んだ詳細タグに一致するものだけ。
+  const visibleItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (isSearching) {
+      return catalogItems.filter((item) => {
+        if (!matchesOrderType(item)) return false;
+        return (
+          item.name.toLowerCase().includes(q) ||
+          item.description.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q) ||
+          item.subcategory.toLowerCase().includes(q)
+        );
+      });
+    }
+    if (!expandedCategory) return [];
+    return catalogItems.filter((item) => {
+      if (item.category !== expandedCategory) return false;
+      if (subcategoryFilter !== null && (item.subcategory || "その他") !== subcategoryFilter) return false;
+      return matchesOrderType(item);
+    });
+  }, [catalogItems, search, isSearching, expandedCategory, subcategoryFilter, orderTypeFilter]);
+
+  const visibleGroups = useMemo(() => groupByCategory(visibleItems), [visibleItems]);
 
   if (catalogItems.length === 0) {
     return (
@@ -209,58 +221,78 @@ export default function CatalogChecklist({ catalogItems, onAdd }: CatalogCheckli
             { value: NO_ORDER_TYPE, label: "区分なし（オプション等）" },
           ]}
         />
-
-        <FilterChipRow
-          label="分類"
-          active={categoryFilter}
-          onToggle={toggleCategory}
-          options={categories.map((c) => ({ value: c, label: c }))}
-        />
-
-        {categoryFilter && subcategories.length > 0 && (
-          <FilterChipRow
-            label="詳細"
-            active={subcategoryFilter}
-            onToggle={toggleSubcategory}
-            options={subcategories.map((s) => ({ value: s, label: s }))}
-          />
-        )}
       </div>
 
-      <div className="card-luxury overflow-hidden">
-        {!hasAnyFilter ? (
-          <p className="text-sm text-gray-400 text-center py-8">検索するか、上のタグで絞り込んでください</p>
-        ) : filteredItems.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">該当する項目がありません</p>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {groups.map((group) => {
-              const subGroups = groupByCategory(group.items.map((i) => ({ ...i, category: i.subcategory || "その他" })));
-              return (
+      {isSearching ? (
+        <div className="card-luxury overflow-hidden">
+          {visibleItems.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">該当する項目がありません</p>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {visibleGroups.map((group) => (
                 <div key={group.category}>
                   <div className="px-4 py-2 bg-gray-50">
                     <p className="text-xs font-semibold text-charcoal-700">{group.category}</p>
                   </div>
-                  {subGroups.map((subGroup) => (
-                    <div key={subGroup.category}>
-                      {subGroups.length > 1 && (
-                        <div className="px-4 py-1.5 bg-gray-50/60">
-                          <p className="text-[11px] font-medium text-gray-400">{subGroup.category}</p>
+                  <div className="divide-y divide-gray-50">
+                    {group.items.map((item) => (
+                      <ItemPicker key={item.id} item={item} onAdd={onAdd} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="card-luxury overflow-hidden divide-y divide-gray-100">
+          {categories.map((category) => {
+            const isOpen = expandedCategory === category;
+            const countInCategory = catalogItems.filter((i) => i.category === category && matchesOrderType(i)).length;
+            return (
+              <div key={category}>
+                <button
+                  onClick={() => toggleExpandedCategory(category)}
+                  className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100"
+                >
+                  <span className="text-sm font-semibold text-charcoal-700">{category}</span>
+                  <span className="flex items-center gap-2 text-[11px] text-gray-400">
+                    {countInCategory}項目
+                    <ChevronRight size={14} strokeWidth={2} className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                  </span>
+                </button>
+
+                {isOpen && (
+                  <div className="p-4 space-y-3">
+                    {subcategories.length > 0 && (
+                      <FilterChipRow
+                        label="詳細"
+                        active={subcategoryFilter}
+                        onToggle={toggleSubcategory}
+                        options={subcategories.map((s) => ({ value: s, label: s }))}
+                      />
+                    )}
+
+                    <div className="card-luxury overflow-hidden">
+                      {visibleItems.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-8">
+                          {subcategoryFilter ? "該当する項目がありません" : "上の「詳細」から絞り込んでください"}
+                        </p>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {visibleItems.map((item) => (
+                            <ItemPicker key={item.id} item={item} onAdd={onAdd} />
+                          ))}
                         </div>
                       )}
-                      <div className="divide-y divide-gray-50">
-                        {subGroup.items.map((item) => (
-                          <ItemPicker key={item.id} item={item} onAdd={onAdd} />
-                        ))}
-                      </div>
                     </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
