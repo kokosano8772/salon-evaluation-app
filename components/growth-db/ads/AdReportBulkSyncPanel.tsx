@@ -21,6 +21,7 @@ interface MonthResult {
   status: "pending" | "syncing" | "success" | "skipped" | "error";
   message?: string;
   campaignCount?: number;
+  campaignNames?: string[];
   categoryWarning?: string | null;
 }
 
@@ -118,7 +119,13 @@ export default function AdReportBulkSyncPanel({
         setResults((prev) =>
           prev.map((r) =>
             r.yearMonth === yearMonth
-              ? { ...r, status: "success", campaignCount: json.data.campaigns?.length ?? 0, categoryWarning }
+              ? {
+                  ...r,
+                  status: "success",
+                  campaignCount: json.data.campaigns?.length ?? 0,
+                  campaignNames: (json.data.campaigns ?? []).map((c: { name: string }) => c.name),
+                  categoryWarning,
+                }
               : r
           )
         );
@@ -249,6 +256,11 @@ export default function AdReportBulkSyncPanel({
                 <p className="flex items-start gap-1.5 mt-1 ml-[72px] text-xs text-red-500">
                   <AlertTriangle size={12} className="shrink-0 mt-0.5" strokeWidth={2} />
                   {r.categoryWarning}
+                </p>
+              )}
+              {r.campaignNames && r.campaignNames.length > 0 && (
+                <p className="mt-1 ml-[72px] text-[11px] text-gray-400 truncate" title={r.campaignNames.join(" / ")}>
+                  {r.campaignNames.join(" / ")}
                 </p>
               )}
             </div>

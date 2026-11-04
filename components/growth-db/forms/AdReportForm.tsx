@@ -8,6 +8,7 @@ import { findCategoryMismatch } from "@/lib/growth-db/ad-report-category-check";
 import { formatMonthLabel } from "@/lib/growth-db/format";
 import {
   AD_PLATFORM_LABEL,
+  AD_REPORT_CATEGORY_LABEL,
   AGE_GROUPS,
   AdCampaignMetrics,
   AdPlatform,
@@ -430,6 +431,23 @@ export default function AdReportForm({
             <span className="font-semibold">区分の設定ミスの可能性があります：</span>
             {categoryMismatchWarning}
           </p>
+        </div>
+      )}
+
+      {/* キャンペーン名に(集客)/(求人)の明記が無い場合は自動検知できないため、
+          実際に同期されたキャンペーン名をここに表示し、「{AD_REPORT_CATEGORY_LABEL[category]}」
+          区分で合っているか人の目で判断できるようにする（Google広告は従来キャンペーン名を
+          どこにも表示していなかった）。 */}
+      {draft.campaigns.length > 0 && (
+        <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-100">
+          <p className="text-xs text-gray-500 mb-1">
+            「{AD_REPORT_CATEGORY_LABEL[category]}」区分として同期された実際のキャンペーン名
+          </p>
+          <ul className="text-xs text-charcoal-700 space-y-0.5">
+            {draft.campaigns.map((c) => (
+              <li key={c.id}>・{c.name || "（名称なし）"}</li>
+            ))}
+          </ul>
         </div>
       )}
       {(platform === "meta" || platform === "google") && (

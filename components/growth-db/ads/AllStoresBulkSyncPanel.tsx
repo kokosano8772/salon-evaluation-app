@@ -24,6 +24,7 @@ interface StoreRow {
   status: StoreStatus;
   message?: string;
   campaignCount?: number;
+  campaignNames?: string[];
   categoryWarning?: string | null; // 実キャンペーン名と選択中の区分が食い違っている場合の警告
 }
 
@@ -125,7 +126,13 @@ export default function AllStoresBulkSyncPanel({ platform, category, yearMonth, 
         setRows((prev) =>
           prev.map((r) =>
             r.storeId === row.storeId
-              ? { ...r, status: "success", campaignCount: json.data.campaigns?.length ?? 0, categoryWarning }
+              ? {
+                  ...r,
+                  status: "success",
+                  campaignCount: json.data.campaigns?.length ?? 0,
+                  campaignNames: (json.data.campaigns ?? []).map((c: { name: string }) => c.name),
+                  categoryWarning,
+                }
               : r
           )
         );
@@ -226,6 +233,11 @@ export default function AllStoresBulkSyncPanel({ platform, category, yearMonth, 
                       <p className="flex items-start gap-1.5 mt-1.5 text-xs text-red-500">
                         <AlertTriangle size={13} className="shrink-0 mt-0.5" strokeWidth={2} />
                         {r.categoryWarning}
+                      </p>
+                    )}
+                    {r.campaignNames && r.campaignNames.length > 0 && (
+                      <p className="mt-1 text-[11px] text-gray-400 truncate" title={r.campaignNames.join(" / ")}>
+                        {r.campaignNames.join(" / ")}
                       </p>
                     )}
                   </div>
