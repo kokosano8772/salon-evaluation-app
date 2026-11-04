@@ -153,6 +153,9 @@ export interface EstimateHeader {
   total: number;
   notes: string;
   productionDate: string | null;
+  // 作成したスタッフ（APIルートでログイン中のuser.emailが自動設定される）。
+  // PDFの「担当：」欄に使う。
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
 }

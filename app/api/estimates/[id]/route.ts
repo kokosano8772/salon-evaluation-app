@@ -49,6 +49,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       total: estimate.total,
       notes: estimate.notes,
       productionDate: estimate.production_date,
+      createdBy: estimate.created_by ?? "",
       createdAt: estimate.created_at,
       updatedAt: estimate.updated_at,
     },
