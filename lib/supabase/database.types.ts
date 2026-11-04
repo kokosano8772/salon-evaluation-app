@@ -426,6 +426,7 @@ export interface Database {
           description: string;
           unit: string;
           unit_price: number;
+          procurement_cost: number;
           quantity: number;
           amount: number;
           sort_order: number;

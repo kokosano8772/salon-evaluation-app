@@ -48,6 +48,9 @@ export interface CartLine {
   description: string;
   unit: string;
   unitPrice: number;
+  // 仕入れ料金（印刷費など）。デザイン・作業料金とは別に、数量に比例せず定額で
+  // 加算される実費。価格表には無いため、明細ごとに手入力する。
+  procurementCost: number;
   quantity: number;
 }
 
@@ -79,6 +82,7 @@ export interface LineItem {
   description: string;
   unit: string;
   unitPrice: number;
+  procurementCost: number;
   quantity: number;
   amount: number;
   sortOrder: number;
@@ -104,6 +108,7 @@ export interface LineItemPayload {
   unit?: string;
   unitPrice?: number;
   quantity: number;
+  procurementCost?: number;
 }
 
 export interface EstimateHeader {

@@ -43,6 +43,7 @@ function buildInitialCart(lineItems: LineItem[] | undefined): Map<string, CartLi
       description: li.description,
       unit: li.unit,
       unitPrice: li.unitPrice,
+      procurementCost: li.procurementCost,
       quantity: li.quantity,
     });
   });
@@ -98,6 +99,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
         description: item.description,
         unit: item.unit,
         unitPrice: tierInfo.unitPrice,
+        procurementCost: existing?.procurementCost ?? 0,
         quantity: (existing?.quantity ?? 0) + quantity,
       });
       return next;
@@ -117,6 +119,15 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
       const next = new Map(prev);
       const line = next.get(key);
       if (line) next.set(key, { ...line, quantity });
+      return next;
+    });
+  };
+
+  const handleProcurementCostChange = (key: string, procurementCost: number) => {
+    setCart((prev) => {
+      const next = new Map(prev);
+      const line = next.get(key);
+      if (line) next.set(key, { ...line, procurementCost });
       return next;
     });
   };
@@ -141,6 +152,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
           description: "",
           unit: item.unit,
           unitPrice: item.unitPrice,
+          procurementCost: 0,
           quantity: item.defaultQuantity,
         });
       }
@@ -151,7 +163,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
   const { subtotal, taxAmount, total } = useMemo(() => {
     let sum = 0;
     cart.forEach((line) => {
-      sum += line.unitPrice * line.quantity;
+      sum += line.unitPrice * line.quantity + line.procurementCost;
     });
     const tax = Math.round(sum * taxRate);
     return { subtotal: sum, taxAmount: tax, total: sum + tax };
@@ -180,7 +192,12 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
     try {
       const lineItems: LineItemPayload[] = Array.from(cart.values()).map((line) =>
         line.priceTier
-          ? { catalogItemId: line.catalogItemId, priceTier: line.priceTier, quantity: line.quantity }
+          ? {
+              catalogItemId: line.catalogItemId,
+              priceTier: line.priceTier,
+              quantity: line.quantity,
+              procurementCost: line.procurementCost,
+            }
           : {
               catalogItemId: line.catalogItemId,
               keepSnapshot: true,
@@ -190,6 +207,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
               unit: line.unit,
               unitPrice: line.unitPrice,
               quantity: line.quantity,
+              procurementCost: line.procurementCost,
             }
       );
       const body = {
@@ -282,7 +300,12 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
 
       <div>
         <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">選択中の明細</p>
-        <SelectedLinesCart lines={Array.from(cart.values())} onRemove={handleRemove} onQuantityChange={handleQuantityChange} />
+        <SelectedLinesCart
+          lines={Array.from(cart.values())}
+          onRemove={handleRemove}
+          onQuantityChange={handleQuantityChange}
+          onProcurementCostChange={handleProcurementCostChange}
+        />
       </div>
 
       <div>

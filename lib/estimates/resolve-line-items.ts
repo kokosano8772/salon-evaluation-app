@@ -19,6 +19,10 @@ export interface LineItemInput {
   description?: string;
   category?: string;
   quantity: number;
+  // 仕入れ料金（印刷費など）。価格表の単価はデザイン・作業料金のみで、実際の仕入れは
+  // 案件ごとに業者見積もりを取って手入力する性質のものなので、価格表には持たせず
+  // 明細ごとに自由入力させる。数量に比例させず定額のまま加算する。
+  procurementCost?: number;
 }
 
 export interface ResolvedLineItem {
@@ -28,6 +32,7 @@ export interface ResolvedLineItem {
   description: string;
   unit: string;
   unit_price: number;
+  procurement_cost: number;
   quantity: number;
   amount: number;
   sort_order: number;
@@ -46,12 +51,18 @@ function pickTierPrice(
   return catalogItem.unit_price;
 }
 
+function resolveProcurementCost(input: LineItemInput): number {
+  return Number.isFinite(input.procurementCost) && input.procurementCost! > 0 ? Math.round(input.procurementCost!) : 0;
+}
+
 // 見積もり明細の「スナップショット化」を行う。catalogItemId付きかつkeepSnapshotでない行は、
 // クライアントが送ってきた名称・単価を一切信用せず、ここでestimate_catalog_itemsを
 // 再取得してサーバー側の値（priceTierで指定した区分の単価）をそのまま使う
 // （価格の改ざん・古い表示からの不整合を防ぐため）。catalogItemIdが無い行（自由入力行）、
 // またはkeepSnapshot指定の行（編集時に触っていない既存明細をそのまま維持する場合）は
-// クライアント値をそのまま使う。
+// クライアント値をそのまま使う。仕入れ料金（procurementCost）は価格表に存在しない
+// 手入力値のため、どのケースでもクライアント値をそのまま信用する（数量×単価のような
+// 価格表由来の改ざん防止対象ではないため）。
 export async function resolveLineItems(
   admin: ReturnType<typeof createAdminClient>,
   inputs: LineItemInput[]
@@ -76,6 +87,7 @@ export async function resolveLineItems(
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
     const quantity = Number.isFinite(input.quantity) && input.quantity > 0 ? Math.round(input.quantity) : 1;
+    const procurementCost = resolveProcurementCost(input);
     let resolved: ResolvedLineItem;
 
     if (input.keepSnapshot) {
@@ -90,8 +102,9 @@ export async function resolveLineItems(
         description: input.description ?? "",
         unit: input.unit?.trim() || "式",
         unit_price: unitPrice,
+        procurement_cost: procurementCost,
         quantity,
-        amount: unitPrice * quantity,
+        amount: unitPrice * quantity + procurementCost,
         sort_order: i,
       };
     } else if (input.catalogItemId) {
@@ -107,8 +120,9 @@ export async function resolveLineItems(
         description: catalogItem.description,
         unit: catalogItem.unit,
         unit_price: unitPrice,
+        procurement_cost: procurementCost,
         quantity,
-        amount: unitPrice * quantity,
+        amount: unitPrice * quantity + procurementCost,
         sort_order: i,
       };
     } else {
@@ -123,8 +137,9 @@ export async function resolveLineItems(
         description: input.description ?? "",
         unit: input.unit?.trim() || "式",
         unit_price: unitPrice,
+        procurement_cost: procurementCost,
         quantity,
-        amount: unitPrice * quantity,
+        amount: unitPrice * quantity + procurementCost,
         sort_order: i,
       };
     }

@@ -220,6 +220,9 @@ export default function EstimateDetailPage({ params }: { params: Promise<{ id: s
                     <td className="px-5 py-3 text-sm text-charcoal-900">
                       {item.name}
                       {item.description && <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>}
+                      {item.procurementCost > 0 && (
+                        <p className="text-xs text-gray-400 mt-0.5">仕入れ料金 {formatYen(item.procurementCost)}</p>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-sm text-gray-500 text-right whitespace-nowrap">
                       {item.quantity} {item.unit}

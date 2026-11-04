@@ -66,6 +66,9 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                     <td style={{ padding: "10px 18px", fontSize: 12, color: "#1a1a1a" }}>
                       {item.name}
                       {item.description && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{item.description}</div>}
+                      {item.procurementCost > 0 && (
+                        <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>仕入れ料金 {yen(item.procurementCost)}</div>
+                      )}
                     </td>
                     <td style={{ padding: "10px 12px", fontSize: 12, color: "#4b5563", textAlign: "right", whiteSpace: "nowrap" }}>
                       {item.quantity} {item.unit}
