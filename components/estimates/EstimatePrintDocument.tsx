@@ -102,19 +102,21 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
           <tbody>
             {groups.map((group) => (
               <Fragment key={group.category}>
-                <tr data-print-section>
+                <tr data-print-section style={{ borderBottom: `1px solid ${LINE}` }}>
                   <td colSpan={4} style={{ padding: "10px 6px 4px", fontWeight: 700 }}>
                     ●{group.category}
                   </td>
                 </tr>
                 {group.items.map((item, i) => {
                   const descLines = item.description ? item.description.split("\n") : [];
-                  // 項目のまとまりの最後の行にだけ罫線を引く（完成系の見積書と同様、
-                  // 名称行と補足説明の間は罫線無しでひと塊に見せる）。
-                  const hasTrailingRows = descLines.length > 0 || item.procurementCost > 0 || item.discountAmount > 0;
+                  // 完成系の見積書と同様、どの行にも罫線を引いてグリッド状にする
+                  // （名称行と補足説明を罫線無しでまとめる見せ方はしない）。値引きが
+                  // ある場合は、見積書の例と同じく名称行の後・値引き行の前後に
+                  // 罫線だけの空行を1行ずつ挟む。
+                  const rowBorder = { borderBottom: `1px solid ${LINE}` };
                   return (
                     <Fragment key={i}>
-                      <tr data-print-section style={hasTrailingRows ? undefined : { borderBottom: `1px solid ${LINE}` }}>
+                      <tr data-print-section style={rowBorder}>
                         <td style={{ padding: "8px 6px" }}>・{item.name}</td>
                         <td style={{ padding: "8px 6px", textAlign: "center", whiteSpace: "nowrap" }}>
                           {item.quantity}　{item.unit}
@@ -126,32 +128,37 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                       </tr>
                       {/* サイズ・用紙・カラー等の補足説明は、完成系の見積書と同様に
                           1行ずつ独立した行として表示する（改行区切りで複数行入れられる）。 */}
-                      {descLines.map((line, li) => {
-                        const isLast = li === descLines.length - 1 && item.procurementCost === 0 && item.discountAmount === 0;
-                        return (
-                          <tr key={`desc-${li}`} style={isLast ? { borderBottom: `1px solid ${LINE}` } : undefined}>
-                            <td colSpan={4} style={{ padding: "4px 6px", fontSize: 11, color: "#6b7280" }}>
-                              　{line}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {descLines.map((line, li) => (
+                        <tr key={`desc-${li}`} style={rowBorder}>
+                          <td colSpan={4} style={{ padding: "4px 6px", fontSize: 11, color: "#6b7280" }}>
+                            　{line}
+                          </td>
+                        </tr>
+                      ))}
                       {item.procurementCost > 0 && (
-                        <tr style={item.discountAmount === 0 ? { borderBottom: `1px solid ${LINE}` } : undefined}>
+                        <tr style={rowBorder}>
                           <td colSpan={4} style={{ padding: "4px 6px", fontSize: 11, color: "#6b7280" }}>
                             　仕入れ料金 {yen(item.procurementCost)}
                           </td>
                         </tr>
                       )}
                       {item.discountAmount > 0 && (
-                        <tr style={{ borderBottom: `1px solid ${LINE}` }}>
-                          <td colSpan={3} style={{ padding: "6px 6px", color: "#dc2626" }}>
-                            　{item.discountLabel}
-                          </td>
-                          <td style={{ padding: "6px 6px", textAlign: "right", fontWeight: 600, color: "#dc2626", whiteSpace: "nowrap" }}>
-                            -{yen(item.discountAmount)}
-                          </td>
-                        </tr>
+                        <>
+                          <tr style={rowBorder}>
+                            <td colSpan={4} style={{ padding: "4px 6px" }} />
+                          </tr>
+                          <tr style={rowBorder}>
+                            <td colSpan={3} style={{ padding: "6px 6px", color: "#dc2626" }}>
+                              　{item.discountLabel}
+                            </td>
+                            <td style={{ padding: "6px 6px", textAlign: "right", fontWeight: 600, color: "#dc2626", whiteSpace: "nowrap" }}>
+                              -{yen(item.discountAmount)}
+                            </td>
+                          </tr>
+                          <tr style={rowBorder}>
+                            <td colSpan={4} style={{ padding: "4px 6px" }} />
+                          </tr>
+                        </>
                       )}
                     </Fragment>
                   );
