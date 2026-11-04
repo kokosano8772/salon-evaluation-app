@@ -21,6 +21,8 @@ const PX_PER_MM = 640 / 210;
 const mm = (v: number) => v * PX_PER_MM;
 
 const SIDE_MARGIN = mm(21.5); // 左右余白 約21.5mm
+const CONTENT_WIDTH = mm(167);
+const TABLE_TOP = mm(112); // 明細表の左上：用紙上端から112mm
 const DETAIL_ROWS = 24; // 見出し行を除く明細表の行数（見本に合わせた固定数）
 const HEADER_ROW_HEIGHT = mm(7.5);
 const DETAIL_ROW_HEIGHT = mm(5.9);
@@ -71,9 +73,10 @@ function buildRows(groups: { category: string; items: LineItem[] }[], notes: str
 
 // PDF保存専用の静止レイアウト。/result のDiagnosisPrintDocumentと同じ方式
 // （lib/pdf.tsのexportResultToPDF、html-to-image+jsPDFで高さを切り分ける）を踏襲する。
-// デザインは実際にユーザーが使っている紙の見積書を、各要素の用紙上端からの距離・
-// 行の高さ・列幅までmm単位で合わせている。数量は金額計算には使わない表記情報の
-// ため、単価欄は参考として列だけ残し、値は入れない。
+// 上部の各ブロック（宛先・ご担当・案内文・自社情報・見積番号/見積日・社印・合計金額枠）
+// は、見本を実測した「用紙左上からの位置」でposition:absolute配置し、通常の
+// flexレイアウトの積み重ねでは再現しづらいmm単位の精度を出している。
+// 数量は金額計算には使わない表記情報のため、単価欄は参考として列だけ残し、値は入れない。
 export default function EstimatePrintDocument({ estimate, clientLabel, lineItems }: EstimatePrintDocumentProps) {
   const groups = groupByCategory(lineItems);
   const rows = buildRows(groups, estimate.notes);
@@ -85,82 +88,95 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
   const issuedDateLabel = formatSlashDate(estimate.createdAt);
   const productionDateLabel = estimate.productionDate ? formatSlashDate(estimate.productionDate) : null;
 
-  // 右側ブロック（見積番号・見積日／自社情報／社印）の左端は、用紙左端から131mm。
-  const RIGHT_COL_LEFT_FROM_PAGE = mm(131);
-  const RIGHT_COL_WIDTH = SIDE_MARGIN + mm(167) - RIGHT_COL_LEFT_FROM_PAGE;
-  const LEFT_COL_WIDTH = RIGHT_COL_LEFT_FROM_PAGE - SIDE_MARGIN;
-
   return (
-    <div style={{ width: 640, backgroundColor: "white", fontFamily: "'Noto Sans JP', sans-serif", color: INK, position: "relative" }}>
-      {/* タイトルバー：用紙上端から19mm、高さ9mm */}
-      <div data-print-section style={{ paddingTop: mm(19), paddingLeft: SIDE_MARGIN, paddingRight: SIDE_MARGIN }}>
-        <div style={{ background: GRAY, height: mm(9), display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ width: 640, backgroundColor: "white", fontFamily: "'Noto Sans JP', sans-serif", color: INK }}>
+      {/* 上部ヘッダー一式。高さをTABLE_TOPぴったりに固定し、中の各要素は
+          実測した絶対座標（用紙左上基準）で配置する。 */}
+      <div data-print-section style={{ position: "relative", height: TABLE_TOP }}>
+        {/* タイトルバー：用紙上端から19mm、高さ9mm */}
+        <div
+          style={{
+            position: "absolute",
+            left: SIDE_MARGIN,
+            top: mm(19),
+            width: CONTENT_WIDTH,
+            height: mm(9),
+            background: GRAY,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <h1 style={{ fontSize: 17, fontWeight: 500, letterSpacing: 0, margin: 0 }}>御　見　積　書</h1>
         </div>
 
-        {/* 宛先（左列）・見積番号/見積日+自社情報+社印（右列、左端は用紙左端から131mm）。
-            右列は内容の長さに関わらず左端が固定されるよう、space-betweenではなく
-            固定幅の2カラムにする。 */}
-        <div style={{ display: "flex", marginTop: 8, gap: 0 }}>
-          <div style={{ width: LEFT_COL_WIDTH, minWidth: 0 }}>
-            <p style={{ fontSize: 14, fontWeight: 400, margin: 0 }}>{clientLabel} 御中</p>
-            <p style={{ fontSize: 11, margin: "4px 0 0" }}>ご担当　{estimate.clientContact || "　　　　"}　様</p>
+        {/* 宛先の会社名：左22mm・上41mm */}
+        <p style={{ position: "absolute", left: mm(22), top: mm(41), fontSize: 14, fontWeight: 400, margin: 0 }}>
+          {clientLabel} 御中
+        </p>
+        {/* 「ご担当」の行：左27mm・上48mm */}
+        <p style={{ position: "absolute", left: mm(27), top: mm(48), fontSize: 11, margin: 0 }}>
+          ご担当　{estimate.clientContact || "　　　　"}　様
+        </p>
+
+        {/* 「下記のとおり〜」案内文ブロック：左22mm・上60mm。自社情報(左110mm)と
+            重ならないよう幅は88mm（110-22）までに収める。 */}
+        <div style={{ position: "absolute", left: mm(22), top: mm(60), width: mm(88), fontSize: 11, lineHeight: 1.75 }}>
+          <p style={{ margin: 0 }}>下記のとおり、御見積り申し上げます。</p>
+          <p style={{ margin: 0 }}>件名：{estimate.title}</p>
+          <p style={{ margin: 0 }}>納期：{productionDateLabel ?? ""}</p>
+          <p style={{ margin: 0 }}>支払条件：</p>
+          <p style={{ margin: 0 }}>有効期限：御見積後４週間</p>
+        </div>
+
+        {/* 自社情報ブロック：左110mm・上60mm。見積番号/見積日（左131mm）とは
+            別の開始位置。TEL・担当者名は会社名より少し字下げする。 */}
+        <div style={{ position: "absolute", left: mm(110), top: mm(60), width: mm(78.5), fontSize: 11, lineHeight: 1.6 }}>
+          <p style={{ margin: 0, fontSize: 12, fontWeight: 400 }}>株式会社　ココデザイン</p>
+          <p style={{ margin: 0 }}>〒460-0012</p>
+          <p style={{ margin: 0, whiteSpace: "nowrap" }}>愛知県名古屋市中区千代田3丁目11-32 5F</p>
+          <p style={{ margin: "6px 0 0 8px" }}>TEL：090-1287-7557</p>
+          {/* created_byはログイン時のメールアドレスのため、クライアント向けの
+              表記としては@より前の部分だけを担当者名として表示する。 */}
+          <p style={{ margin: "0 0 0 8px" }}>担当：{estimate.createdBy ? estimate.createdBy.split("@")[0] : ""}</p>
+        </div>
+
+        {/* 見積番号・見積日ブロック：左131mm・上35mm。ラベル幅を揃えて、
+            値の開始位置も揃う2カラムにする（見積番号が空でもラベルが右へ寄らない）。 */}
+        <div style={{ position: "absolute", left: mm(131), top: mm(35), fontSize: 11, lineHeight: 1.6 }}>
+          <div style={{ display: "flex" }}>
+            <span style={{ width: mm(19) }}>見積番号：</span>
+            <span></span>
           </div>
-          <div style={{ width: RIGHT_COL_WIDTH, minWidth: 0, flexShrink: 0 }}>
-            <div style={{ fontSize: 11, lineHeight: 1.6 }}>
-              <p style={{ margin: 0 }}>見積番号：</p>
-              <p style={{ margin: 0 }}>見積日：{issuedDateLabel}</p>
-            </div>
+          <div style={{ display: "flex" }}>
+            <span style={{ width: mm(19) }}>見積日：</span>
+            <span>{issuedDateLabel}</span>
           </div>
         </div>
 
-        {/* 件名等（左列）・自社情報（右列、見積番号/見積日の続き）。社印は
-            position:absoluteで用紙左端162mm・上端76mmに固定配置する。 */}
-        <div style={{ display: "flex", marginTop: 8 }}>
-          <div style={{ width: LEFT_COL_WIDTH, fontSize: 11, lineHeight: 1.75, minWidth: 0 }}>
-            <p style={{ margin: 0 }}>下記のとおり、御見積り申し上げます。</p>
-            <p style={{ margin: 0 }}>件名：{estimate.title}</p>
-            <p style={{ margin: 0 }}>納期：{productionDateLabel ?? ""}</p>
-            <p style={{ margin: 0 }}>支払条件：</p>
-            <p style={{ margin: 0 }}>有効期限：御見積後４週間</p>
-          </div>
-          <div style={{ width: RIGHT_COL_WIDTH, fontSize: 11, lineHeight: 1.7, minWidth: 0, flexShrink: 0 }}>
-            <p style={{ margin: 0, fontSize: 12, fontWeight: 400 }}>株式会社　ココデザイン</p>
-            <p style={{ margin: 0 }}>〒460-0012</p>
-            <p style={{ margin: 0 }}>愛知県名古屋市中区千代田3丁目11-32 5F</p>
-            <p style={{ margin: "6px 0 0" }}>TEL：090-1287-7557</p>
-            {/* created_byはログイン時のメールアドレスのため、クライアント向けの
-                表記としては@より前の部分だけを担当者名として表示する。 */}
-            <p style={{ margin: 0 }}>担当：{estimate.createdBy ? estimate.createdBy.split("@")[0] : ""}</p>
-          </div>
-        </div>
-      </div>
+        {/* 社印画像を貼る位置のスペース（実画像は未導入。枠だけ確保）。
+            目安は左162mm・上76mmだが、実測で住所の最終行が76mm付近まで
+            伸びて枠に触れるため、上端は79mmに調整して住所と重ならないようにする
+            （TEL行の開始位置とほぼ揃う）。 */}
+        <div
+          style={{
+            position: "absolute",
+            left: mm(162),
+            top: mm(79),
+            width: mm(20),
+            height: mm(20),
+            border: `1px solid ${LINE}`,
+          }}
+        />
 
-      {/* 社印画像を貼る位置のスペース（実画像は未導入。枠だけ確保）。
-          目安は用紙左端から約162mm・上端から約76mmだが、実測するとTEL行の
-          テキストが165.4mmまで伸びて重なるため、左端は166mmに調整して
-          TEL・担当者名の右側に収まるようにしている。 */}
-      <div
-        style={{
-          position: "absolute",
-          left: mm(166),
-          top: mm(76),
-          width: mm(20),
-          height: mm(20),
-          border: `1px solid ${LINE}`,
-        }}
-      />
-
-      {/* 合計金額（強調）。用紙上端から100mm、高さ9mm、左端を明細表に揃え、
-          全体の幅は約88mm（ラベル29mm＋金額59mm）にして摘要欄の右端に合わせる。
-          ラベルセルは四辺とも罫線を明示し、下罫線が欠けないようにする。 */}
-      <div data-print-section style={{ marginTop: 10, paddingLeft: SIDE_MARGIN, paddingRight: SIDE_MARGIN }}>
-        <div style={{ display: "flex", width: mm(88), height: mm(9) }}>
+        {/* 合計金額（強調）：左21.5mm・上100mm、幅88mm（ラベル29mm＋金額59mm）、高さ9mm。
+            ラベルセル・金額セルそれぞれに個別の罫線を持たせ、罫線の欠けを無くす。 */}
+        <div style={{ position: "absolute", left: SIDE_MARGIN, top: mm(100), display: "flex", width: mm(88), height: mm(9) }}>
           <div
             style={{
               width: mm(29),
               background: GRAY,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 700,
               whiteSpace: "nowrap",
               display: "flex",
@@ -176,24 +192,28 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
           <div
             style={{
               width: mm(59),
-              padding: "0 14px",
-              fontSize: 15,
+              padding: "0 10px",
+              fontSize: 16,
               fontWeight: 700,
               whiteSpace: "nowrap",
               display: "flex",
               alignItems: "center",
+              justifyContent: "space-between",
               border: `1px solid ${INK}`,
               boxSizing: "border-box",
             }}
           >
+            <span />
             {yen(estimate.total)}
-            <span style={{ fontSize: 10, fontWeight: 500, marginLeft: 6 }}>（税込）</span>
+            <span style={{ fontSize: 10, fontWeight: 500 }}>（税込）</span>
           </div>
         </div>
       </div>
 
-      {/* 明細（24行固定の格子状の表）。見出し背景は白、4列は中央揃え。 */}
-      <div style={{ marginTop: 7, paddingLeft: SIDE_MARGIN, paddingRight: SIDE_MARGIN }}>
+      {/* 明細（24行固定の格子状の表）。見出し背景は白、4列は中央揃え。
+          小計・消費税・合計も同じ表の続きの行として配置し、摘要・数量列の下は
+          罫線の無い空白のままにする（単価+金額列のみ枠を付ける）。 */}
+      <div style={{ paddingLeft: SIDE_MARGIN, paddingRight: SIDE_MARGIN }}>
         <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: 10.5 }}>
           <colgroup>
             <col />
@@ -252,7 +272,7 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                     <td style={{ padding: "0 6px", color: "#dc2626", textAlign: "right", border: CELL_BORDER }}>{row.label}</td>
                     <td style={{ border: CELL_BORDER }} />
                     <td style={{ border: CELL_BORDER }} />
-                    <td style={{ padding: "0 6px", textAlign: "right", fontWeight: 600, color: "#dc2626", whiteSpace: "nowrap", border: CELL_BORDER }}>
+                    <td style={{ padding: "0 6px", textAlign: "right", fontWeight: 400, color: "#dc2626", whiteSpace: "nowrap", border: CELL_BORDER }}>
                       -{yen(row.amount)}
                     </td>
                   </tr>
@@ -279,49 +299,48 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                 </tr>
               );
             })}
-          </tbody>
-        </table>
 
-        {/* 小計・消費税・合計。摘要欄は罫線なしの空白、ラベルは数量列の下付近に
-            枠なしで配置し、数字は単価+金額列を合わせた幅の枠内で右寄せにする。
-            背景は白のまま、合計だけ太字にする。 */}
-        <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: 11 }} data-print-section>
-          <colgroup>
-            <col />
-            <col style={{ width: QTY_COL }} />
-            <col style={{ width: UNIT_PRICE_COL + AMOUNT_COL }} />
-          </colgroup>
-          <tbody>
-            <tr style={{ height: DETAIL_ROW_HEIGHT }}>
-              <td />
-              <td style={{ padding: "0 4px", textAlign: "center", fontWeight: 700, whiteSpace: "nowrap" }}>小計</td>
-              <td style={{ padding: "0 6px", textAlign: "right", border: CELL_BORDER, fontWeight: 400, whiteSpace: "nowrap" }}>
-                {yen(estimate.subtotal)}
+            {/* 小計・消費税・合計。摘要・数量列は罫線の無い空白のまま、ラベルは
+                数量列の下で中央揃え（枠なし）、金額は単価+金額列を合わせた幅の
+                枠に右寄せで収める。同じ<table>内の行にすることで、別テーブルに
+                分けた場合に起きる罫線の二重描画（太く見える問題）も避けられる。 */}
+            <tr data-print-section style={{ height: DETAIL_ROW_HEIGHT }}>
+              <td colSpan={2} />
+              <td colSpan={2} style={{ padding: 0, border: CELL_BORDER }}>
+                <div style={{ display: "flex", height: "100%" }}>
+                  <div style={{ width: QTY_COL, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
+                    小計
+                  </div>
+                  <div style={{ flex: 1, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "flex-end", fontWeight: 400 }}>
+                    {yen(estimate.subtotal)}
+                  </div>
+                </div>
               </td>
             </tr>
-            <tr style={{ height: DETAIL_ROW_HEIGHT }}>
-              <td />
-              <td style={{ padding: "0 4px", textAlign: "center", fontWeight: 700, whiteSpace: "nowrap" }}>消費税</td>
-              <td style={{ padding: "0 6px", textAlign: "right", border: CELL_BORDER, fontWeight: 400, whiteSpace: "nowrap" }}>
-                {yen(estimate.taxAmount)}
+            <tr data-print-section style={{ height: DETAIL_ROW_HEIGHT }}>
+              <td colSpan={2} />
+              <td colSpan={2} style={{ padding: 0, border: CELL_BORDER }}>
+                <div style={{ display: "flex", height: "100%" }}>
+                  <div style={{ width: QTY_COL, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
+                    消費税
+                  </div>
+                  <div style={{ flex: 1, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "flex-end", fontWeight: 400 }}>
+                    {yen(estimate.taxAmount)}
+                  </div>
+                </div>
               </td>
             </tr>
-            {/* 最下部の行はborder-collapse+端数丸めで下罫線が消えることがあったため、
-                この行だけ明示的にborderBottomも付けて二重に担保する。 */}
-            <tr style={{ height: DETAIL_ROW_HEIGHT, borderBottom: CELL_BORDER }}>
-              <td />
-              <td style={{ padding: "0 4px", textAlign: "center", fontWeight: 700, whiteSpace: "nowrap", borderBottom: CELL_BORDER }}>合計</td>
-              <td
-                style={{
-                  padding: "0 6px",
-                  textAlign: "right",
-                  border: CELL_BORDER,
-                  borderBottom: `2px solid ${LINE}`,
-                  fontWeight: 700,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {yen(estimate.total)}
+            <tr data-print-section style={{ height: DETAIL_ROW_HEIGHT }}>
+              <td colSpan={2} />
+              <td colSpan={2} style={{ padding: 0, border: CELL_BORDER }}>
+                <div style={{ display: "flex", height: "100%" }}>
+                  <div style={{ width: QTY_COL, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
+                    合計
+                  </div>
+                  <div style={{ flex: 1, padding: "0 6px", display: "flex", alignItems: "center", justifyContent: "flex-end", fontWeight: 700 }}>
+                    {yen(estimate.total)}
+                  </div>
+                </div>
               </td>
             </tr>
           </tbody>
