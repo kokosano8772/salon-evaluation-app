@@ -110,7 +110,9 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
         name: item.name,
         description: item.description,
         unit: item.unit,
-        unitPrice: tierInfo.unitPrice,
+        // unitPriceは常に基本作業料（割引前）。割引は数量に関係なく定額で引くため、
+        // unitPrice自体は割引後の値にしない（discountと別に持つ）。
+        unitPrice: item.unitPrice,
         procurementCost: existing?.procurementCost ?? 0,
         discount: tierInfo.discount,
         discountLabel: PRICE_TIER_DISCOUNT_LABEL[tierInfo.tier],
@@ -179,7 +181,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
   const { subtotal, taxAmount, total } = useMemo(() => {
     let sum = 0;
     cart.forEach((line) => {
-      sum += line.unitPrice * line.quantity + line.procurementCost;
+      sum += line.unitPrice * line.quantity - line.discount + line.procurementCost;
     });
     const tax = Math.round(sum * taxRate);
     return { subtotal: sum, taxAmount: tax, total: sum + tax };

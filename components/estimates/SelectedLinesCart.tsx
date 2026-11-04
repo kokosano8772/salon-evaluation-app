@@ -33,11 +33,11 @@ export default function SelectedLinesCart({ lines, onRemove, onQuantityChange, o
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-charcoal-900">{line.name}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      デザイン料金 {formatYen(line.unitPrice + line.discount)} / {line.unit}
+                      デザイン料金 {formatYen(line.unitPrice)} / {line.unit}
                     </p>
                     {line.discount > 0 && (
                       <p className="text-xs text-red-500 mt-0.5">
-                        {line.discountLabel} -{formatYen(line.discount * line.quantity)}
+                        {line.discountLabel} -{formatYen(line.discount)}
                       </p>
                     )}
                   </div>
@@ -49,7 +49,7 @@ export default function SelectedLinesCart({ lines, onRemove, onQuantityChange, o
                     className="w-16 px-2 py-1 rounded-lg border border-gray-200 text-sm text-right outline-none focus:border-[#C4788A] shrink-0"
                   />
                   <p className="text-sm font-semibold text-charcoal-900 w-24 text-right shrink-0">
-                    {formatYen(line.unitPrice * line.quantity + line.procurementCost)}
+                    {formatYen(line.unitPrice * line.quantity - line.discount + line.procurementCost)}
                   </p>
                   <button
                     onClick={() => onRemove(line.key)}

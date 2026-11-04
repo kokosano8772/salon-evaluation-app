@@ -63,7 +63,6 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
               </thead>
               <tbody>
                 {group.items.map((item, i) => {
-                  const undiscountedUnitPrice = item.unitPrice + item.discountAmount;
                   const isLast = i === group.items.length - 1 && item.discountAmount <= 0;
                   return (
                     <Fragment key={i}>
@@ -79,10 +78,10 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                           {item.quantity} {item.unit}
                         </td>
                         <td style={{ padding: "10px 12px", fontSize: 12, color: "#4b5563", textAlign: "right", whiteSpace: "nowrap" }}>
-                          {yen(undiscountedUnitPrice)}
+                          {yen(item.unitPrice)}
                         </td>
                         <td style={{ padding: "10px 18px", fontSize: 12, fontWeight: 600, color: "#1a1a1a", textAlign: "right", whiteSpace: "nowrap" }}>
-                          {yen(undiscountedUnitPrice * item.quantity)}
+                          {yen(item.unitPrice * item.quantity)}
                         </td>
                       </tr>
                       {item.discountAmount > 0 && (
@@ -91,7 +90,7 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                             {item.discountLabel}
                           </td>
                           <td style={{ padding: "6px 18px", fontSize: 12, fontWeight: 600, color: "#dc2626", textAlign: "right", whiteSpace: "nowrap" }}>
-                            -{yen(item.discountAmount * item.quantity)}
+                            -{yen(item.discountAmount)}
                           </td>
                         </tr>
                       )}

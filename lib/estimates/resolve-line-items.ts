@@ -29,11 +29,12 @@ export interface LineItemInput {
   // 案件ごとに業者見積もりを取って手入力する性質のものなので、価格表には持たせず
   // 明細ごとに自由入力させる。数量に比例させず定額のまま加算する。
   procurementCost?: number;
-  // 表示用の割引額・割引ラベル（keepSnapshot時のみクライアント値を使う。
-  // catalogItemId＋priceTier解決時はサーバー側で価格表から計算し直す）。
-  // unit_priceは常に「選んだ料金区分での単価＝割引後の値」のままで、
-  // discountAmountは「割引前の単価はunitPrice+discountAmountだった」ことを
-  // 表示側で再現するための付随情報（amountの計算には使わない）。
+  // 割引額・割引ラベル（keepSnapshot時のみクライアント値を使う。catalogItemId＋
+  // priceTier解決時はサーバー側で価格表から計算し直す）。unit_priceは常に
+  // 「基本作業料＝割引前の単価」のまま（数量に比例させる対象）。discountAmountは
+  // 数量に関係なく明細1行につき定額で1回だけ差し引く割引（例: 特別値引きは
+  // 2個注文しても2倍にはならない）。amount = unit_price×quantity - discountAmount
+  // + procurementCost。
   discountAmount?: number;
   discountLabel?: string;
 }
@@ -53,20 +54,24 @@ export interface ResolvedLineItem {
   sort_order: number;
 }
 
+// unitPriceは常に基本作業料（割引前）を返す。割引額は数量に関係なく定額で
+// 1回だけ差し引くものとして別に返す（呼び出し側でunitPrice×quantity - discountAmount
+// とする。unitPrice自体を割引後の値にしてquantityを掛けると、数量が2以上のときに
+// 割引まで一緒に数量倍されてしまうため）。
 function pickTier(
   catalogItem: { unit_price: number; unit_price_line_registered: number | null; unit_price_hp_managed: number | null },
   tier: PriceTier | undefined
 ): { unitPrice: number; discountAmount: number; discountLabel: string } {
   if (tier === "line_registered" && catalogItem.unit_price_line_registered !== null) {
     return {
-      unitPrice: catalogItem.unit_price_line_registered,
+      unitPrice: catalogItem.unit_price,
       discountAmount: catalogItem.unit_price - catalogItem.unit_price_line_registered,
       discountLabel: TIER_DISCOUNT_LABEL.line_registered,
     };
   }
   if (tier === "hp_managed" && catalogItem.unit_price_hp_managed !== null) {
     return {
-      unitPrice: catalogItem.unit_price_hp_managed,
+      unitPrice: catalogItem.unit_price,
       discountAmount: catalogItem.unit_price - catalogItem.unit_price_hp_managed,
       discountLabel: TIER_DISCOUNT_LABEL.hp_managed,
     };
@@ -117,6 +122,7 @@ export async function resolveLineItems(
         return { ok: false, error: "明細には項目名が必要です" };
       }
       const unitPrice = Number.isFinite(input.unitPrice) ? Math.round(input.unitPrice!) : 0;
+      const discountAmount = Number.isFinite(input.discountAmount) && input.discountAmount! > 0 ? Math.round(input.discountAmount!) : 0;
       resolved = {
         catalog_item_id: input.catalogItemId ?? null,
         category: input.category?.trim() ?? "",
@@ -125,10 +131,10 @@ export async function resolveLineItems(
         unit: input.unit?.trim() || "式",
         unit_price: unitPrice,
         procurement_cost: procurementCost,
-        discount_amount: Number.isFinite(input.discountAmount) && input.discountAmount! > 0 ? Math.round(input.discountAmount!) : 0,
+        discount_amount: discountAmount,
         discount_label: input.discountLabel?.trim() ?? "",
         quantity,
-        amount: unitPrice * quantity + procurementCost,
+        amount: unitPrice * quantity - discountAmount + procurementCost,
         sort_order: i,
       };
     } else if (input.catalogItemId) {
@@ -148,7 +154,7 @@ export async function resolveLineItems(
         discount_amount: discountAmount,
         discount_label: discountLabel,
         quantity,
-        amount: unitPrice * quantity + procurementCost,
+        amount: unitPrice * quantity - discountAmount + procurementCost,
         sort_order: i,
       };
     } else {
