@@ -34,15 +34,23 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
   const productionDateLabel = estimate.productionDate ? formatSlashDate(estimate.productionDate) : null;
 
   return (
-    <div style={{ width: 640, backgroundColor: "white", fontFamily: "'Noto Sans JP', sans-serif", color: INK }}>
+    <div
+      style={{
+        width: 640,
+        backgroundColor: "white",
+        fontFamily: "'Noto Sans JP', sans-serif",
+        color: INK,
+        border: `1px solid ${LINE}`,
+      }}
+    >
       {/* タイトルバー */}
-      <div data-print-section style={{ padding: "28px 40px 0" }}>
-        <div style={{ background: "#e5e5e5", padding: "14px 0", textAlign: "center" }}>
+      <div data-print-section style={{ padding: "18px 40px 0" }}>
+        <div style={{ background: "#e5e5e5", padding: "12px 0", textAlign: "center" }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "0.5em", margin: 0 }}>御見積書</h1>
         </div>
 
         {/* 宛先・見積番号・見積日 */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 10 }}>
           <div style={{ minWidth: 220 }}>
             <p style={{ fontSize: 17, fontWeight: 700, borderBottom: `2px solid ${INK}`, paddingBottom: 4 }}>
               {clientLabel} 御中
@@ -51,7 +59,7 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
               <p style={{ fontSize: 12.5, marginTop: 6 }}>ご担当　{estimate.clientContact}　様</p>
             )}
           </div>
-          <div style={{ fontSize: 12, color: "#4b5563", textAlign: "right", lineHeight: 1.9 }}>
+          <div style={{ fontSize: 12, color: "#4b5563", textAlign: "right", lineHeight: 1.6 }}>
             <p>見積番号：</p>
             <p>見積日：{issuedDateLabel}</p>
           </div>
@@ -60,15 +68,15 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
         {/* 件名等（左）・自社情報（右）。件名が長い場合でも右側の会社情報が画面外に
             はみ出さないよう、両側ともwhiteSpace:nowrapにせず折り返し可能にし、
             minWidth:0でflexアイテムが縮められるようにしている。 */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, gap: 24 }}>
-          <div style={{ fontSize: 12.5, lineHeight: 2, minWidth: 0, flex: "1 1 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, gap: 24 }}>
+          <div style={{ fontSize: 12.5, lineHeight: 1.5, minWidth: 0, flex: "1 1 auto" }}>
             <p>下記のとおり、御見積り申し上げます。</p>
             <p>件名：{estimate.title}</p>
             <p>納期：{productionDateLabel ?? ""}</p>
             <p>支払条件：</p>
             <p>有効期限：御見積後４週間</p>
           </div>
-          <div style={{ fontSize: 11.5, color: "#4b5563", lineHeight: 1.8, textAlign: "right", minWidth: 0, flexShrink: 0 }}>
+          <div style={{ fontSize: 11.5, color: "#4b5563", lineHeight: 1.6, textAlign: "right", minWidth: 0, flexShrink: 0 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: INK }}>株式会社　ココデザイン</p>
             <p>〒460-0012</p>
             <p>愛知県名古屋市中区千代田3丁目11-32 5F</p>
@@ -77,11 +85,12 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
         </div>
       </div>
 
-      {/* 合計金額（強調） */}
-      <div data-print-section style={{ padding: "20px 40px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", border: `1px solid ${INK}` }}>
-          <div style={{ background: "#e5e5e5", padding: "12px 24px", fontSize: 14, fontWeight: 700 }}>合計金額</div>
-          <div style={{ padding: "12px 24px", fontSize: 22, fontWeight: 700 }}>
+      {/* 合計金額（強調）。完成系の見積書と同様、表の全幅には伸ばさず内容に合わせた
+          幅にする（display:inline-flexでコンテンツ幅にフィットさせる）。 */}
+      <div data-print-section style={{ padding: "8px 40px 0" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", border: `1px solid ${INK}` }}>
+          <div style={{ background: "#e5e5e5", padding: "6px 24px", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>合計金額</div>
+          <div style={{ padding: "6px 24px", fontSize: 22, fontWeight: 700, whiteSpace: "nowrap" }}>
             {yen(estimate.total)}
             <span style={{ fontSize: 13, fontWeight: 500, marginLeft: 8 }}>（税込）</span>
           </div>
@@ -89,21 +98,21 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
       </div>
 
       {/* 明細 */}
-      <div style={{ padding: "16px 40px 0" }}>
+      <div style={{ padding: "8px 40px 0" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
           <thead>
             <tr style={{ borderTop: `2px solid ${INK}`, borderBottom: `2px solid ${INK}` }}>
-              <th style={{ textAlign: "left", padding: "8px 6px", fontWeight: 700 }}>摘要</th>
-              <th style={{ textAlign: "center", padding: "8px 6px", fontWeight: 700, width: 80 }}>数量</th>
-              <th style={{ textAlign: "right", padding: "8px 6px", fontWeight: 700, width: 90 }}>単価</th>
-              <th style={{ textAlign: "right", padding: "8px 6px", fontWeight: 700, width: 100 }}>金額</th>
+              <th style={{ textAlign: "left", padding: "6px 6px", fontWeight: 700 }}>摘要</th>
+              <th style={{ textAlign: "center", padding: "6px 6px", fontWeight: 700, width: 80 }}>数量</th>
+              <th style={{ textAlign: "right", padding: "6px 6px", fontWeight: 700, width: 90 }}>単価</th>
+              <th style={{ textAlign: "right", padding: "6px 6px", fontWeight: 700, width: 100 }}>金額</th>
             </tr>
           </thead>
           <tbody>
             {groups.map((group) => (
               <Fragment key={group.category}>
                 <tr data-print-section style={{ borderBottom: `1px solid ${LINE}` }}>
-                  <td colSpan={4} style={{ padding: "10px 6px 4px", fontWeight: 700 }}>
+                  <td colSpan={4} style={{ padding: "4px 6px 1px", fontWeight: 700 }}>
                     ●{group.category}
                   </td>
                 </tr>
@@ -117,48 +126,42 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                   return (
                     <Fragment key={i}>
                       <tr data-print-section style={rowBorder}>
-                        <td style={{ padding: "8px 6px" }}>・{item.name}</td>
-                        <td style={{ padding: "8px 6px", textAlign: "center", whiteSpace: "nowrap" }}>
+                        <td style={{ padding: "4px 6px" }}>・{item.name}</td>
+                        <td style={{ padding: "4px 6px", textAlign: "center", whiteSpace: "nowrap" }}>
                           {item.quantity}　{item.unit}
                         </td>
-                        <td style={{ padding: "8px 6px" }} />
-                        <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>
+                        <td style={{ padding: "4px 6px" }} />
+                        <td style={{ padding: "4px 6px", textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>
                           {yen(item.unitPrice)}
                         </td>
                       </tr>
                       {/* サイズ・用紙・カラー等の補足説明は、完成系の見積書と同様に
-                          1行ずつ独立した行として表示する（改行区切りで複数行入れられる）。 */}
+                          1行ずつ独立した行として表示する（改行区切りで複数行入れられる）。
+                          data-print-sectionを各行に付け、改ページがこの行の途中で
+                          起きないようにする。 */}
                       {descLines.map((line, li) => (
-                        <tr key={`desc-${li}`} style={rowBorder}>
-                          <td colSpan={4} style={{ padding: "4px 6px", fontSize: 11, color: "#6b7280" }}>
+                        <tr key={`desc-${li}`} data-print-section style={rowBorder}>
+                          <td colSpan={4} style={{ padding: "2px 6px", fontSize: 11, color: "#6b7280" }}>
                             　{line}
                           </td>
                         </tr>
                       ))}
                       {item.procurementCost > 0 && (
-                        <tr style={rowBorder}>
-                          <td colSpan={4} style={{ padding: "4px 6px", fontSize: 11, color: "#6b7280" }}>
+                        <tr data-print-section style={rowBorder}>
+                          <td colSpan={4} style={{ padding: "2px 6px", fontSize: 11, color: "#6b7280" }}>
                             　仕入れ料金 {yen(item.procurementCost)}
                           </td>
                         </tr>
                       )}
                       {item.discountAmount > 0 && (
-                        <>
-                          <tr style={rowBorder}>
-                            <td colSpan={4} style={{ padding: "4px 6px" }} />
-                          </tr>
-                          <tr style={rowBorder}>
-                            <td colSpan={3} style={{ padding: "6px 6px", color: "#dc2626" }}>
-                              　{item.discountLabel}
-                            </td>
-                            <td style={{ padding: "6px 6px", textAlign: "right", fontWeight: 600, color: "#dc2626", whiteSpace: "nowrap" }}>
-                              -{yen(item.discountAmount)}
-                            </td>
-                          </tr>
-                          <tr style={rowBorder}>
-                            <td colSpan={4} style={{ padding: "4px 6px" }} />
-                          </tr>
-                        </>
+                        <tr data-print-section style={rowBorder}>
+                          <td colSpan={3} style={{ padding: "4px 6px", color: "#dc2626" }}>
+                            　{item.discountLabel}
+                          </td>
+                          <td style={{ padding: "4px 6px", textAlign: "right", fontWeight: 600, color: "#dc2626", whiteSpace: "nowrap" }}>
+                            -{yen(item.discountAmount)}
+                          </td>
+                        </tr>
                       )}
                     </Fragment>
                   );
@@ -171,9 +174,9 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
 
       {/* 備考・注意事項（赤字） */}
       {estimate.notes && (
-        <div data-print-section style={{ padding: "10px 40px 0" }}>
+        <div data-print-section style={{ padding: "6px 40px 0" }}>
           {estimate.notes.split("\n").map((line, i) => (
-            <p key={i} style={{ fontSize: 11, color: "#dc2626", lineHeight: 1.8, margin: 0 }}>
+            <p key={i} style={{ fontSize: 10.5, color: "#dc2626", lineHeight: 1.4, margin: 0 }}>
               {line ? `※${line}` : " "}
             </p>
           ))}
@@ -181,26 +184,26 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
       )}
 
       {/* 小計・消費税・合計 */}
-      <div data-print-section style={{ padding: "16px 40px 36px" }}>
+      <div data-print-section style={{ padding: "8px 40px 20px" }}>
         <table style={{ marginLeft: "auto", width: 260, fontSize: 13, borderCollapse: "collapse" }}>
           <tbody>
             <tr>
-              <td style={{ padding: "6px 10px", fontWeight: 700, background: "#f5f5f5", border: `1px solid ${LINE}` }}>小計</td>
-              <td style={{ padding: "6px 10px", textAlign: "right", border: `1px solid ${LINE}` }}>{yen(estimate.subtotal)}</td>
+              <td style={{ padding: "5px 10px", fontWeight: 700, background: "#f5f5f5", border: `1px solid ${LINE}` }}>小計</td>
+              <td style={{ padding: "5px 10px", textAlign: "right", border: `1px solid ${LINE}` }}>{yen(estimate.subtotal)}</td>
             </tr>
             <tr>
-              <td style={{ padding: "6px 10px", fontWeight: 700, background: "#f5f5f5", border: `1px solid ${LINE}` }}>
+              <td style={{ padding: "5px 10px", fontWeight: 700, background: "#f5f5f5", border: `1px solid ${LINE}` }}>
                 消費税（{Math.round(estimate.taxRate * 100)}%）
               </td>
-              <td style={{ padding: "6px 10px", textAlign: "right", border: `1px solid ${LINE}` }}>{yen(estimate.taxAmount)}</td>
+              <td style={{ padding: "5px 10px", textAlign: "right", border: `1px solid ${LINE}` }}>{yen(estimate.taxAmount)}</td>
             </tr>
             <tr>
-              <td style={{ padding: "8px 10px", fontWeight: 700, background: "#e5e5e5", border: `1px solid ${INK}`, fontSize: 14 }}>
+              <td style={{ padding: "6px 10px", fontWeight: 700, background: "#e5e5e5", border: `1px solid ${INK}`, fontSize: 14 }}>
                 合計
               </td>
               <td
                 style={{
-                  padding: "8px 10px",
+                  padding: "6px 10px",
                   textAlign: "right",
                   border: `1px solid ${INK}`,
                   fontSize: 15,
