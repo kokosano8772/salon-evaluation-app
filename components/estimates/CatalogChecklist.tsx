@@ -2,9 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { CatalogItem, ORDER_TYPE_LABEL, OrderType, PriceTier, PRICE_TIER_LABEL, availableTiers, formatYen, groupByCategory } from "./types";
 
+export interface AddOptions {
+  unit: string;
+  // 価格表の項目名は「修正料金(8割以上修正)」のように社内向けの区分名でしかなく、
+  // どの商品（チラシ・DM・名刺等）の明細か見積書だけでは分からないことがあるため、
+  // 追加する時点で具体的な商品名・サイズ・紙を補足できるようにする（任意項目。
+  // 入力があれば明細の補足説明に追加される）。
+  productName: string;
+  size: string;
+  paper: string;
+}
+
 interface CatalogChecklistProps {
   catalogItems: CatalogItem[];
-  onAdd: (item: CatalogItem, tier: PriceTier, quantity: number, unit: string) => void;
+  onAdd: (item: CatalogItem, tier: PriceTier, quantity: number, options: AddOptions) => void;
 }
 
 const NO_ORDER_TYPE = "none" as const;
@@ -15,12 +26,19 @@ type OrderTypeFilterValue = OrderType | typeof NO_ORDER_TYPE;
 // 候補は実際のカタログで使われている単位＋よく使われる印刷物の単位。
 const UNIT_OPTIONS = ["枚", "部", "式", "回", "個", "セット", "ページ", "箇所", "月", "年", "時間"];
 
-function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogItem, tier: PriceTier, quantity: number, unit: string) => void }) {
+// サイズは自由入力にすると表記ゆれが起きるため選択式にする。候補は実際の価格表の
+// チラシ・フライヤーの料金区分で使われているサイズの組み合わせ。
+const SIZE_OPTIONS = ["A3/B4", "A4/B5", "A5/B6", "A3", "B4", "A4", "B5", "A5", "B6"];
+
+function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogItem, tier: PriceTier, quantity: number, options: AddOptions) => void }) {
   const tiers = useMemo(() => availableTiers(item), [item]);
   const [open, setOpen] = useState(false);
   const [tier, setTier] = useState<PriceTier>(tiers[0].tier);
   const [quantity, setQuantity] = useState(1);
   const [unit, setUnit] = useState(item.unit);
+  const [productName, setProductName] = useState("");
+  const [size, setSize] = useState("");
+  const [paper, setPaper] = useState("");
 
   return (
     <div className={!item.isActive ? "opacity-50" : ""}>
@@ -82,14 +100,51 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* 商品名・サイズ・紙はどれも任意。入力があれば明細の補足説明に追加される
+              （見積書上で「何の商品の明細か」をその場で具体的に書けるようにするため）。 */}
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            <input
+              type="text"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder="商品名（任意）例: 〇〇チラシ"
+              className="flex-1 min-w-[140px] px-2 py-1 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
+            />
+            <select
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A] bg-white"
+            >
+              <option value="">サイズ（任意）</option>
+              {SIZE_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={paper}
+              onChange={(e) => setPaper(e.target.value)}
+              placeholder="紙（任意）"
+              className="w-24 px-2 py-1 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
+            />
+          </div>
+
+          <div className="flex justify-end mt-2">
             <button
               onClick={() => {
-                onAdd(item, tier, quantity, unit);
+                onAdd(item, tier, quantity, { unit, productName, size, paper });
                 setOpen(false);
                 setQuantity(1);
                 setUnit(item.unit);
+                setProductName("");
+                setSize("");
+                setPaper("");
               }}
-              className="ml-auto flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full text-white"
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full text-white"
               style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
             >
               <Plus size={13} strokeWidth={2.5} />

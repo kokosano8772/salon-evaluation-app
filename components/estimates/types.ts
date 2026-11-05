@@ -102,6 +102,10 @@ export interface LineItem {
   id?: string;
   catalogItemId: string | null;
   category: string;
+  // 価格表側の現在のsubcategory（金額とは無関係の表示用情報のため、スナップショット
+  // しない。GET /api/estimates/[id]がその都度引いて補う。catalogItemIdが無い
+  // 自由入力行では空文字）。見積書PDFではcategoryより具体的なこちらを見出しに使う。
+  subcategory: string;
   name: string;
   description: string;
   unit: string;

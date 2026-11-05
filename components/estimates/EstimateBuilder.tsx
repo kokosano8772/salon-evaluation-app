@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import FormSection from "@/components/growth-db/forms/FormSection";
-import CatalogChecklist from "./CatalogChecklist";
+import CatalogChecklist, { AddOptions } from "./CatalogChecklist";
 import PresetButtons from "./PresetButtons";
 import SelectedLinesCart from "./SelectedLinesCart";
 import StickyTotalBar from "./StickyTotalBar";
@@ -97,10 +97,18 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
       .finally(() => setLoading(false));
   }, []);
 
-  const handleAddFromCatalog = (item: CatalogItem, tier: PriceTier, quantity: number, unit: string) => {
+  const handleAddFromCatalog = (item: CatalogItem, tier: PriceTier, quantity: number, options: AddOptions) => {
     const tiers = availableTiers(item);
     const tierInfo = tiers.find((t) => t.tier === tier) ?? tiers[0];
     const key = `${item.id}:${tierInfo.tier}`;
+    // 商品名・サイズ・紙は、価格表の項目名だけでは分からない「この明細が具体的に
+    // 何の商品か」を見積書の補足説明に書き足すための任意項目。
+    const extraDescLines = [
+      options.productName.trim() && `商品名：${options.productName.trim()}`,
+      options.size && `サイズ：${options.size}`,
+      options.paper.trim() && `紙：${options.paper.trim()}`,
+    ].filter((line): line is string => Boolean(line));
+    const description = [...extraDescLines, item.description].filter(Boolean).join("\n");
     setCart((prev) => {
       const next = new Map(prev);
       const existing = next.get(key);
@@ -110,8 +118,8 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
         priceTier: tierInfo.tier,
         category: item.category,
         name: item.name,
-        description: item.description,
-        unit,
+        description,
+        unit: options.unit,
         // unitPriceは常に基本作業料（割引前）。割引は数量に関係なく定額で引くため、
         // unitPrice自体は割引後の値にしない（discountと別に持つ）。
         unitPrice: item.unitPrice,

@@ -34,6 +34,19 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     .order("sort_order");
   if (lineItemsError) return NextResponse.json({ error: lineItemsError.message }, { status: 500 });
 
+  // 明細のcategoryは「印刷物制作」のように大まかすぎて、見積書の見出しとして
+  // 商品名が分からない。estimate_line_itemsはsubcategoryをスナップショットして
+  // いないため、価格表に紐づいている行だけ現在のsubcategoryを都度引いて補う
+  // （区分けは金額に影響しない表示用の情報のため、スナップショット原則の対象外）。
+  const catalogItemIds = Array.from(
+    new Set((lineItems ?? []).map((li) => li.catalog_item_id).filter((v): v is string => !!v))
+  );
+  const subcategoryByCatalogItemId = new Map<string, string>();
+  if (catalogItemIds.length > 0) {
+    const { data: catalogItems } = await admin.from("estimate_catalog_items").select("id, subcategory").in("id", catalogItemIds);
+    for (const c of catalogItems ?? []) subcategoryByCatalogItemId.set(c.id, c.subcategory);
+  }
+
   return NextResponse.json({
     estimate: {
       id: estimate.id,
@@ -58,6 +71,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       id: li.id,
       catalogItemId: li.catalog_item_id,
       category: li.category,
+      subcategory: li.catalog_item_id ? subcategoryByCatalogItemId.get(li.catalog_item_id) || "" : "",
       name: li.name,
       description: li.description,
       unit: li.unit,

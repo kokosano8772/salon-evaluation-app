@@ -45,6 +45,14 @@ type Row =
   | { kind: "note"; text: string }
   | { kind: "blank" };
 
+// 「8割以上修正」のような社内の料金区分（割合）は、価格表で項目を選び分けるための
+// 内部的な情報であり、クライアント向けの見積書にそのまま出すものではないため、
+// 印刷時だけ名前から取り除く（価格表・見積もり編集画面では区分が見えたままでよい
+// ので、データ自体は書き換えずここで表示用に加工するだけ）。
+function stripInternalTierLabel(name: string): string {
+  return name.replace(/[（(][^（）()]*割[^（）()]*[）)]/g, "").trim();
+}
+
 // 明細・補足・値引き・注意事項を24行固定のフラットな行リストに変換する。
 // 足りない分は空行で埋め、見本と同じく最後まで罫線が途切れないようにする。
 function buildRows(groups: { category: string; items: LineItem[] }[], notes: string): Row[] {
@@ -52,7 +60,13 @@ function buildRows(groups: { category: string; items: LineItem[] }[], notes: str
   for (const group of groups) {
     rows.push({ kind: "category", label: group.category });
     for (const item of group.items) {
-      rows.push({ kind: "item", name: item.name, quantity: item.quantity, unit: item.unit, unitPrice: item.unitPrice });
+      rows.push({
+        kind: "item",
+        name: stripInternalTierLabel(item.name),
+        quantity: item.quantity,
+        unit: item.unit,
+        unitPrice: item.unitPrice,
+      });
       for (const line of item.description ? item.description.split("\n") : []) {
         rows.push({ kind: "desc", text: line });
       }
@@ -77,7 +91,10 @@ function buildRows(groups: { category: string; items: LineItem[] }[], notes: str
 // flexレイアウトの積み重ねでは再現しづらいmm単位の精度を出している。
 // 数量は金額計算には使わない表記情報のため、単価欄は参考として列だけ残し、値は入れない。
 export default function EstimatePrintDocument({ estimate, clientLabel, lineItems }: EstimatePrintDocumentProps) {
-  const groups = groupByCategory(lineItems);
+  // categoryは「印刷物制作」のように大まかすぎて見出しとして商品名が分からないため、
+  // より具体的なsubcategory（「チラシ・フライヤー」等）があればそちらで見出しを作る
+  // （自由入力行等、subcategoryが無い行はcategoryのまま）。
+  const groups = groupByCategory(lineItems.map((item) => ({ ...item, category: item.subcategory || item.category })));
   const rows = buildRows(groups, estimate.notes);
 
   const formatSlashDate = (iso: string) => {
