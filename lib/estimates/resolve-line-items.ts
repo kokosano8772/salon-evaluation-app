@@ -146,7 +146,10 @@ export async function resolveLineItems(
         catalog_item_id: catalogItem.id,
         category: catalogItem.category,
         name: catalogItem.name,
-        description: catalogItem.description,
+        // 商品名・サイズ・紙など、追加時に入力した補足説明（価格表の説明文を含めて
+        // クライアント側で組み立て済み）があればそちらを使う。表示用の情報のため
+        // 価格のように再取得して検証する必要は無い。
+        description: input.description ?? catalogItem.description,
         // 数量の単位（枚/部等）は価格表の既定値だが、同じ項目でも案件によって
         // 数え方が変わることがあるため、クライアントから指定があればそちらを使う
         // （表記のみの情報で金額計算には影響しないため、価格のように再取得して

@@ -226,6 +226,9 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
               priceTier: line.priceTier,
               quantity: line.quantity,
               unit: line.unit,
+              // 商品名・サイズ・紙の入力はdescriptionに含めてカートに積んでいるため、
+              // ここで送らないとサーバー側が価格表の説明文に差し戻してしまう。
+              description: line.description,
               procurementCost: line.procurementCost,
             }
           : {
