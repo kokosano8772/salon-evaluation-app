@@ -442,6 +442,169 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["estimate_line_items"]["Row"]>;
         Relationships: [];
       };
+      chatbot_bot_configs: {
+        Row: {
+          id: string;
+          store_id: string;
+          public_bot_id: string;
+          status: "draft" | "published" | "archived";
+          mode: "choice" | "ai" | "hybrid";
+          allowed_domains: string[];
+          theme: Record<string, unknown>;
+          rate_limit_per_minute: number;
+          rate_limit_per_day: number;
+          ai_monthly_token_limit: number | null;
+          ai_monthly_cost_limit_usd: number | null;
+          draft_system_prompt: string;
+          published_system_prompt: string;
+          prompt_published_at: string | null;
+          prompt_published_by: string | null;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["chatbot_bot_configs"]["Row"], "id" | "public_bot_id" | "created_at" | "updated_at">> & {
+          store_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["chatbot_bot_configs"]["Row"]>;
+        Relationships: [];
+      };
+      chatbot_notification_contacts: {
+        Row: {
+          id: string;
+          store_id: string;
+          email: string;
+          name: string;
+          is_primary: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["chatbot_notification_contacts"]["Row"], "id" | "created_at" | "updated_at">> & {
+          store_id: string;
+          email: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["chatbot_notification_contacts"]["Row"]>;
+        Relationships: [];
+      };
+      chatbot_knowledge_sources: {
+        Row: {
+          id: string;
+          store_id: string;
+          source_type: "recruitment_lp" | "manual_url" | "manual_text";
+          url: string;
+          fetched_content: string;
+          fetched_content_hash: string;
+          fetched_at: string | null;
+          approved_content: string;
+          approved_content_hash: string;
+          approved_at: string | null;
+          approved_by: string | null;
+          status: "pending" | "fetched" | "approved" | "rejected" | "stale";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["chatbot_knowledge_sources"]["Row"], "id" | "created_at" | "updated_at">> & {
+          store_id: string;
+          source_type: "recruitment_lp" | "manual_url" | "manual_text";
+        };
+        Update: Partial<Database["public"]["Tables"]["chatbot_knowledge_sources"]["Row"]>;
+        Relationships: [];
+      };
+      chatbot_knowledge_items: {
+        Row: {
+          id: string;
+          store_id: string;
+          source_id: string | null;
+          item_type:
+            | "salary"
+            | "holiday"
+            | "location"
+            | "hours"
+            | "benefits"
+            | "requirements"
+            | "training"
+            | "selection_flow"
+            | "faq"
+            | "other";
+          category: string;
+          title: string;
+          body: string;
+          metadata: Record<string, unknown>;
+          sort_order: number;
+          is_published: boolean;
+          published_snapshot: Record<string, unknown> | null;
+          published_at: string | null;
+          published_by: string | null;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["chatbot_knowledge_items"]["Row"], "id" | "created_at" | "updated_at">> & {
+          store_id: string;
+          item_type: Database["public"]["Tables"]["chatbot_knowledge_items"]["Row"]["item_type"];
+        };
+        Update: Partial<Database["public"]["Tables"]["chatbot_knowledge_items"]["Row"]>;
+        Relationships: [];
+      };
+      chatbot_flow_versions: {
+        Row: {
+          id: string;
+          store_id: string;
+          version: number;
+          draft_json: Record<string, unknown>;
+          published_json: Record<string, unknown> | null;
+          published_at: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["chatbot_flow_versions"]["Row"], "id" | "created_at">> & {
+          store_id: string;
+          version: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["chatbot_flow_versions"]["Row"]>;
+        Relationships: [];
+      };
+      chatbot_usage_daily: {
+        Row: {
+          id: string;
+          store_id: string;
+          date: string;
+          chat_message_count: number;
+          ai_response_count: number;
+          input_tokens: number;
+          output_tokens: number;
+          estimated_cost_usd: number;
+          application_success_count: number;
+          application_failure_count: number;
+          widget_load_count: number;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["chatbot_usage_daily"]["Row"], "id" | "updated_at">> & {
+          store_id: string;
+          date: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["chatbot_usage_daily"]["Row"]>;
+        Relationships: [];
+      };
+      chatbot_error_logs: {
+        Row: {
+          id: string;
+          store_id: string | null;
+          error_code: string;
+          error_source: "ai" | "email" | "fetch" | "flow" | "rate_limit" | "other";
+          message: string;
+          created_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["chatbot_error_logs"]["Row"], "id" | "created_at">> & {
+          error_code: string;
+          error_source: "ai" | "email" | "fetch" | "flow" | "rate_limit" | "other";
+        };
+        Update: Partial<Database["public"]["Tables"]["chatbot_error_logs"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -456,6 +619,21 @@ export interface Database {
           p_completed_at: string;
         };
         Returns: string;
+      };
+      chatbot_increment_usage: {
+        Args: {
+          p_store_id: string;
+          p_date: string;
+          p_chat_message_count?: number;
+          p_ai_response_count?: number;
+          p_input_tokens?: number;
+          p_output_tokens?: number;
+          p_estimated_cost_usd?: number;
+          p_application_success_count?: number;
+          p_application_failure_count?: number;
+          p_widget_load_count?: number;
+        };
+        Returns: undefined;
       };
     };
   };

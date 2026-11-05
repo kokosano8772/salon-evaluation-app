@@ -13,6 +13,7 @@ import {
   Archive,
   Bot,
   Receipt,
+  MessageSquare,
   ChevronDown,
   LogOut,
   type LucideIcon,
@@ -76,6 +77,7 @@ const NAV_ITEMS: NavEntry[] = [
       { href: "/dashboard/estimates/catalog", label: "価格表・プリセット管理", exact: false },
     ],
   },
+  { type: "link", href: "/dashboard/chatbot", label: "求人チャットボット", icon: MessageSquare, exact: false },
 ];
 
 // モバイルの横スクロールナビは開閉のUIが馴染まないため、グループは子項目を
