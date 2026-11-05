@@ -102,13 +102,16 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
     const tierInfo = tiers.find((t) => t.tier === tier) ?? tiers[0];
     const key = `${item.id}:${tierInfo.tier}`;
     // 商品名・サイズ・紙は、価格表の項目名だけでは分からない「この明細が具体的に
-    // 何の商品か」を見積書の補足説明に書き足すための任意項目。
-    const extraDescLines = [
+    // 何の商品か」を見積書の補足説明に書き足すための任意項目。価格表側のdescription
+    // （「片面につき・修正3回まで」等、区分を選ぶための社内向けの注記）はここでは
+    // 含めない。クライアント向けの見積書にそのまま出すものではないため。
+    const description = [
       options.productName.trim() && `商品名：${options.productName.trim()}`,
       options.size && `サイズ：${options.size}`,
       options.paper.trim() && `紙：${options.paper.trim()}`,
-    ].filter((line): line is string => Boolean(line));
-    const description = [...extraDescLines, item.description].filter(Boolean).join("\n");
+    ]
+      .filter((line): line is string => Boolean(line))
+      .join("\n");
     setCart((prev) => {
       const next = new Map(prev);
       const existing = next.get(key);
