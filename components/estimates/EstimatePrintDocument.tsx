@@ -251,7 +251,7 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
               if (row.kind === "item") {
                 return (
                   <tr key={i} data-print-section style={style}>
-                    <td style={{ padding: "0 6px", border: CELL_BORDER }}>・{row.name}</td>
+                    <td style={{ padding: "0 6px", border: CELL_BORDER }}>●{row.name}</td>
                     <td style={{ padding: "0 4px", textAlign: "center", whiteSpace: "nowrap", border: CELL_BORDER }}>
                       {row.quantity}　{row.unit}
                     </td>
