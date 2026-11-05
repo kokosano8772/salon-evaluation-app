@@ -126,8 +126,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body.storeId !== undefined) update.store_id = body.storeId;
   if (body.clientName !== undefined) update.client_name = body.clientName;
   if (body.clientContact !== undefined) update.client_contact = body.clientContact;
+  // 件名は手入力欄を廃止し、明細の商品名から自動生成するようになったため、
+  // 空文字でも保存できるようにする（必須チェックはしない）。
   if (body.title !== undefined) {
-    if (!body.title.trim()) return NextResponse.json({ error: "件名が必要です" }, { status: 400 });
     update.title = body.title.trim();
   }
   if (body.status !== undefined) {

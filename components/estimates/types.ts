@@ -168,6 +168,14 @@ export function formatYen(value: number): string {
   return `¥${value.toLocaleString("ja-JP")}`;
 }
 
+// 追加時に入力した「商品名：〇〇」の行を補足説明から取り出す（EstimatePrintDocumentの
+// 摘要表記・EstimateBuilderの件名の自動生成、どちらでも同じ抽出ロジックを使うための
+// 共通ユーティリティ）。無ければnull。
+export function extractProductName(description: string): string | null {
+  const line = description.split("\n").find((l) => l.startsWith("商品名："));
+  return line ? line.replace("商品名：", "").trim() : null;
+}
+
 // category（文字列）を持つ配列をカテゴリ別にグルーピングする。渡される配列はsort_order順
 // である前提で、最初に出てきたカテゴリの順番をそのままグループの並び順にする
 // （EstimatePrintDocument・見積もり詳細画面・カート表示など複数箇所で使う共通ロジック）。

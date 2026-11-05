@@ -18,6 +18,7 @@ import {
   StoreOption,
   Template,
   availableTiers,
+  extractProductName,
 } from "./types";
 
 interface EstimateBuilderInitial {
@@ -77,7 +78,6 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
   const [storeId, setStoreId] = useState<string | null>(initial?.storeId ?? null);
   const [clientName, setClientName] = useState(initial?.clientName ?? "");
   const [clientContact, setClientContact] = useState(initial?.clientContact ?? "");
-  const [title, setTitle] = useState(initial?.title ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [staffName, setStaffName] = useState(initial?.staffName ?? "");
   const [productionDate, setProductionDate] = useState(initial?.productionDate ?? "");
@@ -203,12 +203,17 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
     return { subtotal: sum, taxAmount: tax, total: sum + tax };
   }, [cart, taxRate]);
 
+  // 件名は手入力をやめ、明細に入力した商品名から自動で組み立てる
+  // （複数あれば重複を除いて「、」で繋げる）。
+  const title = useMemo(() => {
+    const names = Array.from(cart.values())
+      .map((line) => extractProductName(line.description))
+      .filter((name): name is string => Boolean(name));
+    return [...new Set(names)].join("、");
+  }, [cart]);
+
   const handleSave = async () => {
     setError("");
-    if (!title.trim()) {
-      setError("件名を入力してください");
-      return;
-    }
     if (pickerMode === "client" && !clientName.trim()) {
       setError("クライアント名を入力してください");
       return;
@@ -295,16 +300,6 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
       {error && <div className="card-luxury p-4 text-sm text-red-500 border border-red-200">{error}</div>}
 
       <FormSection title="見積もり情報">
-        <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">件名</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="例: ホームページリニューアル一式"
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
-          />
-        </div>
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1.5">制作日（任意）</label>
           <input

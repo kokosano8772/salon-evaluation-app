@@ -1,4 +1,4 @@
-import { EstimateHeader, LineItem } from "./types";
+import { EstimateHeader, LineItem, extractProductName } from "./types";
 
 interface EstimatePrintDocumentProps {
   estimate: EstimateHeader;
@@ -57,9 +57,9 @@ function stripInternalTierLabel(name: string): string {
 // 無ければ従来通り価格表の項目名を使う。
 function splitDescription(item: LineItem): { displayName: string; descLines: string[] } {
   const lines = item.description ? item.description.split("\n") : [];
-  const productLine = lines.find((l) => l.startsWith("商品名："));
-  const descLines = lines.filter((l) => l !== productLine);
-  const displayName = productLine ? productLine.replace("商品名：", "").trim() : stripInternalTierLabel(item.name);
+  const productName = extractProductName(item.description);
+  const descLines = lines.filter((l) => !l.startsWith("商品名："));
+  const displayName = productName ?? stripInternalTierLabel(item.name);
   return { displayName, descLines };
 }
 

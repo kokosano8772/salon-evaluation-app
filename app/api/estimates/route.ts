@@ -72,9 +72,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });
   }
 
-  if (typeof body.title !== "string" || !body.title.trim()) {
-    return NextResponse.json({ error: "件名が必要です" }, { status: 400 });
-  }
+  // 件名は手入力欄を廃止し、明細の商品名から自動生成するようになったため、
+  // 商品名が1件も入力されていない場合は空文字でも保存できるようにする。
   if (!body.storeId && !body.clientName?.trim()) {
     return NextResponse.json({ error: "既存クライアントの選択、またはクライアント名の入力が必要です" }, { status: 400 });
   }
@@ -97,7 +96,7 @@ export async function POST(request: Request) {
       store_id: body.storeId ?? null,
       client_name: body.clientName?.trim() ?? "",
       client_contact: body.clientContact ?? "",
-      title: body.title.trim(),
+      title: body.title?.trim() ?? "",
       source_template_id: body.sourceTemplateId ?? null,
       subtotal,
       tax_rate: taxRate,
