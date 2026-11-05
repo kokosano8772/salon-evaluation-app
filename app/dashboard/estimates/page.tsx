@@ -97,8 +97,8 @@ export default function EstimatesListPage() {
                     </span>
                     <span className="text-xs text-gray-400">{formatDate(e.createdAt)}作成</span>
                   </div>
-                  <p className="text-sm font-semibold text-charcoal-900 truncate">{e.title || "（件名未設定）"}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{e.clientName || "クライアント未設定"}</p>
+                  <p className="text-sm font-semibold text-charcoal-900 truncate">{e.clientName || "クライアント未設定"}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">{e.title || "（件名未設定）"}</p>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <p className="text-base font-bold" style={{ color: "#C4788A" }}>
