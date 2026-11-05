@@ -11,6 +11,8 @@ export interface AddOptions {
   productName: string;
   size: string;
   paper: string;
+  sides: string;
+  color: string;
 }
 
 interface CatalogChecklistProps {
@@ -29,6 +31,8 @@ const UNIT_OPTIONS = ["枚", "部", "式", "回", "個", "セット", "ページ
 // サイズは自由入力にすると表記ゆれが起きるため選択式にする。候補は実際の価格表の
 // チラシ・フライヤーの料金区分で使われているサイズの組み合わせ。
 const SIZE_OPTIONS = ["A3/B4", "A4/B5", "A5/B6", "A3", "B4", "A4", "B5", "A5", "B6"];
+const SIDES_OPTIONS = ["片面", "両面"];
+const COLOR_OPTIONS = ["カラー", "モノクロ"];
 
 function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogItem, tier: PriceTier, quantity: number, options: AddOptions) => void }) {
   const tiers = useMemo(() => availableTiers(item), [item]);
@@ -39,6 +43,8 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
   const [productName, setProductName] = useState("");
   const [size, setSize] = useState("");
   const [paper, setPaper] = useState("");
+  const [sides, setSides] = useState("");
+  const [color, setColor] = useState("");
 
   return (
     <div className={!item.isActive ? "opacity-50" : ""}>
@@ -102,8 +108,9 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
             </select>
           </div>
 
-          {/* 商品名・サイズ・紙はどれも任意。入力があれば明細の補足説明に追加される
-              （見積書上で「何の商品の明細か」をその場で具体的に書けるようにするため）。 */}
+          {/* 商品名・サイズ・紙・面付け・カラーはどれも任意。入力があれば明細の補足
+              説明に追加される（見積書上で「何の商品の明細か」をその場で具体的に
+              書けるようにするため）。 */}
           <div className="flex flex-wrap items-center gap-1.5 mt-2">
             <input
               type="text"
@@ -131,18 +138,44 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
               placeholder="紙（任意）"
               className="w-24 px-2 py-1 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
             />
+            <select
+              value={sides}
+              onChange={(e) => setSides(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A] bg-white"
+            >
+              <option value="">面付け（任意）</option>
+              {SIDES_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <select
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A] bg-white"
+            >
+              <option value="">カラー（任意）</option>
+              {COLOR_OPTIONS.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex justify-end mt-2">
             <button
               onClick={() => {
-                onAdd(item, tier, quantity, { unit, productName, size, paper });
+                onAdd(item, tier, quantity, { unit, productName, size, paper, sides, color });
                 setOpen(false);
                 setQuantity(1);
                 setUnit(item.unit);
                 setProductName("");
                 setSize("");
                 setPaper("");
+                setSides("");
+                setColor("");
               }}
               className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full text-white"
               style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}

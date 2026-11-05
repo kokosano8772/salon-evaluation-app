@@ -109,6 +109,8 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
       options.productName.trim() && `商品名：${options.productName.trim()}`,
       options.size && `サイズ：${options.size}`,
       options.paper.trim() && `紙：${options.paper.trim()}`,
+      options.sides && `面付け：${options.sides}`,
+      options.color && `カラー：${options.color}`,
     ]
       .filter((line): line is string => Boolean(line))
       .join("\n");
