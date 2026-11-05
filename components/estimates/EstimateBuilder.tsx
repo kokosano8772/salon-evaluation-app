@@ -18,7 +18,6 @@ import {
   StoreOption,
   Template,
   availableTiers,
-  extractProductName,
 } from "./types";
 
 interface EstimateBuilderInitial {
@@ -51,6 +50,7 @@ function buildInitialCart(lineItems: LineItem[] | undefined): Map<string, CartLi
       catalogItemId: li.catalogItemId,
       priceTier: null,
       category: li.category,
+      subcategory: li.subcategory,
       name: li.name,
       description: li.description,
       unit: li.unit,
@@ -122,6 +122,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
         catalogItemId: item.id,
         priceTier: tierInfo.tier,
         category: item.category,
+        subcategory: item.subcategory,
         name: item.name,
         description,
         unit: options.unit,
@@ -179,6 +180,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
           catalogItemId: item.catalogItemId,
           priceTier: "standard",
           category: item.category,
+          subcategory: "",
           name: item.name,
           description: "",
           unit: item.unit,
@@ -205,11 +207,13 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
 
   // 件名は手入力をやめ、明細に入力した商品名から自動で組み立てる
   // （複数あれば重複を除いて「、」で繋げる）。
+  // 件名は価格表のsubcategory（「名刺・カード(シンプルデザイン)」等）から自動生成する
+  // （商品名ではなく、どの区分の明細かという詳細区分の方）。
   const title = useMemo(() => {
-    const names = Array.from(cart.values())
-      .map((line) => extractProductName(line.description))
-      .filter((name): name is string => Boolean(name));
-    return [...new Set(names)].join("、");
+    const subcategories = Array.from(cart.values())
+      .map((line) => line.subcategory)
+      .filter((v): v is string => Boolean(v));
+    return [...new Set(subcategories)].join("、");
   }, [cart]);
 
   const handleSave = async () => {

@@ -64,6 +64,9 @@ export interface CartLine {
   catalogItemId: string | null;
   priceTier: PriceTier | null;
   category: string;
+  // 価格表のsubcategory（「名刺・カード(シンプルデザイン)」等）。見積もりの件名を
+  // 自動生成する元になる。
+  subcategory: string;
   name: string;
   description: string;
   unit: string;
