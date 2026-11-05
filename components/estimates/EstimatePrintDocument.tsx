@@ -1,4 +1,4 @@
-import { EstimateHeader, LineItem, groupByCategory } from "./types";
+import { EstimateHeader, LineItem } from "./types";
 
 interface EstimatePrintDocumentProps {
   estimate: EstimateHeader;
@@ -38,7 +38,6 @@ const UNIT_PRICE_COL = mm(29.2);
 const AMOUNT_COL = mm(29.2);
 
 type Row =
-  | { kind: "category"; label: string }
   | { kind: "item"; name: string; quantity: number; unit: string; unitPrice: number }
   | { kind: "desc"; text: string }
   | { kind: "discount"; label: string; amount: number }
@@ -53,28 +52,33 @@ function stripInternalTierLabel(name: string): string {
   return name.replace(/[（(][^（）()]*割[^（）()]*[）)]/g, "").trim();
 }
 
+// 追加時に入力した「商品名：〇〇」の行があれば、それを摘要の主表記として使い
+// （価格表側の内部的な項目名の代わりに）、補足説明からはその行を除く。
+// 無ければ従来通り価格表の項目名を使う。
+function splitDescription(item: LineItem): { displayName: string; descLines: string[] } {
+  const lines = item.description ? item.description.split("\n") : [];
+  const productLine = lines.find((l) => l.startsWith("商品名："));
+  const descLines = lines.filter((l) => l !== productLine);
+  const displayName = productLine ? productLine.replace("商品名：", "").trim() : stripInternalTierLabel(item.name);
+  return { displayName, descLines };
+}
+
 // 明細・補足・値引き・注意事項を24行固定のフラットな行リストに変換する。
 // 足りない分は空行で埋め、見本と同じく最後まで罫線が途切れないようにする。
-function buildRows(groups: { category: string; items: LineItem[] }[], notes: string): Row[] {
+// カテゴリ見出しの行は出さない（印刷物制作のような大まかな区分や、見出しとして
+// 出していたsubcategoryは、見積もり全体の件名の方で表現する運用にしたため）。
+function buildRows(lineItems: LineItem[], notes: string): Row[] {
   const rows: Row[] = [];
-  for (const group of groups) {
-    rows.push({ kind: "category", label: group.category });
-    for (const item of group.items) {
-      rows.push({
-        kind: "item",
-        name: stripInternalTierLabel(item.name),
-        quantity: item.quantity,
-        unit: item.unit,
-        unitPrice: item.unitPrice,
-      });
-      for (const line of item.description ? item.description.split("\n") : []) {
-        rows.push({ kind: "desc", text: line });
-      }
-      // 仕入れ料金は金額には含めるが（amountの計算は変更無し）、クライアント向けの
-      // 印刷物には内訳として出さない（社内の仕入れ原価を見せないため）。
-      if (item.discountAmount > 0) {
-        rows.push({ kind: "discount", label: item.discountLabel, amount: item.discountAmount });
-      }
+  for (const item of lineItems) {
+    const { displayName, descLines } = splitDescription(item);
+    rows.push({ kind: "item", name: displayName, quantity: item.quantity, unit: item.unit, unitPrice: item.unitPrice });
+    for (const line of descLines) {
+      rows.push({ kind: "desc", text: line });
+    }
+    // 仕入れ料金は金額には含めるが（amountの計算は変更無し）、クライアント向けの
+    // 印刷物には内訳として出さない（社内の仕入れ原価を見せないため）。
+    if (item.discountAmount > 0) {
+      rows.push({ kind: "discount", label: item.discountLabel, amount: item.discountAmount });
     }
   }
   for (const line of notes ? notes.split("\n") : []) {
@@ -91,11 +95,7 @@ function buildRows(groups: { category: string; items: LineItem[] }[], notes: str
 // flexレイアウトの積み重ねでは再現しづらいmm単位の精度を出している。
 // 数量は金額計算には使わない表記情報のため、単価欄は参考として列だけ残し、値は入れない。
 export default function EstimatePrintDocument({ estimate, clientLabel, lineItems }: EstimatePrintDocumentProps) {
-  // categoryは「印刷物制作」のように大まかすぎて見出しとして商品名が分からないため、
-  // より具体的なsubcategory（「チラシ・フライヤー」等）があればそちらで見出しを作る
-  // （自由入力行等、subcategoryが無い行はcategoryのまま）。
-  const groups = groupByCategory(lineItems.map((item) => ({ ...item, category: item.subcategory || item.category })));
-  const rows = buildRows(groups, estimate.notes);
+  const rows = buildRows(lineItems, estimate.notes);
 
   const formatSlashDate = (iso: string) => {
     const d = new Date(iso);
@@ -248,16 +248,6 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
           <tbody>
             {rows.map((row, i) => {
               const style = { height: DETAIL_ROW_HEIGHT };
-              if (row.kind === "category") {
-                return (
-                  <tr key={i} data-print-section style={style}>
-                    <td style={{ padding: "0 6px", fontWeight: 400, border: CELL_BORDER }}>●{row.label}</td>
-                    <td style={{ border: CELL_BORDER }} />
-                    <td style={{ border: CELL_BORDER }} />
-                    <td style={{ border: CELL_BORDER }} />
-                  </tr>
-                );
-              }
               if (row.kind === "item") {
                 return (
                   <tr key={i} data-print-section style={style}>
