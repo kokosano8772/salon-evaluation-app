@@ -28,9 +28,15 @@ type OrderTypeFilterValue = OrderType | typeof NO_ORDER_TYPE;
 // 候補は実際のカタログで使われている単位＋よく使われる印刷物の単位。
 const UNIT_OPTIONS = ["枚", "部", "式", "回", "個", "セット", "ページ", "箇所", "月", "年", "時間"];
 
-// サイズは自由入力にすると表記ゆれが起きるため選択式にする。候補は実際の価格表の
-// チラシ・フライヤーの料金区分で使われているサイズの組み合わせ。
-const SIZE_OPTIONS = ["A3/B4", "A4/B5", "A5/B6", "A3", "B4", "A4", "B5", "A5", "B6"];
+// サイズは自由入力にすると表記ゆれが起きるため選択式にする。チラシ・フライヤー等は
+// 実際の価格表の料金区分で使われている用紙サイズ、名刺・カードはmm単位の実寸サイズ
+// （どちらも商品の種類によって単位の考え方自体が違うため、subcategoryで切り替える）。
+const PAPER_SIZE_OPTIONS = ["A3/B4", "A4/B5", "A5/B6", "A3", "B4", "A4", "B5", "A5", "B6"];
+const CARD_SIZE_OPTIONS = ["91×55mm", "90×54mm", "88×52mm", "86×54mm"];
+function getSizeOptions(item: CatalogItem): string[] {
+  return item.subcategory.includes("名刺") || item.subcategory.includes("カード") ? CARD_SIZE_OPTIONS : PAPER_SIZE_OPTIONS;
+}
+
 const SIDES_OPTIONS = ["片面", "両面"];
 const COLOR_OPTIONS = ["カラー", "モノクロ"];
 
@@ -125,7 +131,7 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
               className="px-2 py-1 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A] bg-white"
             >
               <option value="">サイズ（任意）</option>
-              {SIZE_OPTIONS.map((s) => (
+              {getSizeOptions(item).map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
