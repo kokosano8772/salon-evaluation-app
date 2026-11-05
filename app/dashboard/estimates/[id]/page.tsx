@@ -130,6 +130,7 @@ export default function EstimateDetailPage({ params }: { params: Promise<{ id: s
           initial={{
             title: estimate.title,
             notes: estimate.notes,
+            staffName: estimate.createdBy,
             productionDate: estimate.productionDate,
             taxRate: estimate.taxRate,
             storeId: estimate.storeId,

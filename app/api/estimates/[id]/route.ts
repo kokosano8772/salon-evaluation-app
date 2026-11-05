@@ -93,6 +93,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     productionDate?: string | null;
     taxRate?: number;
     lineItems?: LineItemInput[];
+    staffName?: string;
   };
   try {
     body = await request.json();
@@ -124,6 +125,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   if (body.notes !== undefined) update.notes = body.notes;
   if (body.productionDate !== undefined) update.production_date = body.productionDate;
+  if (body.staffName !== undefined) update.created_by = body.staffName.trim();
 
   const taxRate = Number.isFinite(body.taxRate) ? body.taxRate! : current.tax_rate;
 

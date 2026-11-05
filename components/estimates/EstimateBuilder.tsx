@@ -23,6 +23,7 @@ import {
 interface EstimateBuilderInitial {
   title: string;
   notes: string;
+  staffName: string;
   productionDate: string | null;
   taxRate: number;
   storeId: string | null;
@@ -78,6 +79,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
   const [clientContact, setClientContact] = useState(initial?.clientContact ?? "");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [staffName, setStaffName] = useState(initial?.staffName ?? "");
   const [productionDate, setProductionDate] = useState(initial?.productionDate ?? "");
   const [taxRate] = useState(initial?.taxRate ?? 0.1);
 
@@ -95,7 +97,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
       .finally(() => setLoading(false));
   }, []);
 
-  const handleAddFromCatalog = (item: CatalogItem, tier: PriceTier, quantity: number) => {
+  const handleAddFromCatalog = (item: CatalogItem, tier: PriceTier, quantity: number, unit: string) => {
     const tiers = availableTiers(item);
     const tierInfo = tiers.find((t) => t.tier === tier) ?? tiers[0];
     const key = `${item.id}:${tierInfo.tier}`;
@@ -109,7 +111,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
         category: item.category,
         name: item.name,
         description: item.description,
-        unit: item.unit,
+        unit,
         // unitPriceは常に基本作業料（割引前）。割引は数量に関係なく定額で引くため、
         // unitPrice自体は割引後の値にしない（discountと別に持つ）。
         unitPrice: item.unitPrice,
@@ -215,6 +217,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
               catalogItemId: line.catalogItemId,
               priceTier: line.priceTier,
               quantity: line.quantity,
+              unit: line.unit,
               procurementCost: line.procurementCost,
             }
           : {
@@ -237,6 +240,7 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
         clientContact,
         title,
         notes,
+        staffName,
         productionDate: productionDate || null,
         taxRate,
         lineItems,
@@ -291,6 +295,16 @@ export default function EstimateBuilder({ mode, estimateId, initial }: EstimateB
             type="date"
             value={productionDate}
             onChange={(e) => setProductionDate(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">担当者名（任意・PDFの「担当：」欄に表示）</label>
+          <input
+            type="text"
+            value={staffName}
+            onChange={(e) => setStaffName(e.target.value)}
+            placeholder="例: 佐野"
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
           />
         </div>

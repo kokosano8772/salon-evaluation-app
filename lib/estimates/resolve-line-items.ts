@@ -147,7 +147,11 @@ export async function resolveLineItems(
         category: catalogItem.category,
         name: catalogItem.name,
         description: catalogItem.description,
-        unit: catalogItem.unit,
+        // 数量の単位（枚/部等）は価格表の既定値だが、同じ項目でも案件によって
+        // 数え方が変わることがあるため、クライアントから指定があればそちらを使う
+        // （表記のみの情報で金額計算には影響しないため、価格のように再取得して
+        // 検証する必要は無い）。
+        unit: input.unit?.trim() || catalogItem.unit,
         unit_price: unitPrice,
         procurement_cost: procurementCost,
         discount_amount: discountAmount,

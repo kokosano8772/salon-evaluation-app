@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     taxRate?: number;
     sourceTemplateId?: string | null;
     lineItems?: LineItemInput[];
+    staffName?: string;
   };
   try {
     body = await request.json();
@@ -104,7 +105,9 @@ export async function POST(request: Request) {
       total,
       notes: body.notes ?? "",
       production_date: body.productionDate ?? null,
-      created_by: user.email ?? user.id,
+      // PDFの「担当：」欄にそのまま表示する名前。フォームで入力が無ければ
+      // 従来通りログイン中のメールアドレスを入れる（既存の挙動を維持）。
+      created_by: body.staffName?.trim() || user.email || user.id,
     })
     .select("id")
     .single();

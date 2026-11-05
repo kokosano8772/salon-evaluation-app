@@ -56,9 +56,8 @@ function buildRows(groups: { category: string; items: LineItem[] }[], notes: str
       for (const line of item.description ? item.description.split("\n") : []) {
         rows.push({ kind: "desc", text: line });
       }
-      if (item.procurementCost > 0) {
-        rows.push({ kind: "desc", text: `仕入れ料金 ${yen(item.procurementCost)}` });
-      }
+      // 仕入れ料金は金額には含めるが（amountの計算は変更無し）、クライアント向けの
+      // 印刷物には内訳として出さない（社内の仕入れ原価を見せないため）。
       if (item.discountAmount > 0) {
         rows.push({ kind: "discount", label: item.discountLabel, amount: item.discountAmount });
       }

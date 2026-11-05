@@ -4,17 +4,23 @@ import { CatalogItem, ORDER_TYPE_LABEL, OrderType, PriceTier, PRICE_TIER_LABEL, 
 
 interface CatalogChecklistProps {
   catalogItems: CatalogItem[];
-  onAdd: (item: CatalogItem, tier: PriceTier, quantity: number) => void;
+  onAdd: (item: CatalogItem, tier: PriceTier, quantity: number, unit: string) => void;
 }
 
 const NO_ORDER_TYPE = "none" as const;
 type OrderTypeFilterValue = OrderType | typeof NO_ORDER_TYPE;
 
-function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogItem, tier: PriceTier, quantity: number) => void }) {
+// 数量の単位は価格表の既定値（item.unit）をそのまま使うことが多いが、同じ項目でも
+// 案件によって「枚」「部」等、数え方が変わることがあるため選べるようにする。
+// 候補は実際のカタログで使われている単位＋よく使われる印刷物の単位。
+const UNIT_OPTIONS = ["枚", "部", "式", "回", "個", "セット", "ページ", "箇所", "月", "年", "時間"];
+
+function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogItem, tier: PriceTier, quantity: number, unit: string) => void }) {
   const tiers = useMemo(() => availableTiers(item), [item]);
   const [open, setOpen] = useState(false);
   const [tier, setTier] = useState<PriceTier>(tiers[0].tier);
   const [quantity, setQuantity] = useState(1);
+  const [unit, setUnit] = useState(item.unit);
 
   return (
     <div className={!item.isActive ? "opacity-50" : ""}>
@@ -65,12 +71,23 @@ function ItemPicker({ item, onAdd }: { item: CatalogItem; onAdd: (item: CatalogI
               onChange={(e) => setQuantity(Math.max(1, Math.round(Number(e.target.value)) || 1))}
               className="w-16 px-2 py-1 rounded-lg border border-gray-200 text-sm text-right outline-none focus:border-[#C4788A]"
             />
-            <span className="text-xs text-gray-400">{item.unit}</span>
+            <select
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A] bg-white"
+            >
+              {(UNIT_OPTIONS.includes(item.unit) ? UNIT_OPTIONS : [item.unit, ...UNIT_OPTIONS]).map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </select>
             <button
               onClick={() => {
-                onAdd(item, tier, quantity);
+                onAdd(item, tier, quantity, unit);
                 setOpen(false);
                 setQuantity(1);
+                setUnit(item.unit);
               }}
               className="ml-auto flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full text-white"
               style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
