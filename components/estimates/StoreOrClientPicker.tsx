@@ -99,23 +99,24 @@ export default function StoreOrClientPicker({
           )}
         </div>
       ) : (
-        <div className="space-y-2">
-          <input
-            type="text"
-            value={clientName}
-            onChange={(e) => onChangeClientName(e.target.value)}
-            placeholder="クライアント名（会社名・店舗名など）"
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
-          />
-          <input
-            type="text"
-            value={clientContact}
-            onChange={(e) => onChangeClientContact(e.target.value)}
-            placeholder="連絡先（電話番号・メールアドレス等、任意）"
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
-          />
-        </div>
+        <input
+          type="text"
+          value={clientName}
+          onChange={(e) => onChangeClientName(e.target.value)}
+          placeholder="クライアント名（会社名・店舗名など）"
+          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A]"
+        />
       )}
+
+      {/* ご担当者名（PDFの「ご担当 ○○ 様」欄）。既存クライアント・自由入力どちらを
+          選んだ場合でも入力できるようにする（以前は自由入力の時しか欄が無かった）。 */}
+      <input
+        type="text"
+        value={clientContact}
+        onChange={(e) => onChangeClientContact(e.target.value)}
+        placeholder="ご担当者名（任意）"
+        className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#C4788A] mt-2"
+      />
     </div>
   );
 }
