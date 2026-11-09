@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Trash2, Plus, UploadCloud } from "lucide-react";
+import { ChevronDown, Trash2, Plus, UploadCloud } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { ITEM_TYPE_LABEL, KnowledgeItem, KnowledgeItemType } from "@/components/chatbot/types";
 
@@ -108,17 +108,20 @@ export default function ChatbotKnowledgePage() {
       <div className="card-luxury p-5 mb-6 space-y-3">
         <h3 className="text-sm font-bold text-charcoal-900">新規項目を追加</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <select
-            value={form.itemType}
-            onChange={(e) => setForm({ ...form, itemType: e.target.value as KnowledgeItemType })}
-            className="px-3 py-2 rounded-lg border border-gray-200 text-sm"
-          >
-            {Object.entries(ITEM_TYPE_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={form.itemType}
+              onChange={(e) => setForm({ ...form, itemType: e.target.value as KnowledgeItemType })}
+              className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-sm bg-white"
+            >
+              {Object.entries(ITEM_TYPE_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={14} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
           <input
             type="text"
             placeholder="カテゴリ（任意）"

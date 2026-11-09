@@ -1,5 +1,6 @@
 "use client";
 
+import type { SelectHTMLAttributes } from "react";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { APPLY_ACTION_METHOD_LABEL, ApplyActionMethod, FLOW_NODE_TYPE_LABEL, FlowNode, FlowNodeType } from "@/components/chatbot/types";
 
@@ -29,6 +30,28 @@ function defaultsForType(type: FlowNodeType): Partial<FlowNode> {
 
 const inputClass = "w-full px-3 py-2 rounded-lg border border-gray-200 text-sm";
 const labelClass = "block text-xs text-gray-500 mb-1.5";
+
+// ネイティブselectは「今選ばれている文字」ではなく「選択肢の中で一番長い文字」に
+// 箱の横幅を合わせる仕様があり、短い選択肢を選ぶと矢印が右端に離れて見える。
+// appearance-noneで標準の矢印を消し、自前のChevronDownに差し替えることで回避する。
+function SelectInput({
+  className,
+  wrapperClassName,
+  children,
+  ...rest
+}: SelectHTMLAttributes<HTMLSelectElement> & { wrapperClassName?: string }) {
+  return (
+    <div className={`relative ${wrapperClassName ?? ""}`}>
+      <select
+        {...rest}
+        className={`w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-sm bg-white ${className ?? ""}`}
+      >
+        {children}
+      </select>
+      <ChevronDown size={14} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+    </div>
+  );
+}
 
 export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
   const updateNode = (id: string, patch: Partial<FlowNode>) => {
@@ -94,13 +117,12 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
           {node.type === "start" && (
             <label className="block">
               <span className={labelClass}>最初に進むノード</span>
-              <select
+              <SelectInput
                 value={node.nextNodeId ?? ""}
                 onChange={(e) => updateNode(node.id, { nextNodeId: e.target.value || undefined })}
-                className={inputClass}
               >
                 {nextNodeOptions(node.id)}
-              </select>
+              </SelectInput>
             </label>
           )}
 
@@ -117,13 +139,12 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
               </label>
               <label className="block">
                 <span className={labelClass}>次に進むノード</span>
-                <select
+                <SelectInput
                   value={node.nextNodeId ?? ""}
                   onChange={(e) => updateNode(node.id, { nextNodeId: e.target.value || undefined })}
-                  className={inputClass}
                 >
                   {nextNodeOptions(node.id)}
-                </select>
+                </SelectInput>
               </label>
             </div>
           )}
@@ -155,17 +176,17 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
                         }}
                         className={`${inputClass} flex-1`}
                       />
-                      <select
+                      <SelectInput
                         value={opt.nextNodeId}
                         onChange={(e) => {
                           const options = [...(node.options ?? [])];
                           options[i] = { ...options[i], nextNodeId: e.target.value };
                           updateNode(node.id, { options });
                         }}
-                        className={`${inputClass} flex-1`}
+                        wrapperClassName="flex-1"
                       >
                         {nextNodeOptions(node.id)}
-                      </select>
+                      </SelectInput>
                       <button
                         onClick={() => {
                           const options = (node.options ?? []).filter((_, idx) => idx !== i);
@@ -203,17 +224,16 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
               </label>
               <label className="block">
                 <span className={labelClass}>応募導線の種類</span>
-                <select
+                <SelectInput
                   value={node.method ?? "email"}
                   onChange={(e) => updateNode(node.id, { method: e.target.value as ApplyActionMethod })}
-                  className={inputClass}
                 >
                   {Object.entries(APPLY_ACTION_METHOD_LABEL).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
                     </option>
                   ))}
-                </select>
+                </SelectInput>
               </label>
 
               {node.method === "email" && (

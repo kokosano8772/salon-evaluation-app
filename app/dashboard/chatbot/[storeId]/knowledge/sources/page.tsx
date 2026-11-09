@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Trash2, RefreshCw, Check, X } from "lucide-react";
+import { ChevronDown, Trash2, RefreshCw, Check, X } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { KnowledgeSource, SOURCE_STATUS_LABEL, SOURCE_TYPE_LABEL } from "@/components/chatbot/types";
 
@@ -124,18 +124,21 @@ export default function ChatbotKnowledgeSourcesPage() {
           <div>
             <p className="text-xs text-gray-500 mb-1.5">成長DBに登録済みの求人LP URLから取り込み</p>
             <div className="flex items-center gap-2">
-              <select
-                value={selectedLpUrl}
-                onChange={(e) => setSelectedLpUrl(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm"
-              >
-                <option value="">選択してください...</option>
-                {recruitmentLpUrls.map((u) => (
-                  <option key={u.id} value={u.url}>
-                    {u.name ? `${u.name}: ${u.url}` : u.url}
-                  </option>
-                ))}
-              </select>
+              <div className="relative flex-1">
+                <select
+                  value={selectedLpUrl}
+                  onChange={(e) => setSelectedLpUrl(e.target.value)}
+                  className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-sm bg-white"
+                >
+                  <option value="">選択してください...</option>
+                  {recruitmentLpUrls.map((u) => (
+                    <option key={u.id} value={u.url}>
+                      {u.name ? `${u.name}: ${u.url}` : u.url}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              </div>
               <button
                 onClick={() => addSource("recruitment_lp", selectedLpUrl)}
                 disabled={!selectedLpUrl}

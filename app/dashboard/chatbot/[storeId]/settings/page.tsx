@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import FormSection from "@/components/growth-db/forms/FormSection";
 import { BotConfig, BotMode, BotStatus } from "@/components/chatbot/types";
@@ -118,27 +119,33 @@ export default function ChatbotSettingsPage() {
         <FormSection title="公開設定" description="ドメイン許可・レート制限しきい値は保存すると即座に反映されます（下書き/公開の分離なし）。">
           <label className="block">
             <span className="block text-xs text-gray-500 mb-1.5">公開状態</span>
-            <select
-              value={bot.status}
-              onChange={(e) => setBot({ ...bot, status: e.target.value as BotStatus })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
-            >
-              <option value="draft">下書き（未公開）</option>
-              <option value="published">公開中</option>
-              <option value="archived">停止</option>
-            </select>
+            <div className="relative">
+              <select
+                value={bot.status}
+                onChange={(e) => setBot({ ...bot, status: e.target.value as BotStatus })}
+                className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-sm bg-white"
+              >
+                <option value="draft">下書き（未公開）</option>
+                <option value="published">公開中</option>
+                <option value="archived">停止</option>
+              </select>
+              <ChevronDown size={14} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
           </label>
           <label className="block">
             <span className="block text-xs text-gray-500 mb-1.5">モード</span>
-            <select
-              value={bot.mode}
-              onChange={(e) => setBot({ ...bot, mode: e.target.value as BotMode })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
-            >
-              <option value="choice">選択式のみ</option>
-              <option value="ai">AIのみ</option>
-              <option value="hybrid">選択式+AI</option>
-            </select>
+            <div className="relative">
+              <select
+                value={bot.mode}
+                onChange={(e) => setBot({ ...bot, mode: e.target.value as BotMode })}
+                className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-sm bg-white"
+              >
+                <option value="choice">選択式のみ</option>
+                <option value="ai">AIのみ</option>
+                <option value="hybrid">選択式+AI</option>
+              </select>
+              <ChevronDown size={14} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
           </label>
           <label className="block sm:col-span-2">
             <span className="block text-xs text-gray-500 mb-1.5">
@@ -174,14 +181,17 @@ export default function ChatbotSettingsPage() {
           </label>
           <label className="block">
             <span className="block text-xs text-gray-500 mb-1.5">表示位置（埋め込み時）</span>
-            <select
-              value={themePosition}
-              onChange={(e) => setThemePosition(e.target.value as "bottom-right" | "bottom-left")}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
-            >
-              <option value="bottom-right">右下</option>
-              <option value="bottom-left">左下</option>
-            </select>
+            <div className="relative">
+              <select
+                value={themePosition}
+                onChange={(e) => setThemePosition(e.target.value as "bottom-right" | "bottom-left")}
+                className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-sm bg-white"
+              >
+                <option value="bottom-right">右下</option>
+                <option value="bottom-left">左下</option>
+              </select>
+              <ChevronDown size={14} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
           </label>
           <label className="block sm:col-span-2">
             <span className="block text-xs text-gray-500 mb-1.5">挨拶文（未入力時は店舗名から自動生成）</span>
