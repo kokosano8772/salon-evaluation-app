@@ -205,7 +205,7 @@ export default function ChatbotFlowPage() {
                 setSelectedId(e.target.value);
                 applyLoadedFlow(v?.draftJson);
               }}
-              className="px-3 py-2 rounded-lg border border-gray-200 text-sm"
+              className="px-3 py-2 rounded-lg border border-gray-200 text-sm w-auto max-w-[220px] flex-none"
             >
               {versions.map((v) => (
                 <option key={v.id} value={v.id}>
@@ -234,7 +234,7 @@ export default function ChatbotFlowPage() {
             className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
             style={mode === "json" ? { backgroundColor: "white", color: "#A85E74" } : { color: "#6b7280" }}
           >
-            JSON編集（上級者向け）
+            JSON編集
           </button>
         </div>
       </div>
