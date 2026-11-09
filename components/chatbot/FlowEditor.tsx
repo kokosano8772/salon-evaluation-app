@@ -70,7 +70,7 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
                   const type = e.target.value as FlowNodeType;
                   updateNode(node.id, { type, ...defaultsForType(type) });
                 }}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium"
+                className="w-40 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium"
               >
                 {Object.entries(FLOW_NODE_TYPE_LABEL).map(([value, label]) => (
                   <option key={value} value={value}>
