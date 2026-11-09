@@ -97,6 +97,50 @@ export interface KnowledgeSource {
   updatedAt: string;
 }
 
+export const APPLY_ACTION_METHOD_LABEL = {
+  email: "メール応募（チャット内で入力を収集）",
+  line: "LINE応募（LINE公式アカウントへ誘導）",
+  external_form: "外部フォーム（外部URLへ誘導）",
+  phone: "電話問い合わせ（電話番号を案内）",
+} as const;
+
+export type ApplyActionMethod = keyof typeof APPLY_ACTION_METHOD_LABEL;
+
+export const FLOW_NODE_TYPE_LABEL = {
+  start: "開始",
+  choice: "選択肢",
+  text_input: "自由入力",
+  notice: "案内文",
+  apply_action: "応募導線（終端）",
+  end: "終了",
+} as const;
+
+export type FlowNodeType = keyof typeof FLOW_NODE_TYPE_LABEL;
+
+// lib/chatbot/flow-validation.ts（サーバー側）のFlowNodeと必ず一致させること。
+// こちらはクライアントコンポーネントから使う複製（service_roleを扱うモジュールを
+// クライアントバンドルに引き込まないため、見積もり機能等と同じ方針）。
+export interface FlowNode {
+  id: string;
+  type: FlowNodeType;
+  text?: string;
+  nextNodeId?: string;
+  options?: { label: string; nextNodeId: string }[];
+  method?: ApplyActionMethod;
+  fields?: {
+    askPhone?: boolean;
+    askDesiredPosition?: boolean;
+    askEmploymentType?: boolean;
+  };
+  lineUrl?: string;
+  externalFormUrl?: string;
+  phoneNumber?: string;
+}
+
+export interface Flow {
+  nodes: FlowNode[];
+}
+
 export interface FlowVersion {
   id: string;
   storeId: string;

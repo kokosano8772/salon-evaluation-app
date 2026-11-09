@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import { FlowVersion } from "@/components/chatbot/types";
+import FlowEditor from "@/components/chatbot/FlowEditor";
+import { Flow, FlowNode, FlowVersion } from "@/components/chatbot/types";
 
-const SAMPLE_FLOW = {
+const SAMPLE_FLOW: Flow = {
   nodes: [
     { id: "start", type: "start", nextNodeId: "ask" },
     {
@@ -13,28 +14,48 @@ const SAMPLE_FLOW = {
       type: "choice",
       text: "ご質問の内容を選んでください",
       options: [
-        { label: "求人について質問する", nextNodeId: "notice_question" },
-        { label: "応募・見学を申し込む", nextNodeId: "contact" },
+        { label: "LINEで気軽に質問したい", nextNodeId: "line_apply" },
+        { label: "応募したい", nextNodeId: "email_apply" },
+        { label: "電話で聞きたい", nextNodeId: "phone_apply" },
       ],
     },
-    { id: "notice_question", type: "notice", text: "AIチャットへご案内します", nextNodeId: "end" },
-    { id: "contact", type: "contact_form", text: "応募フォームです", nextNodeId: "end" },
-    { id: "end", type: "end" },
+    { id: "line_apply", type: "apply_action", method: "line", text: "LINEで気軽にご質問ください。", lineUrl: "https://lin.ee/your-line-id" },
+    {
+      id: "email_apply",
+      type: "apply_action",
+      method: "email",
+      text: "以下のフォームからご応募ください。",
+      fields: { askDesiredPosition: true, askEmploymentType: true },
+    },
+    { id: "phone_apply", type: "apply_action", method: "phone", text: "お電話でもお問い合わせいただけます。", phoneNumber: "03-1234-5678" },
   ],
 };
+
+function isFlow(value: unknown): value is Flow {
+  return !!value && typeof value === "object" && Array.isArray((value as Flow).nodes);
+}
 
 export default function ChatbotFlowPage() {
   const params = useParams<{ storeId: string }>();
   const storeId = params.storeId;
   const [versions, setVersions] = useState<FlowVersion[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [draftText, setDraftText] = useState("");
+  const [nodes, setNodes] = useState<FlowNode[]>(SAMPLE_FLOW.nodes);
+  const [mode, setMode] = useState<"form" | "json">("form");
+  const [jsonText, setJsonText] = useState("");
+  const [jsonError, setJsonError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [message, setMessage] = useState("");
+
+  const applyLoadedFlow = (flow: unknown) => {
+    const loadedNodes = isFlow(flow) ? flow.nodes : SAMPLE_FLOW.nodes;
+    setNodes(loadedNodes);
+    setJsonText(JSON.stringify({ nodes: loadedNodes }, null, 2));
+  };
 
   const load = () => {
     fetch(`/api/chatbot/admin/flow-versions?storeId=${storeId}`)
@@ -44,9 +65,9 @@ export default function ChatbotFlowPage() {
         setVersions(list);
         if (list.length > 0) {
           setSelectedId(list[0].id);
-          setDraftText(JSON.stringify(list[0].draftJson, null, 2));
+          applyLoadedFlow(list[0].draftJson);
         } else {
-          setDraftText(JSON.stringify(SAMPLE_FLOW, null, 2));
+          applyLoadedFlow(SAMPLE_FLOW);
         }
       })
       .finally(() => setLoading(false));
@@ -56,37 +77,70 @@ export default function ChatbotFlowPage() {
 
   const selected = versions.find((v) => v.id === selectedId) ?? null;
 
+  // フォーム編集とJSON編集は同じ状態を共有する。切り替え時に同期し、
+  // JSON側の不正な入力は切り替え時にエラー表示して取り込まない。
+  const switchToJson = () => {
+    setJsonText(JSON.stringify({ nodes }, null, 2));
+    setJsonError("");
+    setMode("json");
+  };
+  const switchToForm = () => {
+    try {
+      const parsed = JSON.parse(jsonText);
+      if (!isFlow(parsed)) throw new Error("nodes配列が必要です");
+      setNodes(parsed.nodes);
+      setJsonError("");
+      setMode("form");
+    } catch (err) {
+      setJsonError(err instanceof Error ? err.message : "JSONの形式が正しくありません");
+    }
+  };
+
+  const currentFlowJson = (): Flow | null => {
+    if (mode === "form") return { nodes };
+    try {
+      const parsed = JSON.parse(jsonText);
+      if (!isFlow(parsed)) throw new Error("nodes配列が必要です");
+      return parsed;
+    } catch (err) {
+      setJsonError(err instanceof Error ? err.message : "JSONの形式が正しくありません");
+      return null;
+    }
+  };
+
   const handleCreateVersion = async () => {
     const res = await fetch("/api/chatbot/admin/flow-versions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ storeId }),
     });
-    const json = await res.json();
     if (res.ok) load();
   };
 
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = async (): Promise<boolean> => {
+    const draftJson = currentFlowJson();
+    if (!draftJson) return false;
     if (!selectedId) {
       await handleCreateVersion();
-      return;
+      return false;
     }
     setSaving(true);
     setError("");
     setMessage("");
     try {
-      const parsed = JSON.parse(draftText);
       const res = await fetch(`/api/chatbot/admin/flow-versions/${selectedId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ draftJson: parsed }),
+        body: JSON.stringify({ draftJson }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "保存に失敗しました");
+      if (!res.ok) throw new Error([json.error, ...(json.details ?? [])].filter(Boolean).join(" / "));
       setMessage("下書きを保存しました");
       load();
+      return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "JSONの形式が正しくありません");
+      setError(err instanceof Error ? err.message : "保存に失敗しました");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -99,7 +153,8 @@ export default function ChatbotFlowPage() {
     setMessage("");
     setValidationErrors([]);
     try {
-      await handleSaveDraft();
+      const saved = await handleSaveDraft();
+      if (!saved) return;
       const res = await fetch(`/api/chatbot/admin/flow-versions/${selectedId}/publish`, { method: "POST" });
       const json = await res.json();
       if (!res.ok) {
@@ -121,7 +176,7 @@ export default function ChatbotFlowPage() {
     <div>
       <DashboardHeader
         title="選択式フロー"
-        description="公開を押すまで、編集中の下書きは公開中のチャットボットに反映されません。P1時点ではJSON形式での編集です。"
+        description="公開を押すまで、編集中の下書きは公開中のチャットボットに反映されません。応募導線（メール／LINE／外部フォーム／電話）は分岐ごとに個別に設定できます。"
         breadcrumbs={[
           { label: "ダッシュボード", href: "/dashboard" },
           { label: "求人チャットボット", href: "/dashboard/chatbot" },
@@ -140,61 +195,83 @@ export default function ChatbotFlowPage() {
       )}
       {message && <p className="text-green-600 text-sm mb-4">{message}</p>}
 
-      {versions.length > 0 && (
-        <div className="mb-4 flex items-center gap-2">
-          <select
-            value={selectedId ?? ""}
-            onChange={(e) => {
-              const v = versions.find((ver) => ver.id === e.target.value);
-              setSelectedId(e.target.value);
-              setDraftText(JSON.stringify(v?.draftJson ?? {}, null, 2));
-            }}
-            className="px-3 py-2 rounded-lg border border-gray-200 text-sm"
-          >
-            {versions.map((v) => (
-              <option key={v.id} value={v.id}>
-                v{v.version} {v.publishedAt ? "（公開済み）" : "（未公開）"}
-              </option>
-            ))}
-          </select>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {versions.length > 0 && (
+          <>
+            <select
+              value={selectedId ?? ""}
+              onChange={(e) => {
+                const v = versions.find((ver) => ver.id === e.target.value);
+                setSelectedId(e.target.value);
+                applyLoadedFlow(v?.draftJson);
+              }}
+              className="px-3 py-2 rounded-lg border border-gray-200 text-sm"
+            >
+              {versions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  v{v.version} {v.publishedAt ? "（公開済み）" : "（未公開）"}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleCreateVersion}
+              className="text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 text-charcoal-700"
+            >
+              新しいバージョンを作成
+            </button>
+          </>
+        )}
+        <div className="ml-auto flex items-center gap-1 bg-gray-100 rounded-full p-1">
           <button
-            onClick={handleCreateVersion}
-            className="text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 text-charcoal-700"
+            onClick={() => mode !== "form" && switchToForm()}
+            className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+            style={mode === "form" ? { backgroundColor: "white", color: "#A85E74" } : { color: "#6b7280" }}
           >
-            新しいバージョンを作成
+            フォーム編集
           </button>
+          <button
+            onClick={() => mode !== "json" && switchToJson()}
+            className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+            style={mode === "json" ? { backgroundColor: "white", color: "#A85E74" } : { color: "#6b7280" }}
+          >
+            JSON編集（上級者向け）
+          </button>
+        </div>
+      </div>
+
+      {mode === "form" ? (
+        <FlowEditor nodes={nodes} onChange={setNodes} />
+      ) : (
+        <div className="card-luxury p-5">
+          {jsonError && <p className="text-red-500 text-xs mb-2">{jsonError}</p>}
+          <textarea
+            value={jsonText}
+            onChange={(e) => setJsonText(e.target.value)}
+            rows={20}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs font-mono"
+          />
         </div>
       )}
 
-      <div className="card-luxury p-5">
-        <textarea
-          value={draftText}
-          onChange={(e) => setDraftText(e.target.value)}
-          rows={20}
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs font-mono"
-        />
-        <div className="flex items-center gap-3 mt-4">
-          <button
-            onClick={handleSaveDraft}
-            disabled={saving}
-            className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-charcoal-700 disabled:opacity-50"
-          >
-            下書き保存
-          </button>
-          <button
-            onClick={handlePublish}
-            disabled={publishing || !selectedId}
-            className="text-sm font-medium px-4 py-2 rounded-lg text-white disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
-          >
-            {publishing ? "公開中..." : "公開する（検証あり）"}
-          </button>
-          {selected?.publishedAt && (
-            <span className="text-xs text-gray-400">
-              最終公開: {new Date(selected.publishedAt).toLocaleString("ja-JP")}
-            </span>
-          )}
-        </div>
+      <div className="card-luxury p-5 mt-4 flex items-center gap-3">
+        <button
+          onClick={() => handleSaveDraft()}
+          disabled={saving}
+          className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-charcoal-700 disabled:opacity-50"
+        >
+          下書き保存
+        </button>
+        <button
+          onClick={handlePublish}
+          disabled={publishing || !selectedId}
+          className="text-sm font-medium px-4 py-2 rounded-lg text-white disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+        >
+          {publishing ? "公開中..." : "公開する（検証あり）"}
+        </button>
+        {selected?.publishedAt && (
+          <span className="text-xs text-gray-400">最終公開: {new Date(selected.publishedAt).toLocaleString("ja-JP")}</span>
+        )}
       </div>
     </div>
   );

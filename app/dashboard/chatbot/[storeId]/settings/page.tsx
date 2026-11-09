@@ -22,6 +22,9 @@ export default function ChatbotSettingsPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [domainsText, setDomainsText] = useState("");
+  const [themePrimaryColor, setThemePrimaryColor] = useState("#C4788A");
+  const [themePosition, setThemePosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
+  const [themeGreeting, setThemeGreeting] = useState("");
 
   const load = () => {
     fetch(`/api/chatbot/admin/bots/${storeId}`)
@@ -30,6 +33,10 @@ export default function ChatbotSettingsPage() {
         setStore(json.store ?? null);
         setBot(json.bot ?? null);
         setDomainsText((json.bot?.allowedDomains ?? []).join("\n"));
+        const theme = (json.bot?.theme ?? {}) as { primaryColor?: string; position?: string; greeting?: string };
+        setThemePrimaryColor(theme.primaryColor || "#C4788A");
+        setThemePosition(theme.position === "bottom-left" ? "bottom-left" : "bottom-right");
+        setThemeGreeting(theme.greeting ?? "");
       })
       .finally(() => setLoading(false));
   };
@@ -56,6 +63,7 @@ export default function ChatbotSettingsPage() {
         status: bot.status,
         mode: bot.mode,
         allowedDomains: domainsText.split("\n").map((d) => d.trim()).filter(Boolean),
+        theme: { primaryColor: themePrimaryColor, position: themePosition, greeting: themeGreeting },
         rateLimitPerMinute: bot.rateLimitPerMinute,
         rateLimitPerDay: bot.rateLimitPerDay,
         aiMonthlyTokenLimit: bot.aiMonthlyTokenLimit,
@@ -142,6 +150,47 @@ export default function ChatbotSettingsPage() {
               rows={3}
               placeholder={"example-salon.com\nrecruit.example-salon.com"}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-mono"
+            />
+          </label>
+        </FormSection>
+
+        <FormSection title="ウィジェットのテーマ" description="埋め込みチャット画面（別Vercelプロジェクト側）の見た目に反映されます。">
+          <label className="block">
+            <span className="block text-xs text-gray-500 mb-1.5">メインカラー</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={themePrimaryColor}
+                onChange={(e) => setThemePrimaryColor(e.target.value)}
+                className="w-10 h-10 rounded-lg border border-gray-200 p-1"
+              />
+              <input
+                type="text"
+                value={themePrimaryColor}
+                onChange={(e) => setThemePrimaryColor(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm font-mono"
+              />
+            </div>
+          </label>
+          <label className="block">
+            <span className="block text-xs text-gray-500 mb-1.5">表示位置（埋め込み時）</span>
+            <select
+              value={themePosition}
+              onChange={(e) => setThemePosition(e.target.value as "bottom-right" | "bottom-left")}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+            >
+              <option value="bottom-right">右下</option>
+              <option value="bottom-left">左下</option>
+            </select>
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="block text-xs text-gray-500 mb-1.5">挨拶文（未入力時は店舗名から自動生成）</span>
+            <input
+              type="text"
+              value={themeGreeting}
+              onChange={(e) => setThemeGreeting(e.target.value)}
+              placeholder={`${store?.name ?? "当サロン"}の求人についてお気軽にご質問ください。`}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
             />
           </label>
         </FormSection>
