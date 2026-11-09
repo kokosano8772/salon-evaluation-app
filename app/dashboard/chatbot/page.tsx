@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { BotSummary } from "@/components/chatbot/types";
 
@@ -85,18 +85,21 @@ export default function ChatbotListPage() {
       />
 
       <div className="card-luxury p-5 mb-6 flex flex-wrap items-center gap-3">
-        <select
-          value={selectedStoreId}
-          onChange={(e) => setSelectedStoreId(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-gray-200 text-sm"
-        >
-          <option value="">店舗を選択して新規作成...</option>
-          {storesWithoutBot.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={selectedStoreId}
+            onChange={(e) => setSelectedStoreId(e.target.value)}
+            className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-sm bg-white"
+          >
+            <option value="">店舗を選択して新規作成...</option>
+            {storesWithoutBot.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={14} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
         <button
           onClick={handleCreate}
           disabled={!selectedStoreId || creating}

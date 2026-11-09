@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import FlowEditor from "@/components/chatbot/FlowEditor";
 import { Flow, FlowNode, FlowVersion } from "@/components/chatbot/types";
@@ -198,21 +199,24 @@ export default function ChatbotFlowPage() {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {versions.length > 0 && (
           <>
-            <select
-              value={selectedId ?? ""}
-              onChange={(e) => {
-                const v = versions.find((ver) => ver.id === e.target.value);
-                setSelectedId(e.target.value);
-                applyLoadedFlow(v?.draftJson);
-              }}
-              className="px-3 py-2 rounded-lg border border-gray-200 text-sm w-auto max-w-[220px] flex-none"
-            >
-              {versions.map((v) => (
-                <option key={v.id} value={v.id}>
-                  v{v.version} {v.publishedAt ? "（公開済み）" : "（未公開）"}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedId ?? ""}
+                onChange={(e) => {
+                  const v = versions.find((ver) => ver.id === e.target.value);
+                  setSelectedId(e.target.value);
+                  applyLoadedFlow(v?.draftJson);
+                }}
+                className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-sm bg-white"
+              >
+                {versions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    v{v.version} {v.publishedAt ? "（公開済み）" : "（未公開）"}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
             <button
               onClick={handleCreateVersion}
               className="text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 text-charcoal-700"

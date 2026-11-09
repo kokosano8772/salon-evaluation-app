@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { APPLY_ACTION_METHOD_LABEL, ApplyActionMethod, FLOW_NODE_TYPE_LABEL, FlowNode, FlowNodeType } from "@/components/chatbot/types";
 
 interface FlowEditorProps {
@@ -64,20 +64,27 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <code className="text-xs font-mono px-2 py-1 rounded bg-gray-100 text-gray-600">{node.id}</code>
-              <select
-                value={node.type}
-                onChange={(e) => {
-                  const type = e.target.value as FlowNodeType;
-                  updateNode(node.id, { type, ...defaultsForType(type) });
-                }}
-                className="w-40 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium"
-              >
-                {Object.entries(FLOW_NODE_TYPE_LABEL).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={node.type}
+                  onChange={(e) => {
+                    const type = e.target.value as FlowNodeType;
+                    updateNode(node.id, { type, ...defaultsForType(type) });
+                  }}
+                  className="appearance-none pl-3 pr-8 py-1.5 rounded-lg border border-gray-200 text-sm font-medium bg-white"
+                >
+                  {Object.entries(FLOW_NODE_TYPE_LABEL).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={14}
+                  strokeWidth={2}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+              </div>
             </div>
             <button onClick={() => removeNode(node.id)} className="text-gray-400 hover:text-red-500">
               <Trash2 size={16} />
