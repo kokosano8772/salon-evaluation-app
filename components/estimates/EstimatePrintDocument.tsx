@@ -40,6 +40,7 @@ const AMOUNT_COL = mm(29.2);
 type Row =
   | { kind: "item"; name: string; quantity: number; unit: string; unitPrice: number }
   | { kind: "desc"; text: string }
+  | { kind: "procurement"; amount: number }
   | { kind: "discount"; label: string; amount: number }
   | { kind: "note"; text: string }
   | { kind: "blank" };
@@ -75,8 +76,12 @@ function buildRows(lineItems: LineItem[], notes: string): Row[] {
     for (const line of descLines) {
       rows.push({ kind: "desc", text: line });
     }
-    // 仕入れ料金は金額には含めるが（amountの計算は変更無し）、クライアント向けの
-    // 印刷物には内訳として出さない（社内の仕入れ原価を見せないため）。
+    // 仕入れ料金（印刷費等の実費）は小計・合計の金額には既に含まれているため、
+    // 内訳行を出さないと明細の合計と見積書の合計がずれて見える。クライアント向けには
+    // 「仕入れ」ではなく「入稿手数料」という名目の1行として明示する。
+    if (item.procurementCost > 0) {
+      rows.push({ kind: "procurement", amount: item.procurementCost });
+    }
     if (item.discountAmount > 0) {
       rows.push({ kind: "discount", label: item.discountLabel, amount: item.discountAmount });
     }
@@ -269,6 +274,18 @@ export default function EstimatePrintDocument({ estimate, clientLabel, lineItems
                     <td style={{ border: CELL_BORDER }} />
                     <td style={{ border: CELL_BORDER }} />
                     <td style={{ border: CELL_BORDER }} />
+                  </tr>
+                );
+              }
+              if (row.kind === "procurement") {
+                return (
+                  <tr key={i} data-print-section style={style}>
+                    <td style={{ padding: "0 6px", border: CELL_BORDER }}>●入稿手数料</td>
+                    <td style={{ border: CELL_BORDER }} />
+                    <td style={{ border: CELL_BORDER }} />
+                    <td style={{ padding: "0 6px", textAlign: "right", verticalAlign: "middle", fontSize: 11.5, fontWeight: 400, whiteSpace: "nowrap", border: CELL_BORDER }}>
+                      {yen(row.amount)}
+                    </td>
                   </tr>
                 );
               }
