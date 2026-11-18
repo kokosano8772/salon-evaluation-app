@@ -1,8 +1,8 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
-import { Printer } from "lucide-react";
+import { Download } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DiagnosisReportDocument from "@/components/growth-db/store-detail/DiagnosisReportDocument";
 import { useDiagnosisResults, useStore } from "@/lib/growth-db/hooks";
@@ -17,6 +17,7 @@ export default function DiagnosisReportPage({ params }: DiagnosisReportPageProps
   const { storeId, diagnosisId } = use(params);
   const { store, loading: storeLoading } = useStore(storeId);
   const { items, loading: itemsLoading } = useDiagnosisResults(storeId);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   if (storeLoading || itemsLoading || !store) {
     return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
@@ -37,41 +38,51 @@ export default function DiagnosisReportPage({ params }: DiagnosisReportPageProps
   const rankInfo = RANK_INFO[item.rank];
   const improvements = generateImprovements(item.categoryScores);
 
-  // 印刷/PDF保存ダイアログが提示するファイル名候補はdocument.titleから決まるため、
-  // 印刷直前だけ差し替え、閉じたら元に戻す。ページ毎に高さが違うと短い方に余白が
-  // 残ってしまうため、長い方に高さを揃えてから@pageをその高さに合わせる
-  // （Google広告レポートの印刷と同じ仕組み）。
-  const handlePrint = () => {
-    const originalTitle = document.title;
-    document.title = `${store.name}-診断レポート-${item.completedAt.slice(0, 10).replace(/-/g, "")}`;
+  // PDF保存は以前ブラウザのネイティブ印刷（window.print + @page CSS）を使っていたが、
+  // 実機の印刷ダイアログ（「PDFに保存」含む）がカスタムの@pageサイズを確実には尊重せず、
+  // Letter等の標準用紙サイズにそのまま収めようとして右側が切れたり、高さがページ内に
+  // 収まらず余分なページに分割されたりする不具合があった（Salon AI CheckのPDF保存で
+  // 判明したのと同じ不具合）。ブラウザの印刷パイプラインに依存せず、html-to-image
+  // （lib/pdf.ts参照）で各ページ（.ad-report-page）をcanvasとして直接キャプチャし、
+  // キャプチャした実寸ぴったりのサイズでjsPDFの各ページを作ることで、用紙サイズの
+  // 判定を完全に自前で制御する。
+  const handlePdf = async () => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    try {
+      const [{ default: jsPDF }, { toCanvas }] = await Promise.all([import("jspdf"), import("html-to-image")]);
 
-    const pages = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
-    const maxHeight = Math.max(0, ...pages.map((el) => el.offsetHeight));
-    let printSizeStyle: HTMLStyleElement | null = null;
-    const heightOverrides: { el: HTMLElement; original: string }[] = [];
-    if (maxHeight > 0) {
-      pages.forEach((el) => {
-        if (el.offsetHeight < maxHeight) {
-          heightOverrides.push({ el, original: el.style.minHeight });
-          el.style.minHeight = `${maxHeight}px`;
-        }
+      if (typeof document.fonts?.load === "function") {
+        await Promise.all(
+          [400, 500, 600, 700].map((weight) => document.fonts.load(`${weight} 16px "Noto Sans JP"`).catch(() => {}))
+        );
+      }
+      if (typeof document.fonts?.ready?.then === "function") {
+        await document.fonts.ready;
+      }
+
+      const pageEls = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
+      const pixelRatio = 2;
+      const pxToPt = 0.75; // 96dpi(css px) -> 72dpi(pt)
+      const canvases = [];
+      for (const el of pageEls) {
+        canvases.push(await toCanvas(el, { pixelRatio, cacheBust: true, backgroundColor: "#FAF8F3", skipFonts: true }));
+      }
+
+      const firstWidthPt = (canvases[0].width / pixelRatio) * pxToPt;
+      const firstHeightPt = (canvases[0].height / pixelRatio) * pxToPt;
+      const pdf = new jsPDF({ unit: "pt", format: [firstWidthPt, firstHeightPt] });
+      canvases.forEach((canvas, i) => {
+        const widthPt = (canvas.width / pixelRatio) * pxToPt;
+        const heightPt = (canvas.height / pixelRatio) * pxToPt;
+        if (i > 0) pdf.addPage([widthPt, heightPt]);
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, widthPt, heightPt);
       });
-      const printHeight = maxHeight + 3;
-      printSizeStyle = document.createElement("style");
-      printSizeStyle.textContent = `@media print { @page { size: 900px ${printHeight}px; margin: 0; } }`;
-      document.head.appendChild(printSizeStyle);
+
+      pdf.save(`${store.name}-診断レポート-${item.completedAt.slice(0, 10).replace(/-/g, "")}.pdf`);
+    } finally {
+      setIsGeneratingPdf(false);
     }
-
-    const restore = () => {
-      document.title = originalTitle;
-      printSizeStyle?.remove();
-      heightOverrides.forEach(({ el, original }) => {
-        el.style.minHeight = original;
-      });
-      window.removeEventListener("afterprint", restore);
-    };
-    window.addEventListener("afterprint", restore);
-    window.print();
   };
 
   return (
@@ -88,11 +99,12 @@ export default function DiagnosisReportPage({ params }: DiagnosisReportPageProps
           actions={
             <div className="flex items-center gap-2">
               <button
-                onClick={handlePrint}
-                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50"
+                onClick={handlePdf}
+                disabled={isGeneratingPdf}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-charcoal-700 hover:bg-gray-50 disabled:opacity-60"
               >
-                <Printer size={15} strokeWidth={2} />
-                印刷・PDFで保存
+                <Download size={15} strokeWidth={2} />
+                {isGeneratingPdf ? "生成中..." : "PDFで保存"}
               </button>
               <Link
                 href={`/dashboard/stores/${store.id}`}
