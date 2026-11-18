@@ -46,6 +46,14 @@ export default function DiagnosisReportPage({ params }: DiagnosisReportPageProps
   // （lib/pdf.ts参照）で各ページ（.ad-report-page）をcanvasとして直接キャプチャし、
   // キャプチャした実寸ぴったりのサイズでjsPDFの各ページを作ることで、用紙サイズの
   // 判定を完全に自前で制御する。
+  //
+  // .ad-report-pageはmx-autoで中央寄せしており、html-to-imageはキャプチャ対象の
+  // computed style（margin込み）をそのままクローンに焼き付けてしまう一方、
+  // キャプチャ用キャンバスの幅は要素自身のclientWidth（900px、marginは含まない）で
+  // 決まるため、mx-autoで付くmargin-leftの分だけ中身が右にずれてクローン内で
+  // 右端がはみ出し、はみ出した分だけ右側が欠けて見える不具合があった
+  // （実機の画面幅が広く中央寄せの余白が大きいほど欠ける量も増える）。
+  // キャプチャ直前だけ対象要素自身のmarginを0にして回避する。
   const handlePdf = async () => {
     if (isGeneratingPdf) return;
     setIsGeneratingPdf(true);
@@ -62,11 +70,28 @@ export default function DiagnosisReportPage({ params }: DiagnosisReportPageProps
       }
 
       const pageEls = Array.from(document.querySelectorAll<HTMLElement>(".ad-report-page"));
+      const marginOverrides = pageEls.map((el) => ({
+        el,
+        marginLeft: el.style.marginLeft,
+        marginRight: el.style.marginRight,
+      }));
+      pageEls.forEach((el) => {
+        el.style.marginLeft = "0";
+        el.style.marginRight = "0";
+      });
+
       const pixelRatio = 2;
       const pxToPt = 0.75; // 96dpi(css px) -> 72dpi(pt)
       const canvases = [];
-      for (const el of pageEls) {
-        canvases.push(await toCanvas(el, { pixelRatio, cacheBust: true, backgroundColor: "#FAF8F3", skipFonts: true }));
+      try {
+        for (const el of pageEls) {
+          canvases.push(await toCanvas(el, { pixelRatio, cacheBust: true, backgroundColor: "#FAF8F3", skipFonts: true }));
+        }
+      } finally {
+        marginOverrides.forEach(({ el, marginLeft, marginRight }) => {
+          el.style.marginLeft = marginLeft;
+          el.style.marginRight = marginRight;
+        });
       }
 
       const firstWidthPt = (canvases[0].width / pixelRatio) * pxToPt;
