@@ -46,8 +46,14 @@ export default function ChatbotStoreDashboardPage() {
   if (loading) return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
   if (!bot) return <div className="card-luxury p-12 text-center text-sm text-gray-400">チャットボット設定が見つかりませんでした。</div>;
 
+  // テーマ色・表示位置は基本設定で編集した値をそのまま埋め込みコードに反映する
+  // （embed.js側もdata-color/data-positionを読んで表示に使う。設定し忘れている
+  // 場合のデフォルトはembed.js・ChatWidgetどちらも#C4788A/bottom-rightで揃えてある）。
+  const theme = (bot.theme ?? {}) as { primaryColor?: string; position?: string };
+  const themeColor = theme.primaryColor || "#C4788A";
+  const themePosition = theme.position === "bottom-left" ? "bottom-left" : "bottom-right";
   const embedSnippet = WIDGET_BASE_URL
-    ? `<script src="${WIDGET_BASE_URL.replace(/\/$/, "")}/embed.js" data-bot="${bot.publicBotId}" data-position="bottom-right"></script>`
+    ? `<script src="${WIDGET_BASE_URL.replace(/\/$/, "")}/embed.js" data-bot="${bot.publicBotId}" data-position="${themePosition}" data-color="${themeColor}"></script>`
     : null;
 
   const handleCopy = async () => {
