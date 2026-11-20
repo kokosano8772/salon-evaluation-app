@@ -4,6 +4,7 @@ import * as cheerio from "cheerio";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertUrlIsSafeToFetch, SsrfBlockedError } from "@/lib/ai-check/ssrf-guard";
+import { structureKnowledgeSourceContent } from "@/lib/ai/structureKnowledgeSourceContent";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -107,15 +108,28 @@ export async function POST(_request: Request, { params }: { params: Promise<{ st
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
+  // staleness判定は生スクレイピング結果のハッシュで行う（ページの中身が変わったかどうかの
+  // 判定に使うため）。Geminiの整理後テキストは呼び出すたびに言い回しが変わり得る（非決定的）
+  // ので、ハッシュに使うと中身が同じでも毎回staleになってしまい判定が意味をなさなくなる。
   const hash = hashContent(text);
   // 承認済みの内容と違いがある場合はstale（再確認待ち）にし、承認済みの内容は
   // approved_content側に残したまま変更しない（再承認するまで公開情報は変わらない）。
   const status = source.approved_content_hash && source.approved_content_hash !== hash ? "stale" : "fetched";
 
+  // 生テキストはナビ・フッター等が混ざって読みにくいため、管理者が確認しやすいよう
+  // Geminiで求人情報として整理する。無料枠のレート制限等で失敗した場合は、確認作業が
+  // できなくなるのを避けるため整理前の生テキストにフォールバックする。
+  let fetchedContent = text;
+  try {
+    fetchedContent = await structureKnowledgeSourceContent(text);
+  } catch (error) {
+    console.error("[knowledge-sources/sync] structuring failed, falling back to raw text:", error);
+  }
+
   const { error } = await admin
     .from("chatbot_knowledge_sources")
     .update({
-      fetched_content: text,
+      fetched_content: fetchedContent,
       fetched_content_hash: hash,
       fetched_at: new Date().toISOString(),
       status,
@@ -123,5 +137,5 @@ export async function POST(_request: Request, { params }: { params: Promise<{ st
     .eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true, status, contentLength: text.length });
+  return NextResponse.json({ ok: true, status, contentLength: fetchedContent.length });
 }
