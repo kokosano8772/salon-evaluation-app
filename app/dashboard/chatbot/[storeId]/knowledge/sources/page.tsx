@@ -30,6 +30,9 @@ export default function ChatbotKnowledgeSourcesPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [manualUrl, setManualUrl] = useState("");
   const [selectedLpUrl, setSelectedLpUrl] = useState("");
+  // 取得内容の編集中ドラフト。source.idごとに持ち、未編集なら保存済みの内容をそのまま表示する。
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = () => {
     Promise.all([
@@ -71,11 +74,42 @@ export default function ChatbotKnowledgeSourcesPage() {
       const res = await fetch(`/api/chatbot/admin/bots/${storeId}/knowledge-sources/${id}/sync`, { method: "POST" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "取得に失敗しました");
+      setDrafts((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "取得に失敗しました");
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const handleSaveContent = async (id: string) => {
+    const draft = drafts[id];
+    if (draft === undefined) return;
+    setSavingId(id);
+    setError("");
+    try {
+      const res = await fetch(`/api/chatbot/admin/bots/${storeId}/knowledge-sources/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ manualText: draft }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "保存に失敗しました");
+      setDrafts((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -107,7 +141,7 @@ export default function ChatbotKnowledgeSourcesPage() {
     <div>
       <DashboardHeader
         title="求人情報の取得元URL"
-        description="取得しただけでは公開情報には反映されません。内容を確認して「承認」すると、FAQ・求人項目作成の参照元として使えます。"
+        description="登録したURLの内容をAIが読みやすく整理し、確認・承認した分だけチャットボットの回答に使われます。"
         breadcrumbs={[
           { label: "ダッシュボード", href: "/dashboard" },
           { label: "求人チャットボット", href: "/dashboard/chatbot" },
@@ -116,6 +150,16 @@ export default function ChatbotKnowledgeSourcesPage() {
           { label: "取得元URL" },
         ]}
       />
+
+      <div className="card-luxury p-4 mb-6 bg-gray-50/60">
+        <p className="text-xs font-medium text-charcoal-700 mb-2">使い方の流れ</p>
+        <ol className="text-xs text-gray-500 space-y-1 list-decimal list-inside">
+          <li>下でURLを登録する</li>
+          <li>「再取得」で最新の内容を取り込む（AIが読みやすく整理します）</li>
+          <li>内容を確認する。必要ならそのまま書き換えて「保存」できる</li>
+          <li>問題なければ「承認」。承認した内容だけがチャットボットの回答に使われる</li>
+        </ol>
+      </div>
 
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
@@ -191,21 +235,38 @@ export default function ChatbotKnowledgeSourcesPage() {
                   <Trash2 size={16} />
                 </button>
               </div>
-              {source.url && <p className="text-xs text-gray-500 mb-2 break-all">{source.url}</p>}
-              {source.fetchedContent && (
-                <details className="mb-3">
-                  <summary className="text-xs text-gray-400 cursor-pointer">取得内容を表示（直近の取得結果）</summary>
-                  <p className="text-xs text-gray-600 mt-2 whitespace-pre-wrap max-h-48 overflow-y-auto bg-gray-50 p-3 rounded-lg">
-                    {source.fetchedContent}
-                  </p>
-                </details>
-              )}
-              <div className="flex items-center gap-2">
+              {source.url && <p className="text-xs text-gray-500 mb-3 break-all">{source.url}</p>}
+
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-medium text-gray-500">取得内容（書き換えて保存できます）</p>
+                  {drafts[source.id] !== undefined && drafts[source.id] !== source.fetchedContent && (
+                    <button
+                      onClick={() => handleSaveContent(source.id)}
+                      disabled={savingId === source.id}
+                      className="text-xs font-medium px-2.5 py-1 rounded-md text-white disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
+                    >
+                      {savingId === source.id ? "保存中..." : "保存"}
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  value={drafts[source.id] ?? source.fetchedContent ?? ""}
+                  onChange={(e) => setDrafts((prev) => ({ ...prev, [source.id]: e.target.value }))}
+                  placeholder="まだ内容がありません。「再取得」を押すか、ここに直接入力してください。"
+                  rows={6}
+                  className="w-full text-xs text-charcoal-700 bg-gray-50 border border-gray-200 rounded-lg p-3 whitespace-pre-wrap focus:outline-none focus:ring-1 focus:ring-[#C4788A]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
                 {source.sourceType !== "manual_text" && (
                   <button
                     onClick={() => handleSync(source.id)}
                     disabled={busyId === source.id}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-charcoal-700 disabled:opacity-50"
+                    title="URL先の最新の内容を取り直し、AIが読みやすく整理し直します"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 mt-2 rounded-lg border border-gray-200 text-charcoal-700 disabled:opacity-50"
                   >
                     <RefreshCw size={14} />
                     再取得
@@ -216,7 +277,8 @@ export default function ChatbotKnowledgeSourcesPage() {
                     <button
                       onClick={() => handleApprove(source.id)}
                       disabled={busyId === source.id}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
+                      title="上の内容をチャットボットの回答に使えるようにします"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 mt-2 rounded-lg text-white disabled:opacity-50"
                       style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
                     >
                       <Check size={14} />
@@ -225,7 +287,8 @@ export default function ChatbotKnowledgeSourcesPage() {
                     <button
                       onClick={() => handleReject(source.id)}
                       disabled={busyId === source.id}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 disabled:opacity-50"
+                      title="この内容は使わない（却下）"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 mt-2 rounded-lg border border-gray-200 text-gray-500 disabled:opacity-50"
                     >
                       <X size={14} />
                       却下
