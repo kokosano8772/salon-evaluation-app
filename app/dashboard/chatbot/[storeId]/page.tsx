@@ -3,9 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Settings, Mail, BookOpen, GitBranch, BarChart3 } from "lucide-react";
+import { Settings, Mail, BookOpen, GitBranch, BarChart3, Copy, Check } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { BotConfig } from "@/components/chatbot/types";
+
+// ウィジェット側（salon-chatbot-widget、別Vercelプロジェクト）の本番ドメイン。
+// このプロジェクト（成長DB）からは普段アクセスしないため他のenvと違いここでしか
+// 使わないが、ドメインが変わった時にコード修正無しで追従できるよう環境変数にする。
+const WIDGET_BASE_URL = process.env.NEXT_PUBLIC_CHATBOT_WIDGET_URL;
 
 interface StoreInfo {
   id: string;
@@ -26,6 +31,7 @@ export default function ChatbotStoreDashboardPage() {
   const [store, setStore] = useState<StoreInfo | null>(null);
   const [bot, setBot] = useState<BotConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch(`/api/chatbot/admin/bots/${storeId}`)
@@ -39,6 +45,17 @@ export default function ChatbotStoreDashboardPage() {
 
   if (loading) return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
   if (!bot) return <div className="card-luxury p-12 text-center text-sm text-gray-400">チャットボット設定が見つかりませんでした。</div>;
+
+  const embedSnippet = WIDGET_BASE_URL
+    ? `<script src="${WIDGET_BASE_URL.replace(/\/$/, "")}/embed.js" data-bot="${bot.publicBotId}" data-position="bottom-right"></script>`
+    : null;
+
+  const handleCopy = async () => {
+    if (!embedSnippet) return;
+    await navigator.clipboard.writeText(embedSnippet);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div>
@@ -61,6 +78,28 @@ export default function ChatbotStoreDashboardPage() {
             {bot.status === "draft" ? "下書き（未公開）" : bot.status === "published" ? "公開中" : "停止"}
           </span>
         </p>
+
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <p className="text-xs text-gray-400 mb-1.5">埋め込みコード（サロンのLP/HPに貼り付ける）</p>
+          {embedSnippet ? (
+            <div className="flex items-start gap-2">
+              <code className="flex-1 block text-xs font-mono text-charcoal-700 bg-gray-50 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
+                {embedSnippet}
+              </code>
+              <button
+                onClick={handleCopy}
+                className="shrink-0 flex items-center gap-1 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 text-charcoal-700 hover:bg-gray-50"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? "コピー済み" : "コピー"}
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-amber-600">
+              環境変数 NEXT_PUBLIC_CHATBOT_WIDGET_URL が未設定のため表示できません（Vercelでウィジェット側の本番ドメインを設定してください）。
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
