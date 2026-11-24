@@ -20,7 +20,7 @@ interface StoreInfo {
 const LINKS = [
   { href: "settings", label: "基本設定", icon: Settings, description: "公開状態・モード・ドメイン許可・レート制限・AIプロンプト" },
   { href: "notifications", label: "通知先メール", icon: Mail, description: "応募内容を直送するサロン担当者のメールアドレス" },
-  { href: "knowledge", label: "求人情報・FAQ", icon: BookOpen, description: "給与・休日などの求人項目とFAQの登録・公開" },
+  { href: "knowledge", label: "求人情報・FAQ", icon: BookOpen, description: "HPから取り込み、または手入力でAIの回答内容を登録・公開" },
   { href: "flow", label: "選択式フロー", icon: GitBranch, description: "選択式チャットの質問分岐の編集・公開" },
   { href: "usage", label: "利用状況", icon: BarChart3, description: "利用件数・AIトークン使用量・エラーログ" },
 ];
