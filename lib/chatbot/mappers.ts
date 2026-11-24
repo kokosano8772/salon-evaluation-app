@@ -54,6 +54,7 @@ export function mapKnowledgeSource(row: KnowledgeSourceRow): KnowledgeSource {
     approvedContentHash: row.approved_content_hash,
     approvedAt: row.approved_at,
     status: row.status,
+    fetchWarning: row.fetch_warning,
     updatedAt: row.updated_at,
   };
 }

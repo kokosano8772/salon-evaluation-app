@@ -502,6 +502,7 @@ export interface Database {
           approved_at: string | null;
           approved_by: string | null;
           status: "pending" | "fetched" | "approved" | "rejected" | "stale";
+          fetch_warning: string;
           created_at: string;
           updated_at: string;
         };

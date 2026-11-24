@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ChevronDown, Trash2, Plus, UploadCloud, RefreshCw, Check, X, Download, MessageCircleQuestion } from "lucide-react";
+import { ChevronDown, Trash2, Plus, UploadCloud, RefreshCw, Check, X, Download, MessageCircleQuestion, AlertTriangle } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import {
   ITEM_TYPE_LABEL,
@@ -391,6 +391,13 @@ export default function ChatbotKnowledgePage() {
                     </button>
                   </div>
                   {source.url && <p className="text-xs text-gray-500 mb-3 break-all">{source.url}</p>}
+
+                  {source.fetchWarning && (
+                    <div className="flex items-start gap-2 mb-3 p-3 rounded-lg bg-amber-50 text-amber-700 text-xs">
+                      <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                      <p>{source.fetchWarning}</p>
+                    </div>
+                  )}
 
                   {!hasContent && canFetch ? (
                     <div className="flex flex-col items-center justify-center py-7 bg-gray-50 rounded-xl border border-dashed border-gray-200">

@@ -12,15 +12,44 @@ export const maxDuration = 30;
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_PAGE_BYTES = 2_000_000;
 const MAX_CONTENT_CHARS = 20_000;
+// これ未満しか本文を取得できなかった場合は、何らかの理由でうまく読み込めて
+// いない可能性が高いとみなして警告する（実在するLPで試した所、普通に書かれた
+// 求人LP1枚で1万文字超が取得できたため、数百文字程度では明らかに少なすぎる）。
+const MIN_CONTENT_LENGTH_WITHOUT_WARNING = 300;
 
 function hashContent(content: string): string {
   return createHash("sha256").update(content).digest("hex");
 }
 
+// 取得できた文字数が極端に少ない場合に、スタッフが気づけるよう警告文を作る。
+// このアプリの取得方式はJavaScriptを実行しない（素のHTMLを読むだけ）ため、
+// JavaScriptで後から中身を描画するタイプのサイト（React/Vue等のSPA）だと、
+// 取得したHTMLにナビ・フッターなどの殻しか入っておらず、本文がほぼ空のまま
+// 取り込まれてしまうことがある。気づかずそのまま承認してしまうと、AIがその
+// ページの内容を一切使えないまま「承認済み」に見えてしまうため、ここで検知する。
+function buildFetchWarning(rawHtml: string, text: string): string {
+  if (text.length >= MIN_CONTENT_LENGTH_WITHOUT_WARNING) return "";
+  const looksLikeJsRenderedShell =
+    /id=["'](root|__next|app)["']/.test(rawHtml) || rawHtml.includes("__NEXT_DATA__") || rawHtml.includes("__NUXT__");
+  if (looksLikeJsRenderedShell) {
+    return (
+      "取得できた文字数が少なく（" +
+      text.length +
+      "文字）、うまく読み込めていない可能性があります。JavaScriptで表示を組み立てるタイプのサイトは、" +
+      "この取り込み機能では中身を正しく読み取れないことがあります。実際のページを開いて、内容が十分に反映されているか目視で確認してください。"
+    );
+  }
+  return (
+    "取得できた文字数が少ないです（" +
+    text.length +
+    "文字）。うまく読み込めていない可能性があるので、実際のページを開いて内容を目視で確認してください。"
+  );
+}
+
 // 既存のURL診断（lib/ai-check/ssrf-guard.ts）と同じSSRF対策を流用する:
 // http/httpsのみ許可、DNS解決先がprivate/loopback等でないことを確認、
 // リダイレクトは自動追従させず1hopごとに再検証する。
-async function fetchPlainText(rawUrl: string): Promise<string> {
+async function fetchPlainText(rawUrl: string): Promise<{ text: string; warning: string }> {
   let currentUrl = rawUrl;
   for (let hop = 0; hop <= 5; hop++) {
     const url = await assertUrlIsSafeToFetch(currentUrl);
@@ -62,8 +91,8 @@ async function fetchPlainText(rawUrl: string): Promise<string> {
       }
       const $ = cheerio.load(html);
       $("script, style, noscript").remove();
-      const text = $("body").text().replace(/\s+/g, " ").trim();
-      return text.slice(0, MAX_CONTENT_CHARS);
+      const text = $("body").text().replace(/\s+/g, " ").trim().slice(0, MAX_CONTENT_CHARS);
+      return { text, warning: buildFetchWarning(html, text) };
     } finally {
       clearTimeout(timeout);
     }
@@ -96,8 +125,9 @@ export async function POST(_request: Request, { params }: { params: Promise<{ st
   }
 
   let text: string;
+  let fetchWarning: string;
   try {
-    text = await fetchPlainText(source.url);
+    ({ text, warning: fetchWarning } = await fetchPlainText(source.url));
   } catch (error) {
     const message =
       error instanceof SsrfBlockedError
@@ -133,9 +163,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ st
       fetched_content_hash: hash,
       fetched_at: new Date().toISOString(),
       status,
+      fetch_warning: fetchWarning,
     })
     .eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true, status, contentLength: fetchedContent.length });
+  return NextResponse.json({ ok: true, status, contentLength: fetchedContent.length, warning: fetchWarning });
 }

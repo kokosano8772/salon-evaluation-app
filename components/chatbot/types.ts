@@ -94,6 +94,7 @@ export interface KnowledgeSource {
   approvedContentHash: string;
   approvedAt: string | null;
   status: keyof typeof SOURCE_STATUS_LABEL;
+  fetchWarning: string;
   updatedAt: string;
 }
 
