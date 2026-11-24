@@ -248,9 +248,9 @@ export default function ChatbotSettingsPage() {
               className="mt-0.5"
             />
             <span>
-              <span className="block text-sm font-medium text-charcoal-900">ページを開いたら自動で表示する</span>
+              <span className="block text-sm font-medium text-charcoal-900">ページを開いたら画面中央にポップアップ表示する</span>
               <span className="block text-xs text-gray-400 mt-0.5">
-                起動ボタンを押さなくても、ページ読み込み後にチャット画面が自動で開いた状態になります（閉じるボタンで消せます）。主に選択式を使う場合におすすめです。
+                いつものコーナーの起動ボタン・パネルとは別に、ページ読み込みから少し経つと画面中央に大きくポップアップが表示されます（×ボタンや背景クリックで閉じられます）。閉じた後は通常通りコーナーの起動ボタンから開けます。同じ閲覧中は一度閉じると再表示されません。主に選択式を使う場合におすすめです。
               </span>
             </span>
           </label>
