@@ -605,6 +605,22 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["chatbot_error_logs"]["Row"]>;
         Relationships: [];
       };
+      chatbot_unanswered_questions: {
+        Row: {
+          id: string;
+          store_id: string;
+          category: string;
+          summary: string;
+          status: "open" | "added_to_faq" | "dismissed";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Omit<Database["public"]["Tables"]["chatbot_unanswered_questions"]["Row"], "id" | "created_at" | "updated_at">> & {
+          store_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["chatbot_unanswered_questions"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

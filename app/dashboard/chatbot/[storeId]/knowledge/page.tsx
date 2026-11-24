@@ -2,9 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ChevronDown, Trash2, Plus, UploadCloud, RefreshCw, Check, X, Download } from "lucide-react";
+import { ChevronDown, Trash2, Plus, UploadCloud, RefreshCw, Check, X, Download, MessageCircleQuestion } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import { ITEM_TYPE_LABEL, KnowledgeItem, KnowledgeItemType, KnowledgeSource, SOURCE_STATUS_LABEL, SOURCE_TYPE_LABEL } from "@/components/chatbot/types";
+import {
+  ITEM_TYPE_LABEL,
+  KnowledgeItem,
+  KnowledgeItemType,
+  KnowledgeSource,
+  SOURCE_STATUS_LABEL,
+  SOURCE_TYPE_LABEL,
+  UnansweredQuestion,
+} from "@/components/chatbot/types";
 
 const EMPTY_FORM = { itemType: "faq" as KnowledgeItemType, category: "", title: "", body: "" };
 
@@ -26,11 +34,12 @@ const PRIMARY_BTN_CLASS =
   "inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white disabled:opacity-50";
 const PRIMARY_BTN_STYLE = { background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" };
 
-type Tab = "sources" | "manual";
-const TABS: { key: Tab; label: string }[] = [
-  { key: "sources", label: "HPから取り込む" },
-  { key: "manual", label: "手動で追加する" },
-];
+type Tab = "sources" | "manual" | "unanswered";
+const TAB_LABEL: Record<Tab, string> = {
+  sources: "HPから取り込む",
+  manual: "手動で追加する",
+  unanswered: "未回答の質問",
+};
 
 export default function ChatbotKnowledgePage() {
   const params = useParams<{ storeId: string }>();
@@ -57,6 +66,11 @@ export default function ChatbotKnowledgePage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Record<string, { title: string; body: string; category: string }>>({});
 
+  // --- 未回答の質問（AIが「情報がございません」と答えたもの） ---
+  const [unanswered, setUnanswered] = useState<UnansweredQuestion[]>([]);
+  const [unansweredLoading, setUnansweredLoading] = useState(true);
+  const [unansweredBusyId, setUnansweredBusyId] = useState<string | null>(null);
+
   const loadSources = () => {
     Promise.all([
       fetch(`/api/chatbot/admin/bots/${storeId}/knowledge-sources`).then((r) => r.json()),
@@ -76,11 +90,45 @@ export default function ChatbotKnowledgePage() {
       .finally(() => setItemsLoading(false));
   };
 
+  const loadUnanswered = () => {
+    fetch(`/api/chatbot/admin/bots/${storeId}/unanswered-questions`)
+      .then((r) => r.json())
+      .then((json) => setUnanswered(json.questions ?? []))
+      .finally(() => setUnansweredLoading(false));
+  };
+
   useEffect(() => {
     loadSources();
     loadItems();
+    loadUnanswered();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
+
+  const openCount = unanswered.filter((q) => q.status === "open").length;
+
+  const handleAddUnansweredToFaq = (q: UnansweredQuestion) => {
+    setForm({ itemType: "faq", category: q.category, title: q.summary, body: "" });
+    setTab("manual");
+    setUnansweredBusyId(q.id);
+    fetch(`/api/chatbot/admin/bots/${storeId}/unanswered-questions/${q.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "added_to_faq" }),
+    })
+      .then(loadUnanswered)
+      .finally(() => setUnansweredBusyId(null));
+  };
+
+  const handleDismissUnanswered = (id: string) => {
+    setUnansweredBusyId(id);
+    fetch(`/api/chatbot/admin/bots/${storeId}/unanswered-questions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "dismissed" }),
+    })
+      .then(loadUnanswered)
+      .finally(() => setUnansweredBusyId(null));
+  };
 
   const addSource = async (sourceType: "recruitment_lp" | "manual_url", url: string) => {
     if (!url.trim()) return;
@@ -239,15 +287,20 @@ export default function ChatbotKnowledgePage() {
       />
 
       <div className="flex items-center gap-1 mb-6 border-b border-gray-100">
-        {TABS.map((t) => (
+        {(Object.keys(TAB_LABEL) as Tab[]).map((key) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px ${
-              tab === t.key ? "border-[#C4788A] text-[#C4788A]" : "border-transparent text-gray-400 hover:text-charcoal-900"
+            key={key}
+            onClick={() => setTab(key)}
+            className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px ${
+              tab === key ? "border-[#C4788A] text-[#C4788A]" : "border-transparent text-gray-400 hover:text-charcoal-900"
             }`}
           >
-            {t.label}
+            {TAB_LABEL[key]}
+            {key === "unanswered" && openCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-semibold">
+                {openCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -528,6 +581,58 @@ export default function ChatbotKnowledgePage() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </section>
+
+      {/* ============ 3. 未回答の質問（AIが答えられなかったもの） ============ */}
+      <section className={tab === "unanswered" ? "" : "hidden"}>
+        <p className="text-xs text-gray-400 mb-4">
+          チャットボットのAIが「情報がございません」と答えた質問です。求人・採用に関係のない質問や不適切な質問はここには出ません
+          （AIが自動で除外します）。質問文そのものではなく、AIが作った要約だけを表示しています。
+        </p>
+
+        {unansweredLoading ? (
+          <div className="card-luxury p-12 h-32 animate-pulse bg-gray-50" />
+        ) : unanswered.length === 0 ? (
+          <p className="text-sm text-gray-400">今のところ未回答の質問はありません。</p>
+        ) : (
+          <div className="space-y-3">
+            {unanswered.map((q) => (
+              <div key={q.id} className="card-luxury p-4 flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3 min-w-0">
+                  <MessageCircleQuestion size={18} className="text-gray-300 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    {q.category && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{q.category}</span>}
+                    <p className="text-sm text-charcoal-800 mt-1">{q.summary}</p>
+                    {q.status !== "open" && (
+                      <p className="text-xs text-gray-400 mt-1">{q.status === "added_to_faq" ? "FAQに追加済み" : "却下済み"}</p>
+                    )}
+                  </div>
+                </div>
+                {q.status === "open" && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleAddUnansweredToFaq(q)}
+                      disabled={unansweredBusyId === q.id}
+                      className={PRIMARY_BTN_CLASS}
+                      style={PRIMARY_BTN_STYLE}
+                    >
+                      <Plus size={14} />
+                      FAQに追加
+                    </button>
+                    <button
+                      onClick={() => handleDismissUnanswered(q.id)}
+                      disabled={unansweredBusyId === q.id}
+                      title="対応不要として却下する"
+                      className="inline-flex items-center gap-1 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 text-gray-400 disabled:opacity-50"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </section>

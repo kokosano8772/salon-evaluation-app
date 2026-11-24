@@ -97,6 +97,21 @@ export interface KnowledgeSource {
   updatedAt: string;
 }
 
+export const UNANSWERED_STATUS_LABEL = {
+  open: "未対応",
+  added_to_faq: "FAQに追加済み",
+  dismissed: "却下",
+} as const;
+
+export interface UnansweredQuestion {
+  id: string;
+  storeId: string;
+  category: string;
+  summary: string;
+  status: keyof typeof UNANSWERED_STATUS_LABEL;
+  createdAt: string;
+}
+
 export const APPLY_ACTION_METHOD_LABEL = {
   email: "メール応募（チャット内で入力を収集）",
   line: "LINE応募（LINE公式アカウントへ誘導）",

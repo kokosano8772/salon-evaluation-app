@@ -1,5 +1,5 @@
 import { Database } from "@/lib/supabase/database.types";
-import { BotConfig, FlowVersion, KnowledgeItem, KnowledgeSource, NotificationContact, UsageDay } from "@/components/chatbot/types";
+import { BotConfig, FlowVersion, KnowledgeItem, KnowledgeSource, NotificationContact, UnansweredQuestion, UsageDay } from "@/components/chatbot/types";
 
 type BotConfigRow = Database["public"]["Tables"]["chatbot_bot_configs"]["Row"];
 type NotificationContactRow = Database["public"]["Tables"]["chatbot_notification_contacts"]["Row"];
@@ -7,6 +7,7 @@ type KnowledgeSourceRow = Database["public"]["Tables"]["chatbot_knowledge_source
 type KnowledgeItemRow = Database["public"]["Tables"]["chatbot_knowledge_items"]["Row"];
 type FlowVersionRow = Database["public"]["Tables"]["chatbot_flow_versions"]["Row"];
 type UsageDailyRow = Database["public"]["Tables"]["chatbot_usage_daily"]["Row"];
+type UnansweredQuestionRow = Database["public"]["Tables"]["chatbot_unanswered_questions"]["Row"];
 
 export function mapBotConfig(row: BotConfigRow): BotConfig {
   return {
@@ -81,6 +82,17 @@ export function mapFlowVersion(row: FlowVersionRow): FlowVersion {
     draftJson: (row.draft_json as Record<string, unknown>) ?? {},
     publishedJson: row.published_json as Record<string, unknown> | null,
     publishedAt: row.published_at,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapUnansweredQuestion(row: UnansweredQuestionRow): UnansweredQuestion {
+  return {
+    id: row.id,
+    storeId: row.store_id,
+    category: row.category,
+    summary: row.summary,
+    status: row.status,
     createdAt: row.created_at,
   };
 }
