@@ -26,9 +26,16 @@ const PRIMARY_BTN_CLASS =
   "inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white disabled:opacity-50";
 const PRIMARY_BTN_STYLE = { background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" };
 
+type Tab = "sources" | "manual";
+const TABS: { key: Tab; label: string }[] = [
+  { key: "sources", label: "HPから取り込む" },
+  { key: "manual", label: "手動で追加する" },
+];
+
 export default function ChatbotKnowledgePage() {
   const params = useParams<{ storeId: string }>();
   const storeId = params.storeId;
+  const [tab, setTab] = useState<Tab>("sources");
 
   // --- HPから取り込む（求人情報の主な入力経路） ---
   const [sources, setSources] = useState<KnowledgeSource[]>([]);
@@ -231,9 +238,22 @@ export default function ChatbotKnowledgePage() {
         ]}
       />
 
+      <div className="flex items-center gap-1 mb-6 border-b border-gray-100">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px ${
+              tab === t.key ? "border-[#C4788A] text-[#C4788A]" : "border-transparent text-gray-400 hover:text-charcoal-900"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* ============ 1. HPから取り込む（主な入力経路） ============ */}
-      <section className="mb-10">
-        <h2 className="text-base font-bold text-charcoal-900 mb-1">HPから取り込む</h2>
+      <section className={tab === "sources" ? "" : "hidden"}>
         <p className="text-xs text-gray-400 mb-4">サロンのHPや求人LPのURLを登録すると、内容を取得してAIが読みやすく整理します。確認・承認した分だけ使われます。</p>
 
         {sourceError && <p className="text-red-500 text-sm mb-3">{sourceError}</p>}
@@ -399,8 +419,7 @@ export default function ChatbotKnowledgePage() {
       </section>
 
       {/* ============ 2. 手動で追加する（HPに載っていない情報向け） ============ */}
-      <section className="pt-8 border-t border-gray-200">
-        <h2 className="text-base font-bold text-charcoal-900 mb-1">手動で追加する</h2>
+      <section className={tab === "manual" ? "" : "hidden"}>
         <p className="text-xs text-gray-400 mb-4">見学会の様子など、HPに載っていない情報はここから直接入力してください。</p>
 
         {itemError && <p className="text-red-500 text-sm mb-3">{itemError}</p>}
