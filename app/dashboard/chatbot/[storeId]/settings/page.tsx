@@ -27,6 +27,7 @@ export default function ChatbotSettingsPage() {
   const [themePosition, setThemePosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
   const [themeGreeting, setThemeGreeting] = useState("");
   const [themeLauncherStyle, setThemeLauncherStyle] = useState<"button" | "robot">("button");
+  const [themeAutoOpen, setThemeAutoOpen] = useState(false);
 
   const load = () => {
     fetch(`/api/chatbot/admin/bots/${storeId}`)
@@ -35,11 +36,18 @@ export default function ChatbotSettingsPage() {
         setStore(json.store ?? null);
         setBot(json.bot ?? null);
         setDomainsText((json.bot?.allowedDomains ?? []).join("\n"));
-        const theme = (json.bot?.theme ?? {}) as { primaryColor?: string; position?: string; greeting?: string; launcherStyle?: string };
+        const theme = (json.bot?.theme ?? {}) as {
+          primaryColor?: string;
+          position?: string;
+          greeting?: string;
+          launcherStyle?: string;
+          autoOpen?: boolean;
+        };
         setThemePrimaryColor(theme.primaryColor || "#C4788A");
         setThemePosition(theme.position === "bottom-left" ? "bottom-left" : "bottom-right");
         setThemeGreeting(theme.greeting ?? "");
         setThemeLauncherStyle(theme.launcherStyle === "robot" ? "robot" : "button");
+        setThemeAutoOpen(theme.autoOpen === true);
       })
       .finally(() => setLoading(false));
   };
@@ -66,7 +74,13 @@ export default function ChatbotSettingsPage() {
         status: bot.status,
         mode: bot.mode,
         allowedDomains: domainsText.split("\n").map((d) => d.trim()).filter(Boolean),
-        theme: { primaryColor: themePrimaryColor, position: themePosition, greeting: themeGreeting, launcherStyle: themeLauncherStyle },
+        theme: {
+          primaryColor: themePrimaryColor,
+          position: themePosition,
+          greeting: themeGreeting,
+          launcherStyle: themeLauncherStyle,
+          autoOpen: themeAutoOpen,
+        },
         rateLimitPerMinute: bot.rateLimitPerMinute,
         rateLimitPerDay: bot.rateLimitPerDay,
         aiMonthlyTokenLimit: bot.aiMonthlyTokenLimit,
@@ -225,6 +239,20 @@ export default function ChatbotSettingsPage() {
               placeholder={`${store?.name ?? "当サロン"}の求人についてお気軽にご質問ください。`}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
             />
+          </label>
+          <label className="flex items-start gap-2 sm:col-span-2 p-3 rounded-lg border border-gray-200">
+            <input
+              type="checkbox"
+              checked={themeAutoOpen}
+              onChange={(e) => setThemeAutoOpen(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="block text-sm font-medium text-charcoal-900">ページを開いたら自動で表示する</span>
+              <span className="block text-xs text-gray-400 mt-0.5">
+                起動ボタンを押さなくても、ページ読み込み後にチャット画面が自動で開いた状態になります（閉じるボタンで消せます）。主に選択式を使う場合におすすめです。
+              </span>
+            </span>
           </label>
         </FormSection>
 

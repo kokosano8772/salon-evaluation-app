@@ -46,16 +46,18 @@ export default function ChatbotStoreDashboardPage() {
   if (loading) return <div className="card-luxury p-12 h-64 animate-pulse bg-gray-50" />;
   if (!bot) return <div className="card-luxury p-12 text-center text-sm text-gray-400">チャットボット設定が見つかりませんでした。</div>;
 
-  // テーマ色・表示位置・起動ボタンの形は基本設定で編集した値をそのまま埋め込みコードに
-  // 反映する（embed.js側もdata-color/data-position/data-launcher-styleを読んで表示に
-  // 使う。設定し忘れている場合のデフォルトはembed.js・ChatWidgetどちらも
-  // #C4788A/bottom-right/button（文言入りボタン）で揃えてある）。
-  const theme = (bot.theme ?? {}) as { primaryColor?: string; position?: string; launcherStyle?: string };
+  // テーマ色・表示位置・起動ボタンの形・自動表示は基本設定で編集した値をそのまま
+  // 埋め込みコードに反映する（embed.js側もdata-color/data-position/
+  // data-launcher-style/data-auto-openを読んで表示に使う。設定し忘れている場合の
+  // デフォルトはembed.js・ChatWidgetどちらも#C4788A/bottom-right/button
+  // （文言入りボタン）/自動表示オフで揃えてある）。
+  const theme = (bot.theme ?? {}) as { primaryColor?: string; position?: string; launcherStyle?: string; autoOpen?: boolean };
   const themeColor = theme.primaryColor || "#C4788A";
   const themePosition = theme.position === "bottom-left" ? "bottom-left" : "bottom-right";
   const themeLauncherStyle = theme.launcherStyle === "robot" ? "robot" : "button";
+  const themeAutoOpen = theme.autoOpen === true;
   const embedSnippet = WIDGET_BASE_URL
-    ? `<script src="${WIDGET_BASE_URL.replace(/\/$/, "")}/embed.js" data-bot="${bot.publicBotId}" data-position="${themePosition}" data-color="${themeColor}" data-launcher-style="${themeLauncherStyle}"></script>`
+    ? `<script src="${WIDGET_BASE_URL.replace(/\/$/, "")}/embed.js" data-bot="${bot.publicBotId}" data-position="${themePosition}" data-color="${themeColor}" data-launcher-style="${themeLauncherStyle}" data-auto-open="${themeAutoOpen}"></script>`
     : null;
 
   const handleCopy = async () => {
