@@ -26,6 +26,7 @@ export default function ChatbotSettingsPage() {
   const [themePrimaryColor, setThemePrimaryColor] = useState("#C4788A");
   const [themePosition, setThemePosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
   const [themeGreeting, setThemeGreeting] = useState("");
+  const [themeLauncherStyle, setThemeLauncherStyle] = useState<"button" | "robot">("button");
 
   const load = () => {
     fetch(`/api/chatbot/admin/bots/${storeId}`)
@@ -34,10 +35,11 @@ export default function ChatbotSettingsPage() {
         setStore(json.store ?? null);
         setBot(json.bot ?? null);
         setDomainsText((json.bot?.allowedDomains ?? []).join("\n"));
-        const theme = (json.bot?.theme ?? {}) as { primaryColor?: string; position?: string; greeting?: string };
+        const theme = (json.bot?.theme ?? {}) as { primaryColor?: string; position?: string; greeting?: string; launcherStyle?: string };
         setThemePrimaryColor(theme.primaryColor || "#C4788A");
         setThemePosition(theme.position === "bottom-left" ? "bottom-left" : "bottom-right");
         setThemeGreeting(theme.greeting ?? "");
+        setThemeLauncherStyle(theme.launcherStyle === "robot" ? "robot" : "button");
       })
       .finally(() => setLoading(false));
   };
@@ -64,7 +66,7 @@ export default function ChatbotSettingsPage() {
         status: bot.status,
         mode: bot.mode,
         allowedDomains: domainsText.split("\n").map((d) => d.trim()).filter(Boolean),
-        theme: { primaryColor: themePrimaryColor, position: themePosition, greeting: themeGreeting },
+        theme: { primaryColor: themePrimaryColor, position: themePosition, greeting: themeGreeting, launcherStyle: themeLauncherStyle },
         rateLimitPerMinute: bot.rateLimitPerMinute,
         rateLimitPerDay: bot.rateLimitPerDay,
         aiMonthlyTokenLimit: bot.aiMonthlyTokenLimit,
@@ -177,6 +179,27 @@ export default function ChatbotSettingsPage() {
                 onChange={(e) => setThemePrimaryColor(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm font-mono"
               />
+            </div>
+          </label>
+          <label className="block">
+            <span className="block text-xs text-gray-500 mb-1.5">起動ボタンの形</span>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+              {([
+                { value: "button" as const, label: "文言入りボタン" },
+                { value: "robot" as const, label: "ロボットアイコン" },
+              ]).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setThemeLauncherStyle(opt.value)}
+                  className={`flex-1 px-3 py-2 ${
+                    themeLauncherStyle === opt.value ? "text-white font-medium" : "bg-white text-gray-500 hover:bg-gray-50"
+                  }`}
+                  style={themeLauncherStyle === opt.value ? { background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" } : undefined}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </label>
           <label className="block">
