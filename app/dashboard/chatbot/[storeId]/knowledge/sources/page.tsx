@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ChevronDown, Trash2, RefreshCw, Check, X } from "lucide-react";
+import { ChevronDown, Trash2, RefreshCw, Check, X, Download } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { KnowledgeSource, SOURCE_STATUS_LABEL, SOURCE_TYPE_LABEL } from "@/components/chatbot/types";
 
@@ -151,16 +151,6 @@ export default function ChatbotKnowledgeSourcesPage() {
         ]}
       />
 
-      <div className="card-luxury p-4 mb-6 bg-gray-50/60">
-        <p className="text-xs font-medium text-charcoal-700 mb-2">使い方の流れ</p>
-        <ol className="text-xs text-gray-500 space-y-1 list-decimal list-inside">
-          <li>下でURLを登録する</li>
-          <li>「再取得」で最新の内容を取り込む（AIが読みやすく整理します）</li>
-          <li>内容を確認する。必要ならそのまま書き換えて「保存」できる</li>
-          <li>問題なければ「承認」。承認した内容だけがチャットボットの回答に使われる</li>
-        </ol>
-      </div>
-
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       <div className="card-luxury p-5 mb-6 space-y-4">
@@ -220,84 +210,119 @@ export default function ChatbotKnowledgeSourcesPage() {
       ) : (
         <div className="space-y-4">
           {sources.length === 0 && <p className="text-sm text-gray-400">取得元が未登録です。</p>}
-          {sources.map((source) => (
-            <div key={source.id} className="card-luxury p-5">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 mr-2">
-                    {SOURCE_TYPE_LABEL[source.sourceType]}
-                  </span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLE[source.status]}`}>
-                    {SOURCE_STATUS_LABEL[source.status]}
-                  </span>
-                </div>
-                <button onClick={() => handleDelete(source.id)} className="text-gray-400 hover:text-red-500">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-              {source.url && <p className="text-xs text-gray-500 mb-3 break-all">{source.url}</p>}
+          {sources.map((source) => {
+            const draftValue = drafts[source.id] ?? source.fetchedContent ?? "";
+            const isDirty = drafts[source.id] !== undefined && drafts[source.id] !== source.fetchedContent;
+            const hasContent = source.fetchedContent.trim() !== "";
+            const needsApproval = !isDirty && hasContent && source.fetchedContent !== source.approvedContent;
+            const canFetch = source.sourceType !== "manual_text";
+            const primaryBtnClass =
+              "inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white disabled:opacity-50";
+            const primaryBtnStyle = { background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" };
 
-              <div className="mb-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-xs font-medium text-gray-500">取得内容（書き換えて保存できます）</p>
-                  {drafts[source.id] !== undefined && drafts[source.id] !== source.fetchedContent && (
-                    <button
-                      onClick={() => handleSaveContent(source.id)}
-                      disabled={savingId === source.id}
-                      className="text-xs font-medium px-2.5 py-1 rounded-md text-white disabled:opacity-50"
-                      style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
-                    >
-                      {savingId === source.id ? "保存中..." : "保存"}
-                    </button>
-                  )}
-                </div>
-                <textarea
-                  value={drafts[source.id] ?? source.fetchedContent ?? ""}
-                  onChange={(e) => setDrafts((prev) => ({ ...prev, [source.id]: e.target.value }))}
-                  placeholder="まだ内容がありません。「再取得」を押すか、ここに直接入力してください。"
-                  rows={6}
-                  className="w-full text-xs text-charcoal-700 bg-gray-50 border border-gray-200 rounded-lg p-3 whitespace-pre-wrap focus:outline-none focus:ring-1 focus:ring-[#C4788A]"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
-                {source.sourceType !== "manual_text" && (
-                  <button
-                    onClick={() => handleSync(source.id)}
-                    disabled={busyId === source.id}
-                    title="URL先の最新の内容を取り直し、AIが読みやすく整理し直します"
-                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 mt-2 rounded-lg border border-gray-200 text-charcoal-700 disabled:opacity-50"
-                  >
-                    <RefreshCw size={14} />
-                    再取得
+            return (
+              <div key={source.id} className="card-luxury p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 mr-2">
+                      {SOURCE_TYPE_LABEL[source.sourceType]}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLE[source.status]}`}>
+                      {SOURCE_STATUS_LABEL[source.status]}
+                    </span>
+                  </div>
+                  <button onClick={() => handleDelete(source.id)} className="text-gray-400 hover:text-red-500">
+                    <Trash2 size={16} />
                   </button>
-                )}
-                {(source.status === "fetched" || source.status === "stale") && (
+                </div>
+                {source.url && <p className="text-xs text-gray-500 mb-3 break-all">{source.url}</p>}
+
+                {!hasContent && canFetch ? (
+                  // まだ何も取得していない：次にやることが一つしかないので、ボタンを主役として大きく出す
+                  <div className="flex flex-col items-center justify-center py-7 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <p className="text-xs text-gray-400 mb-3">まだ内容を取り込んでいません</p>
+                    <button
+                      onClick={() => handleSync(source.id)}
+                      disabled={busyId === source.id}
+                      className={primaryBtnClass}
+                      style={primaryBtnStyle}
+                    >
+                      <Download size={16} />
+                      {busyId === source.id ? "取り込み中..." : "HPから取り込む"}
+                    </button>
+                  </div>
+                ) : (
                   <>
-                    <button
-                      onClick={() => handleApprove(source.id)}
-                      disabled={busyId === source.id}
-                      title="上の内容をチャットボットの回答に使えるようにします"
-                      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 mt-2 rounded-lg text-white disabled:opacity-50"
-                      style={{ background: "linear-gradient(135deg, #C4788A 0%, #A85E74 100%)" }}
-                    >
-                      <Check size={14} />
-                      承認
-                    </button>
-                    <button
-                      onClick={() => handleReject(source.id)}
-                      disabled={busyId === source.id}
-                      title="この内容は使わない（却下）"
-                      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 mt-2 rounded-lg border border-gray-200 text-gray-500 disabled:opacity-50"
-                    >
-                      <X size={14} />
-                      却下
-                    </button>
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-xs font-medium text-gray-500">内容</p>
+                        {canFetch && (
+                          <button
+                            onClick={() => handleSync(source.id)}
+                            disabled={busyId === source.id}
+                            title="HP側の最新の内容を取り直します"
+                            className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-charcoal-600 disabled:opacity-50"
+                          >
+                            <RefreshCw size={12} />
+                            {busyId === source.id ? "更新中..." : "内容を更新"}
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        value={draftValue}
+                        onChange={(e) => setDrafts((prev) => ({ ...prev, [source.id]: e.target.value }))}
+                        placeholder="ここに直接入力できます。"
+                        rows={6}
+                        className="w-full text-xs text-charcoal-700 bg-gray-50 border border-gray-200 rounded-lg p-3 whitespace-pre-wrap focus:outline-none focus:ring-1 focus:ring-[#C4788A]"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {isDirty ? (
+                        <button
+                          onClick={() => handleSaveContent(source.id)}
+                          disabled={savingId === source.id}
+                          className={primaryBtnClass}
+                          style={primaryBtnStyle}
+                        >
+                          {savingId === source.id ? "保存中..." : "保存する"}
+                        </button>
+                      ) : needsApproval ? (
+                        <>
+                          <button
+                            onClick={() => handleApprove(source.id)}
+                            disabled={busyId === source.id}
+                            title="この内容をチャットボットの回答に使えるようにします"
+                            className={primaryBtnClass}
+                            style={primaryBtnStyle}
+                          >
+                            <Check size={16} />
+                            承認する
+                          </button>
+                          <button
+                            onClick={() => handleReject(source.id)}
+                            disabled={busyId === source.id}
+                            title="この内容は使わない"
+                            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 text-gray-500 disabled:opacity-50"
+                          >
+                            <X size={14} />
+                            却下
+                          </button>
+                        </>
+                      ) : source.status === "approved" ? (
+                        <p className="text-xs text-green-600 inline-flex items-center gap-1">
+                          <Check size={12} />
+                          承認済み・チャットボットで使用中
+                        </p>
+                      ) : source.status === "rejected" ? (
+                        <p className="text-xs text-gray-400">却下済み（チャットボットには使われません）</p>
+                      ) : null}
+                    </div>
                   </>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
