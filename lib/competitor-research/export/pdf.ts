@@ -114,7 +114,10 @@ export function exportToPdf(
     page-break-inside: avoid;
   }
   @media print {
-    @page { size: A4 landscape; margin: 8mm; }
+    /* 実際に紙へ印刷するわけではなく常にPDF保存用途のため、A4だと項目数が
+       多い比較だと2ページ目に数行だけあふれやすい。面積が広いA3にして
+       1枚に収まりやすくする。 */
+    @page { size: A3 landscape; margin: 8mm; }
     body { padding: 0; }
   }
 </style>
