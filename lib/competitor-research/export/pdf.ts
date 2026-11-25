@@ -109,6 +109,10 @@ export function exportToPdf(
     word-break: break-all;
   }
   tbody tr:nth-child(even) td { background: #f9fafb; }
+  tbody tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
   @media print {
     @page { size: A4 landscape; margin: 8mm; }
     body { padding: 0; }
