@@ -76,7 +76,11 @@ export function exportToPdf(
 <meta charset="UTF-8">
 <title>競合分析レポート — ${esc(region)}</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * {
+    box-sizing: border-box; margin: 0; padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   body {
     font-family: "Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
     font-size: 9px;

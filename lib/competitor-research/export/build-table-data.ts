@@ -47,7 +47,7 @@ export function buildExportData(
   const headers = [
     "カテゴリ",
     "項目",
-    ...salons.map((s) => (s.isOwn ? "自社" : s.name)),
+    ...salons.map((s) => (s.isOwn ? `${s.name}（自社）` : s.name)),
   ];
 
   const rows = fields.map((f) => ({
