@@ -195,6 +195,15 @@ function ManageView() {
   const [candidates, setCandidates] = useState<DiscoverCandidate[]>([]);
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
   const [registeringCandidates, setRegisteringCandidates] = useState(false);
+  const [candidateSort, setCandidateSort] = useState<"relevance" | "reviews" | "rating">("relevance");
+
+  const sortedCandidates = useMemo(() => {
+    if (candidateSort === "relevance") return candidates;
+    const sorted = [...candidates];
+    if (candidateSort === "reviews") sorted.sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0));
+    if (candidateSort === "rating") sorted.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    return sorted;
+  }, [candidates, candidateSort]);
 
   const loadSalons = async () => {
     setLoading(true);
@@ -388,8 +397,20 @@ function ManageView() {
 
           {candidates.length > 0 && (
             <>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-gray-400">並び替え:</span>
+                <select
+                  value={candidateSort}
+                  onChange={(e) => setCandidateSort(e.target.value as typeof candidateSort)}
+                  className="px-2 py-1 rounded-lg border border-gray-200 text-xs"
+                >
+                  <option value="relevance">関連度（デフォルト）</option>
+                  <option value="reviews">口コミ数が多い順</option>
+                  <option value="rating">評価が高い順</option>
+                </select>
+              </div>
               <div className="space-y-1.5 max-h-96 overflow-y-auto mb-3">
-                {candidates.map((c) => (
+                {sortedCandidates.map((c) => (
                   <label
                     key={c.website}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${
@@ -406,6 +427,10 @@ function ManageView() {
                       <span className={c.alreadyRegistered ? "text-gray-300" : "text-charcoal-900 font-medium"}>{c.name}</span>
                       <span className="text-xs text-gray-400 ml-2">{c.area}</span>
                       {c.alreadyRegistered && <span className="text-[11px] ml-2 text-gray-300">（登録済み）</span>}
+                      <span className="text-xs text-gray-400 ml-2">
+                        {c.rating > 0 ? `★${c.rating.toFixed(1)}` : "評価なし"}（口コミ{c.reviewCount}件）
+                      </span>
+                      <p className="text-xs text-gray-400 truncate">{c.address}</p>
                       <p className="text-xs text-gray-400 truncate">{c.website}</p>
                     </div>
                   </label>
