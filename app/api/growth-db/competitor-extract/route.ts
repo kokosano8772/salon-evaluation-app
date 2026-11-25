@@ -25,10 +25,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });
   }
 
-  const result = await extractCompetitorInfo(
-    body.name,
-    body.area,
-    typeof body.website === "string" ? body.website : undefined
-  );
-  return NextResponse.json(result ?? { attraction: {}, recruitment: {} });
+  try {
+    const result = await extractCompetitorInfo(
+      body.name,
+      body.area,
+      typeof body.website === "string" ? body.website : undefined
+    );
+    return NextResponse.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "競合情報の取得に失敗しました";
+    console.error(`competitor-extract failed for ${body.name}:`, message);
+    return NextResponse.json({ error: message, attraction: {}, recruitment: {} }, { status: 502 });
+  }
 }

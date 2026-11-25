@@ -81,24 +81,24 @@ function extractJson(rawText: string): unknown {
   return JSON.parse(jsonText.trim());
 }
 
+// 呼び出し元(API route)でエラー理由をそのままクライアントに返せるよう、
+// ここでは例外を握りつぶさずそのまま投げる(withRetry/cleanErrorMessageが
+// 既に利用者向けの分かりやすいメッセージに整形済み)。
 export async function extractCompetitorInfo(
   salonName: string,
   area: string,
   knownWebsite?: string
-): Promise<ExtractionResult | null> {
-  try {
-    const model = getGeminiModel({ useGoogleSearch: true });
-    const prompt = buildExtractionPrompt(salonName, area, knownWebsite);
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const parsed = extractJson(text);
-    if (typeof parsed !== "object" || parsed === null) return null;
-    return {
-      attraction: (parsed as Record<string, unknown>).attraction as Partial<AttractionData> ?? {},
-      recruitment: (parsed as Record<string, unknown>).recruitment as Partial<RecruitmentData> ?? {},
-    };
-  } catch (error) {
-    console.error("Competitor info extraction failed:", error);
-    return null;
+): Promise<ExtractionResult> {
+  const model = getGeminiModel({ useGoogleSearch: true });
+  const prompt = buildExtractionPrompt(salonName, area, knownWebsite);
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  const parsed = extractJson(text);
+  if (typeof parsed !== "object" || parsed === null) {
+    return { attraction: {}, recruitment: {} };
   }
+  return {
+    attraction: (parsed as Record<string, unknown>).attraction as Partial<AttractionData> ?? {},
+    recruitment: (parsed as Record<string, unknown>).recruitment as Partial<RecruitmentData> ?? {},
+  };
 }
