@@ -95,6 +95,33 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
     onChange(next);
   };
 
+  // ノードの種類を変えた時、IDも新しい種類のprefix（q/text/notice...）で
+  // 採番し直す。IDだけ変えると他ノードからの分岐先参照（nextNodeId）が
+  // 宙に浮いてしまうため、他ノード側の参照も新IDへ一緒に書き換える。
+  const changeNodeType = (id: string, newType: FlowNodeType) => {
+    const current = nodes.find((n) => n.id === id);
+    if (!current || newType === current.type) return;
+    const newId = genNodeId(
+      nodes.filter((n) => n.id !== id),
+      newType
+    );
+    onChange(
+      nodes.map((n) => {
+        if (n.id === id) {
+          return { ...n, id: newId, type: newType, ...defaultsForType(newType) };
+        }
+        const referencesSingle = n.nextNodeId === id;
+        const referencesOption = n.options?.some((o) => o.nextNodeId === id);
+        if (!referencesSingle && !referencesOption) return n;
+        return {
+          ...n,
+          ...(referencesSingle ? { nextNodeId: newId } : {}),
+          ...(referencesOption ? { options: n.options!.map((o) => (o.nextNodeId === id ? { ...o, nextNodeId: newId } : o)) } : {}),
+        };
+      })
+    );
+  };
+
   const nextNodeOptions = (currentId: string) => (
     <>
       <option value="">（未設定）</option>
@@ -118,10 +145,7 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
               <div className="relative">
                 <select
                   value={node.type}
-                  onChange={(e) => {
-                    const type = e.target.value as FlowNodeType;
-                    updateNode(node.id, { type, ...defaultsForType(type) });
-                  }}
+                  onChange={(e) => changeNodeType(node.id, e.target.value as FlowNodeType)}
                   className="appearance-none pl-3 pr-8 py-1.5 rounded-lg border border-gray-200 text-sm font-medium bg-white"
                 >
                   {Object.entries(FLOW_NODE_TYPE_LABEL).map(([value, label]) => (
