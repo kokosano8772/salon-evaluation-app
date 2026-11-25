@@ -29,9 +29,18 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
   let prevCategory = "";
 
   return (
-    <div style={{ width: 1800, fontFamily: '"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif', color: "#111827", background: "#fff", padding: 16 }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>競合分析レポート — {region}</h1>
-      <p style={{ color: "#6b7280", fontSize: 15, marginBottom: 16 }}>
+    <div
+      style={{
+        width: 1800,
+        fontFamily: '"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif',
+        fontSize: 9,
+        color: "#111827",
+        background: "#fff",
+        padding: 16,
+      }}
+    >
+      <h1 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>競合分析レポート — {region}</h1>
+      <p style={{ color: "#6b7280", fontSize: 9, marginBottom: 16 }}>
         {modeLabel} ／ 出力日: {date} ／ 比較: {salons.filter((s) => !s.isOwn).length}社
       </p>
 
@@ -45,8 +54,8 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
                   width: i === 0 ? "8%" : i === 1 ? "18%" : `${salonColWidthPct}%`,
                   background: ACCENT,
                   color: "#fff",
-                  padding: "9px 10px",
-                  fontSize: 15,
+                  padding: "5px 6px",
+                  fontSize: 9,
                   textAlign: "left",
                   border: `1px solid ${ACCENT_DARK}`,
                 }}
@@ -63,17 +72,18 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
             const catBg = r.category === "集客分析" ? "#fdf2f5" : "#faf5ff";
             return (
               <tr data-print-section key={ri} style={{ background: ri % 2 === 1 ? "#f9fafb" : undefined }}>
-                <td style={{ background: catBg, color: "#6b7280", fontSize: 13, textAlign: "center", border: "1px solid #e5e7eb", padding: "5px 8px", verticalAlign: "top" }}>
+                <td style={{ background: catBg, color: "#6b7280", fontSize: 8, textAlign: "center", border: "1px solid #e5e7eb", padding: "3px 5px", verticalAlign: "top" }}>
                   {catChanged ? r.category : ""}
                 </td>
-                <td style={{ fontWeight: 600, border: "1px solid #e5e7eb", padding: "5px 8px", verticalAlign: "top" }}>{r.field}</td>
+                <td style={{ fontSize: 9, fontWeight: 600, border: "1px solid #e5e7eb", padding: "3px 5px", verticalAlign: "top" }}>{r.field}</td>
                 {r.values.map((v, i) => (
                   <td
                     key={i}
                     style={{
+                      fontSize: 9,
                       background: i === 0 ? "#fdf2f5" : undefined,
                       border: "1px solid #e5e7eb",
-                      padding: "5px 8px",
+                      padding: "3px 5px",
                       verticalAlign: "top",
                       wordBreak: "break-word",
                       whiteSpace: "pre-wrap",
@@ -90,8 +100,8 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
 
       {aiResult && (
         <div data-print-section style={{ marginTop: 24 }}>
-          <h2 style={{ fontSize: 20, marginBottom: 8, color: ACCENT_DARK }}>AI 競合分析レポート</h2>
-          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: 16, whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.7 }}>
+          <h2 style={{ fontSize: 13, marginBottom: 8, color: ACCENT_DARK }}>AI 競合分析レポート</h2>
+          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: 12, whiteSpace: "pre-wrap", fontSize: 9, lineHeight: 1.7 }}>
             {aiResult}
           </div>
         </div>
