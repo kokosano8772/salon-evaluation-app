@@ -13,12 +13,16 @@ export async function GET(request: Request) {
   if (!bot) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const admin = createAdminClient();
+  // バージョン番号の大小ではなく、実際に公開した時刻が一番新しいものを表示する。
+  // 番号順にすると、古いバージョンを選んで再公開しても、より番号の大きい
+  // バージョンが公開済みのままだとそちらが優先されてしまい、「戻す」操作が
+  // 見た目上できても実際には反映されないという不具合があったため。
   const { data, error } = await admin
     .from("chatbot_flow_versions")
     .select("version, published_json")
     .eq("store_id", bot.store_id)
     .not("published_json", "is", null)
-    .order("version", { ascending: false })
+    .order("published_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
