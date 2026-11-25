@@ -27,6 +27,7 @@ export default function ChatbotSettingsPage() {
   const [themePosition, setThemePosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
   const [themeGreeting, setThemeGreeting] = useState("");
   const [themeLauncherStyle, setThemeLauncherStyle] = useState<"button" | "robot">("button");
+  const [themeLauncherText, setThemeLauncherText] = useState("");
   const [themeAutoOpen, setThemeAutoOpen] = useState(false);
 
   const load = () => {
@@ -41,12 +42,14 @@ export default function ChatbotSettingsPage() {
           position?: string;
           greeting?: string;
           launcherStyle?: string;
+          launcherText?: string;
           autoOpen?: boolean;
         };
         setThemePrimaryColor(theme.primaryColor || "#C4788A");
         setThemePosition(theme.position === "bottom-left" ? "bottom-left" : "bottom-right");
         setThemeGreeting(theme.greeting ?? "");
         setThemeLauncherStyle(theme.launcherStyle === "robot" ? "robot" : "button");
+        setThemeLauncherText(theme.launcherText ?? "");
         setThemeAutoOpen(theme.autoOpen === true);
       })
       .finally(() => setLoading(false));
@@ -79,6 +82,7 @@ export default function ChatbotSettingsPage() {
           position: themePosition,
           greeting: themeGreeting,
           launcherStyle: themeLauncherStyle,
+          launcherText: themeLauncherText,
           autoOpen: themeAutoOpen,
         },
         rateLimitPerMinute: bot.rateLimitPerMinute,
@@ -215,6 +219,16 @@ export default function ChatbotSettingsPage() {
                 </button>
               ))}
             </div>
+          </label>
+          <label className="block">
+            <span className="block text-xs text-gray-500 mb-1.5">起動ボタンの文言（未入力時は既定文言）</span>
+            <input
+              type="text"
+              value={themeLauncherText}
+              onChange={(e) => setThemeLauncherText(e.target.value)}
+              placeholder="採用について質問する"
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+            />
           </label>
           <label className="block">
             <span className="block text-xs text-gray-500 mb-1.5">表示位置（埋め込み時）</span>
