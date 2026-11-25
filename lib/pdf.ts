@@ -9,7 +9,8 @@
 // 再利用するため。型はDiagnosisResultに依存しない）。
 export async function exportResultToPDF(
   element: HTMLElement,
-  filename: string
+  filename: string,
+  options?: { orientation?: "portrait" | "landscape" }
 ): Promise<void> {
   // dynamic import — SSR 非対応ライブラリのため実行時のみ読み込む
   const [{ default: jsPDF }, { toCanvas }] = await Promise.all([
@@ -49,7 +50,7 @@ export async function exportResultToPDF(
 
   // A4サイズのPDFに収まるよう、キャプチャした画像をページの高さ単位で縦に切り分け、
   // 複数ページとして追加する（1枚の縦に長いだけの非標準サイズページにはしない）。
-  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: options?.orientation === "landscape" ? "l" : "p" });
   const pageWidthMm = pdf.internal.pageSize.getWidth();
   const pageHeightMm = pdf.internal.pageSize.getHeight();
   const pxPerMm = canvas.width / pageWidthMm;

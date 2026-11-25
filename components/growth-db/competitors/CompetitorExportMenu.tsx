@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Download, FileSpreadsheet, FileText, Loader2, Printer } from "lucide-react";
 import { exportToCsv } from "@/lib/competitor-research/export/csv";
 import { exportToExcel } from "@/lib/competitor-research/export/excel";
-import { exportToPdf } from "@/lib/competitor-research/export/pdf";
+import { exportResultToPDF } from "@/lib/pdf";
+import CompetitorPrintDocument from "./CompetitorPrintDocument";
 import { AnalysisMode, ComparisonData, SalonData } from "@/lib/competitor-research/types";
 
 interface CompetitorExportMenuProps {
@@ -18,7 +19,7 @@ interface CompetitorExportMenuProps {
 type ExportType = "pdf" | "csv" | "excel";
 
 const ITEMS: { type: ExportType; label: string; desc: string; icon: typeof Printer }[] = [
-  { type: "pdf", label: "PDFとして印刷", desc: "ブラウザの印刷→PDF保存", icon: Printer },
+  { type: "pdf", label: "PDFダウンロード", desc: "画面と同じ見た目で保存", icon: Printer },
   { type: "csv", label: "CSVダウンロード", desc: "Excel/Numbersで開けます", icon: FileText },
   { type: "excel", label: "Excelダウンロード", desc: ".xlsx形式", icon: FileSpreadsheet },
 ];
@@ -27,6 +28,7 @@ export default function CompetitorExportMenu({ salons, mode, cellData, region, a
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState<ExportType | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -40,9 +42,16 @@ export default function CompetitorExportMenu({ salons, mode, cellData, region, a
     setLoading(type);
     setOpen(false);
     try {
-      if (type === "pdf") exportToPdf(salons, mode, cellData, region, aiResult);
-      else if (type === "csv") exportToCsv(salons, mode, cellData, region);
+      if (type === "pdf") {
+        if (!printRef.current) return;
+        const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        await exportResultToPDF(printRef.current, `競合分析レポート_${region || "地域未設定"}_${date}.pdf`, {
+          orientation: "landscape",
+        });
+      } else if (type === "csv") exportToCsv(salons, mode, cellData, region);
       else await exportToExcel(salons, mode, cellData, region);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "出力に失敗しました");
     } finally {
       setLoading(null);
     }
@@ -50,6 +59,14 @@ export default function CompetitorExportMenu({ salons, mode, cellData, region, a
 
   return (
     <div ref={ref} className="relative">
+      {/* キャプチャ専用の非表示DOM。画面外に配置するだけでdisplay:noneにはしない
+          （html-to-imageが実際にレイアウトされた要素しかキャプチャできないため）。 */}
+      <div style={{ position: "absolute", top: 0, left: -99999, width: 1800, height: 0, overflow: "hidden" }} aria-hidden="true">
+        <div ref={printRef}>
+          <CompetitorPrintDocument salons={salons} mode={mode} cellData={cellData} region={region} aiResult={aiResult} />
+        </div>
+      </div>
+
       <button
         onClick={() => setOpen((o) => !o)}
         disabled={loading !== null}
