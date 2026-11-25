@@ -120,79 +120,64 @@ export default function CompetitorResearchPage({ params }: { params: Promise<{ s
 
     setPreparingCompare(true);
     setExtractionWarnings([]);
-    const warnings: { name: string; reason: string }[] = [];
     try {
-      // 3件同時にGeminiを呼ぶと分単位のレート制限に引っかかり、1件だけ成功して
-      // 残りが silent に空欄落ちすることがあったため、1件ずつ順番に呼ぶ。
-      // 自社も競合と同じくAIでWeb検索して仮埋めする（店舗データ由来の値は既知の
-      // 実データなので、AIの推測より常に優先する＝空欄/未設定の項目だけAIで補う）。
-      let ownSalon: SalonData = ownSalonBase;
-      try {
-        const homepageUrl = store?.homepageUrls?.[0]?.url;
-        const res = await fetch("/api/growth-db/competitor-extract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: ownSalonBase.name, area: ownSalonBase.area, website: homepageUrl }),
-        });
-        if (!res.ok) {
-          const errJson = await res.json().catch(() => ({}));
-          const reason = typeof errJson.error === "string" ? errJson.error : `HTTP ${res.status}`;
-          console.error("competitor-extract failed for own salon:", res.status, errJson);
-          warnings.push({ name: `${ownSalonBase.name}（自社）`, reason });
-        } else {
-          const extracted = await res.json();
-          ownSalon = {
-            ...ownSalonBase,
-            attraction: { ...extracted.attraction, ...pickDefined(ownSalonBase.attraction) },
-            recruitment: { ...extracted.recruitment, ...pickDefined(ownSalonBase.recruitment) },
-          };
-        }
-      } catch (err) {
-        console.error("competitor-extract threw for own salon:", err);
-        warnings.push({ name: `${ownSalonBase.name}（自社）`, reason: err instanceof Error ? err.message : "通信に失敗しました" });
-      }
+      // 以前は「同時に呼ぶとレート制限に引っかかる」と考えて1件ずつ順番に呼んで
+      // いたが、実際のエラーは429(レート制限)ではなく504(1件30秒の処理時間切れ)
+      // だったため、根本原因はそこではなかった。/api/growth-db/competitor-extract
+      // のmaxDurationを60秒に伸ばして直したので、同時実行に戻して速くする。
+      type ExtractTarget = { label: string; name: string; area: string; website?: string };
+      const ownHomepageUrl = store?.homepageUrls?.[0]?.url;
+      const targets: ExtractTarget[] = [
+        { label: `${ownSalonBase.name}（自社）`, name: ownSalonBase.name, area: ownSalonBase.area, website: ownHomepageUrl },
+        ...selectedBasics.map((s) => ({ label: s.name, name: s.name, area: s.area, website: s.website })),
+      ];
 
-      const competitorSalons: SalonData[] = [];
-      for (const s of selectedBasics) {
-        // Google Placesから取得できていれば営業時間・定休日はここで先に埋めておく
-        const baseAttraction: AttractionData = {
-          businessHours: s.businessHours,
-          closedDays: s.closedDays,
-        };
-        const baseRecruitment: RecruitmentData = {
-          businessHours: s.businessHours,
-        };
-
-        // Gemini + Google検索で、公式サイト・求人媒体・予約サイトなどから
-        // 他の項目も横断的に推定して仮入力する（ウェブサイトURLが無くても検索できる）
-        try {
-          const res = await fetch("/api/growth-db/competitor-extract", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: s.name, area: s.area, website: s.website }),
-          });
-          if (!res.ok) {
-            const errJson = await res.json().catch(() => ({}));
-            const reason = typeof errJson.error === "string" ? errJson.error : `HTTP ${res.status}`;
-            console.error(`competitor-extract failed for ${s.name}:`, res.status, errJson);
-            warnings.push({ name: s.name, reason });
-            competitorSalons.push({ ...s, attraction: baseAttraction, recruitment: baseRecruitment });
-            continue;
+      const results = await Promise.all(
+        targets.map(async (target) => {
+          try {
+            const res = await fetch("/api/growth-db/competitor-extract", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: target.name, area: target.area, website: target.website }),
+            });
+            if (!res.ok) {
+              const errJson = await res.json().catch(() => ({}));
+              const reason = typeof errJson.error === "string" ? errJson.error : `HTTP ${res.status}`;
+              console.error(`competitor-extract failed for ${target.label}:`, res.status, errJson);
+              return { warning: { name: target.label, reason } };
+            }
+            const extracted = await res.json();
+            return { extracted };
+          } catch (err) {
+            console.error(`competitor-extract threw for ${target.label}:`, err);
+            return { warning: { name: target.label, reason: err instanceof Error ? err.message : "通信に失敗しました" } };
           }
-          const extracted = await res.json();
-          competitorSalons.push({
-            ...s,
-            attraction: { ...baseAttraction, ...extracted.attraction },
-            recruitment: { ...baseRecruitment, ...extracted.recruitment },
-          });
-        } catch (err) {
-          console.error(`competitor-extract threw for ${s.name}:`, err);
-          warnings.push({ name: s.name, reason: err instanceof Error ? err.message : "通信に失敗しました" });
-          competitorSalons.push({ ...s, attraction: baseAttraction, recruitment: baseRecruitment });
-        }
-      }
+        })
+      );
 
+      const warnings = results.map((r) => r.warning).filter((w): w is { name: string; reason: string } => !!w);
       setExtractionWarnings(warnings);
+
+      // 自社: 店舗データ由来の実データ(価格帯・席数・評価等)はAIの推測より常に優先する。
+      const ownExtracted = results[0].extracted;
+      const ownSalon: SalonData = {
+        ...ownSalonBase,
+        attraction: { ...ownExtracted?.attraction, ...pickDefined(ownSalonBase.attraction) },
+        recruitment: { ...ownExtracted?.recruitment, ...pickDefined(ownSalonBase.recruitment) },
+      };
+
+      const competitorSalons: SalonData[] = selectedBasics.map((s, i) => {
+        const extracted = results[i + 1].extracted;
+        // Google Placesから取得できていれば営業時間・定休日はここで先に埋めておく
+        const baseAttraction: AttractionData = { businessHours: s.businessHours, closedDays: s.closedDays };
+        const baseRecruitment: RecruitmentData = { businessHours: s.businessHours };
+        return {
+          ...s,
+          attraction: { ...baseAttraction, ...extracted?.attraction },
+          recruitment: { ...baseRecruitment, ...extracted?.recruitment },
+        };
+      });
+
       const newSalons = [ownSalon, ...competitorSalons];
       setSalons(newSalons);
       // 数値・はい/いいえ項目は自社と自動比較して評価を仮入力しておく（手動で上書き可能）
