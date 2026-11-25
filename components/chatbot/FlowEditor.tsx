@@ -1,7 +1,7 @@
 "use client";
 
 import type { SelectHTMLAttributes } from "react";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from "lucide-react";
 import { APPLY_ACTION_METHOD_LABEL, ApplyActionMethod, FLOW_NODE_TYPE_LABEL, FlowNode, FlowNodeType } from "@/components/chatbot/types";
 
 interface FlowEditorProps {
@@ -9,12 +9,26 @@ interface FlowEditorProps {
   onChange: (nodes: FlowNode[]) => void;
 }
 
-function genNodeId(existing: FlowNode[]): string {
-  let id: string;
-  do {
-    id = `node_${Math.random().toString(36).slice(2, 8)}`;
-  } while (existing.some((n) => n.id === id));
-  return id;
+// ノードの種類ごとに、追加時のIDを「q1, q2, q3...」のように連番で分かりやすく
+// 採番する（既存のstart/q1/q2/apply1という命名に合わせる）。
+const NODE_ID_PREFIX: Record<FlowNodeType, string> = {
+  start: "start",
+  choice: "q",
+  text_input: "text",
+  notice: "notice",
+  apply_action: "apply",
+  end: "end",
+};
+
+function genNodeId(existing: FlowNode[], type: FlowNodeType): string {
+  const prefix = NODE_ID_PREFIX[type];
+  const pattern = new RegExp(`^${prefix}(\\d+)$`);
+  let max = 0;
+  for (const n of existing) {
+    const match = n.id.match(pattern);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return `${prefix}${max + 1}`;
 }
 
 function defaultsForType(type: FlowNodeType): Partial<FlowNode> {
@@ -63,8 +77,22 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
   };
 
   const addNode = () => {
-    const id = genNodeId(nodes);
-    onChange([...nodes, { id, type: "notice", text: "", ...defaultsForType("notice") }]);
+    // 新しく質問を増やすケースが大半なので、既定の種類は「選択肢」にする
+    // （案内文等にしたい場合は、追加後にノード種類のドロップダウンで変更する）。
+    const type: FlowNodeType = "choice";
+    const id = genNodeId(nodes, type);
+    onChange([...nodes, { id, type, text: "", ...defaultsForType(type) }]);
+  };
+
+  // 画面上の並び順を入れ替えるだけで、分岐先（nextNodeId）はIDで参照している
+  // ため動作には影響しない。「apply1の前にq3を置きたい」のような整理がしやすい
+  // ようにするための見た目上の並び替え機能。
+  const moveNode = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= nodes.length) return;
+    const next = [...nodes];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
   };
 
   const nextNodeOptions = (currentId: string) => (
@@ -82,7 +110,7 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
 
   return (
     <div className="space-y-4">
-      {nodes.map((node) => (
+      {nodes.map((node, index) => (
         <div key={node.id} className="card-luxury p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -109,9 +137,27 @@ export default function FlowEditor({ nodes, onChange }: FlowEditorProps) {
                 />
               </div>
             </div>
-            <button onClick={() => removeNode(node.id)} className="text-gray-400 hover:text-red-500">
-              <Trash2 size={16} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => moveNode(index, -1)}
+                disabled={index === 0}
+                className="text-gray-400 hover:text-gray-600 disabled:opacity-25 disabled:hover:text-gray-400"
+                aria-label="上に移動"
+              >
+                <ArrowUp size={16} />
+              </button>
+              <button
+                onClick={() => moveNode(index, 1)}
+                disabled={index === nodes.length - 1}
+                className="text-gray-400 hover:text-gray-600 disabled:opacity-25 disabled:hover:text-gray-400"
+                aria-label="下に移動"
+              >
+                <ArrowDown size={16} />
+              </button>
+              <button onClick={() => removeNode(node.id)} className="text-gray-400 hover:text-red-500 ml-1" aria-label="削除">
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
 
           {node.type === "start" && (
