@@ -86,6 +86,10 @@ export function exportToPdf(
     font-size: 9px;
     color: #111827;
     padding: 16px;
+    /* タブで見た時と同じ余裕のある列幅にするため、ウィンドウ幅に関係なく
+       常に同じ幅で組む（印刷時のページ高さは、この幅で実際に描画された
+       内容の高さを後から測って1ページぴったりに合わせる）。 */
+    width: 1800px;
   }
   h1 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
   .meta { color: #6b7280; font-size: 9px; margin-bottom: 12px; }
@@ -114,11 +118,6 @@ export function exportToPdf(
     page-break-inside: avoid;
   }
   @media print {
-    /* 実際に紙へ印刷するわけではなく常にPDF保存用途のため、決まった用紙サイズに
-       収めようとして文字を詰め込むのではなく、ブラウザのタブで見た時と同じ
-       余裕のある列幅になるよう、十分広いカスタムサイズにする（A3でも画面より
-       狭く、セル内の折り返しが増えて窮屈に見えていたため）。 */
-    @page { size: 500mm 600mm; margin: 8mm; }
     body { padding: 0; }
   }
 </style>
@@ -141,6 +140,19 @@ ${aiSection}
   }
   win.document.write(html);
   win.document.close();
-  // Give browser time to render Japanese fonts before triggering print
-  win.setTimeout(() => win.print(), 600);
+  // Give browser time to render Japanese fonts before measuring/printing
+  win.setTimeout(() => {
+    // 用紙サイズを決め打ちで仮定せず、実際にbodyが描画された高さを測って
+    // 1ページぴったりに収まる@pageサイズを後から差し込む（決め打ちだと
+    // 内容量によって余白が余ったり、逆に溢れたりしていたため）。
+    // box-sizing:border-boxのため、body.scrollHeight・固定width(1800px)は
+    // どちらも既に自身のpadding込みの値（二重に足さない）。
+    const PX_TO_MM = 25.4 / 96;
+    const pageWidthMm = Math.ceil(1800 * PX_TO_MM) + 2;
+    const pageHeightMm = Math.ceil(win.document.body.scrollHeight * PX_TO_MM) + 2;
+    const style = win.document.createElement("style");
+    style.textContent = `@page { size: ${pageWidthMm}mm ${pageHeightMm}mm; margin: 0; }`;
+    win.document.head.appendChild(style);
+    win.print();
+  }, 600);
 }
