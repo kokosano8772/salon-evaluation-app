@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Globe, ChevronRight, Trophy, Settings2 } from "lucide-react";
+import { Plus, Globe, ChevronRight, Trophy, Settings2, Search } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 const ACCENT = "#C4788A";
@@ -40,6 +40,16 @@ interface Salon {
   city: string;
   store_count: number | null;
   webAssets: WebAsset[];
+}
+
+interface DiscoverCandidate {
+  name: string;
+  area: string;
+  address: string;
+  website: string;
+  rating: number;
+  reviewCount: number;
+  alreadyRegistered: boolean;
 }
 
 function RankingView() {
@@ -176,6 +186,16 @@ function ManageView() {
   const [assetUrl, setAssetUrl] = useState("");
   const [assetSiteType, setAssetSiteType] = useState("hp");
 
+  const [showDiscoverForm, setShowDiscoverForm] = useState(false);
+  const [discoverPrefecture, setDiscoverPrefecture] = useState("");
+  const [discoverCity, setDiscoverCity] = useState("");
+  const [discovering, setDiscovering] = useState(false);
+  const [discoverError, setDiscoverError] = useState("");
+  const [discoverMeta, setDiscoverMeta] = useState<{ foundCount: number; withWebsiteCount: number } | null>(null);
+  const [candidates, setCandidates] = useState<DiscoverCandidate[]>([]);
+  const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
+  const [registeringCandidates, setRegisteringCandidates] = useState(false);
+
   const loadSalons = async () => {
     setLoading(true);
     try {
@@ -246,9 +266,82 @@ function ManageView() {
     }
   };
 
+  const handleDiscover = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!discoverPrefecture.trim()) return;
+    setDiscovering(true);
+    setDiscoverError("");
+    setCandidates([]);
+    setDiscoverMeta(null);
+    try {
+      const res = await fetch("/api/web-ranking/discover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prefecture: discoverPrefecture.trim(), city: discoverCity.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "検索に失敗しました");
+      setDiscoverMeta({ foundCount: json.foundCount, withWebsiteCount: json.withWebsiteCount });
+      const found: DiscoverCandidate[] = json.candidates ?? [];
+      setCandidates(found);
+      setSelectedCandidates(new Set(found.filter((c) => !c.alreadyRegistered).map((c) => c.website)));
+    } catch (err) {
+      setDiscoverError(err instanceof Error ? err.message : "検索に失敗しました");
+    } finally {
+      setDiscovering(false);
+    }
+  };
+
+  const toggleCandidate = (website: string) => {
+    setSelectedCandidates((prev) => {
+      const next = new Set(prev);
+      if (next.has(website)) next.delete(website);
+      else next.add(website);
+      return next;
+    });
+  };
+
+  const handleRegisterSelected = async () => {
+    const targets = candidates.filter((c) => selectedCandidates.has(c.website) && !c.alreadyRegistered);
+    if (targets.length === 0) return;
+    setRegisteringCandidates(true);
+    try {
+      for (const c of targets) {
+        const salonRes = await fetch("/api/web-ranking/salons", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: c.name, prefecture: discoverPrefecture.trim(), city: discoverCity.trim(), address: c.address }),
+        });
+        const salonJson = await salonRes.json();
+        if (!salonRes.ok) continue; // 1件失敗しても残りは続行する
+        await fetch("/api/web-ranking/web-assets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ salonId: salonJson.id, url: c.website, siteType: "hp" }),
+        });
+      }
+      setCandidates([]);
+      setDiscoverMeta(null);
+      setShowDiscoverForm(false);
+      await loadSalons();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "登録に失敗しました");
+    } finally {
+      setRegisteringCandidates(false);
+    }
+  };
+
   return (
     <div>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <button
+          onClick={() => setShowDiscoverForm((v) => !v)}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold border"
+          style={{ borderColor: ACCENT, color: ACCENT }}
+        >
+          <Search size={16} strokeWidth={2} />
+          地域から候補を検索
+        </button>
         <button
           onClick={() => setShowSalonForm((v) => !v)}
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
@@ -258,6 +351,78 @@ function ManageView() {
           サロンを登録
         </button>
       </div>
+
+      {showDiscoverForm && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6">
+          <form onSubmit={handleDiscover} className="flex flex-wrap gap-2 mb-3">
+            <input
+              value={discoverPrefecture}
+              onChange={(e) => setDiscoverPrefecture(e.target.value)}
+              placeholder="都道府県（例: 愛知県）"
+              required
+              className="px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+            />
+            <input
+              value={discoverCity}
+              onChange={(e) => setDiscoverCity(e.target.value)}
+              placeholder="市区町村（任意）"
+              className="px-3 py-2.5 rounded-lg border border-gray-200 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={discovering}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+              style={{ background: ACCENT }}
+            >
+              <Search size={15} strokeWidth={2} />
+              {discovering ? "検索中..." : "検索する"}
+            </button>
+          </form>
+
+          {discoverError && <p className="text-sm text-red-500">{discoverError}</p>}
+          {discoverMeta && (
+            <p className="text-xs text-gray-400 mb-3">
+              {discoverMeta.foundCount}件見つかり、公式サイトURLが判明したのは{discoverMeta.withWebsiteCount}件でした。
+            </p>
+          )}
+
+          {candidates.length > 0 && (
+            <>
+              <div className="space-y-1.5 max-h-96 overflow-y-auto mb-3">
+                {candidates.map((c) => (
+                  <label
+                    key={c.website}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${
+                      c.alreadyRegistered ? "bg-gray-50 text-gray-300" : "bg-gray-50 hover:bg-gray-100 cursor-pointer"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedCandidates.has(c.website)}
+                      disabled={c.alreadyRegistered}
+                      onChange={() => toggleCandidate(c.website)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className={c.alreadyRegistered ? "text-gray-300" : "text-charcoal-900 font-medium"}>{c.name}</span>
+                      <span className="text-xs text-gray-400 ml-2">{c.area}</span>
+                      {c.alreadyRegistered && <span className="text-[11px] ml-2 text-gray-300">（登録済み）</span>}
+                      <p className="text-xs text-gray-400 truncate">{c.website}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <button
+                onClick={handleRegisterSelected}
+                disabled={registeringCandidates || selectedCandidates.size === 0}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background: ACCENT }}
+              >
+                {registeringCandidates ? "登録中..." : `選択した${selectedCandidates.size}件を登録する`}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {showSalonForm && (
         <form onSubmit={handleCreateSalon} className="bg-white rounded-2xl border border-gray-100 p-5 mb-6 space-y-3">
