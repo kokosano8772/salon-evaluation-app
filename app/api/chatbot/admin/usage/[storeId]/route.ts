@@ -50,6 +50,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ stor
       applicationSuccessCount: acc.applicationSuccessCount + d.applicationSuccessCount,
       applicationFailureCount: acc.applicationFailureCount + d.applicationFailureCount,
       widgetLoadCount: acc.widgetLoadCount + d.widgetLoadCount,
+      applyLinkClickCount: acc.applyLinkClickCount + d.applyLinkClickCount,
     }),
     {
       chatMessageCount: 0,
@@ -60,6 +61,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ stor
       applicationSuccessCount: 0,
       applicationFailureCount: 0,
       widgetLoadCount: 0,
+      applyLinkClickCount: 0,
     }
   );
 

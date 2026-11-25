@@ -581,6 +581,7 @@ export interface Database {
           application_success_count: number;
           application_failure_count: number;
           widget_load_count: number;
+          apply_link_click_count: number;
           updated_at: string;
         };
         Insert: Partial<Omit<Database["public"]["Tables"]["chatbot_usage_daily"]["Row"], "id" | "updated_at">> & {

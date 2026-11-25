@@ -14,6 +14,7 @@ interface Totals {
   applicationSuccessCount: number;
   applicationFailureCount: number;
   widgetLoadCount: number;
+  applyLinkClickCount: number;
 }
 
 function currentMonth(): string {
@@ -113,6 +114,10 @@ export default function ChatbotUsagePage() {
               <p className="text-xs text-gray-400">ウィジェット表示回数</p>
               <p className="text-xl font-bold text-charcoal-900">{totals?.widgetLoadCount ?? 0}</p>
             </div>
+            <div className="card-luxury p-4">
+              <p className="text-xs text-gray-400">応募導線クリック数（LINE・電話・外部フォーム）</p>
+              <p className="text-xl font-bold text-charcoal-900">{totals?.applyLinkClickCount ?? 0}</p>
+            </div>
           </div>
 
           <div className="card-luxury overflow-x-auto mb-6">
@@ -126,6 +131,7 @@ export default function ChatbotUsagePage() {
                   <th className="text-right p-3">費用(USD)</th>
                   <th className="text-right p-3">応募成功</th>
                   <th className="text-right p-3">応募失敗</th>
+                  <th className="text-right p-3">導線クリック</th>
                 </tr>
               </thead>
               <tbody>
@@ -138,11 +144,12 @@ export default function ChatbotUsagePage() {
                     <td className="p-3 text-right">${d.estimatedCostUsd.toFixed(4)}</td>
                     <td className="p-3 text-right">{d.applicationSuccessCount}</td>
                     <td className="p-3 text-right">{d.applicationFailureCount}</td>
+                    <td className="p-3 text-right">{d.applyLinkClickCount}</td>
                   </tr>
                 ))}
                 {days.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="p-5 text-center text-xs text-gray-400">
+                    <td colSpan={8} className="p-5 text-center text-xs text-gray-400">
                       この月のデータはありません。
                     </td>
                   </tr>

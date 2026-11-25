@@ -177,6 +177,7 @@ export interface UsageDay {
   applicationSuccessCount: number;
   applicationFailureCount: number;
   widgetLoadCount: number;
+  applyLinkClickCount: number;
 }
 
 export interface ErrorLogEntry {

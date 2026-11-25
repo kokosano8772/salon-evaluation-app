@@ -109,5 +109,6 @@ export function mapUsageDay(row: UsageDailyRow): UsageDay {
     applicationSuccessCount: row.application_success_count,
     applicationFailureCount: row.application_failure_count,
     widgetLoadCount: row.widget_load_count,
+    applyLinkClickCount: row.apply_link_click_count,
   };
 }

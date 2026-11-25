@@ -19,6 +19,7 @@ export async function POST(request: Request) {
     applicationSuccessCount?: number;
     applicationFailureCount?: number;
     widgetLoadCount?: number;
+    applyLinkClickCount?: number;
   };
   try {
     body = await request.json();
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
     p_application_success_count: num(body.applicationSuccessCount),
     p_application_failure_count: num(body.applicationFailureCount),
     p_widget_load_count: num(body.widgetLoadCount),
+    p_apply_link_click_count: num(body.applyLinkClickCount),
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
