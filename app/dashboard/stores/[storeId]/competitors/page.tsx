@@ -26,6 +26,17 @@ import {
 } from "@/lib/competitor-research/types";
 import type { SearchResponse } from "@/lib/competitor-research/search-types";
 
+// 空文字/undefinedのキーを除いたコピーを返す（既知の実データで未設定のまま
+// AI推測を上書きしてしまわないようにするため）。
+function pickDefined<T extends object>(obj: T | undefined): Partial<T> {
+  if (!obj) return {};
+  const out: Partial<T> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined && value !== "") (out as Record<string, unknown>)[key] = value;
+  }
+  return out;
+}
+
 type Step = "sessions" | "search" | "compare";
 type CompareTab = "table" | "ai";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -104,7 +115,7 @@ export default function CompetitorResearchPage({ params }: { params: Promise<{ s
   }
 
   async function startCompare() {
-    const ownSalon = buildOwnSalonFromStore(store!, latestMonthly);
+    const ownSalonBase = buildOwnSalonFromStore(store!, latestMonthly);
     const selectedBasics = allResults.filter((s) => selectedIds.has(s.id));
 
     setPreparingCompare(true);
@@ -113,6 +124,34 @@ export default function CompetitorResearchPage({ params }: { params: Promise<{ s
     try {
       // 3件同時にGeminiを呼ぶと分単位のレート制限に引っかかり、1件だけ成功して
       // 残りが silent に空欄落ちすることがあったため、1件ずつ順番に呼ぶ。
+      // 自社も競合と同じくAIでWeb検索して仮埋めする（店舗データ由来の値は既知の
+      // 実データなので、AIの推測より常に優先する＝空欄/未設定の項目だけAIで補う）。
+      let ownSalon: SalonData = ownSalonBase;
+      try {
+        const homepageUrl = store?.homepageUrls?.[0]?.url;
+        const res = await fetch("/api/growth-db/competitor-extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: ownSalonBase.name, area: ownSalonBase.area, website: homepageUrl }),
+        });
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => ({}));
+          const reason = typeof errJson.error === "string" ? errJson.error : `HTTP ${res.status}`;
+          console.error("competitor-extract failed for own salon:", res.status, errJson);
+          warnings.push({ name: `${ownSalonBase.name}（自社）`, reason });
+        } else {
+          const extracted = await res.json();
+          ownSalon = {
+            ...ownSalonBase,
+            attraction: { ...extracted.attraction, ...pickDefined(ownSalonBase.attraction) },
+            recruitment: { ...extracted.recruitment, ...pickDefined(ownSalonBase.recruitment) },
+          };
+        }
+      } catch (err) {
+        console.error("competitor-extract threw for own salon:", err);
+        warnings.push({ name: `${ownSalonBase.name}（自社）`, reason: err instanceof Error ? err.message : "通信に失敗しました" });
+      }
+
       const competitorSalons: SalonData[] = [];
       for (const s of selectedBasics) {
         // Google Placesから取得できていれば営業時間・定休日はここで先に埋めておく
