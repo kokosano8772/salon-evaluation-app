@@ -81,6 +81,13 @@ function extractJson(rawText: string): unknown {
   return JSON.parse(jsonText.trim());
 }
 
+// googleSearchツール使用時はJSON強制出力(responseMimeType)が使えないため、
+// Geminiがまれに（日本語テキスト中の引用符の扱い等で）厳密には壊れたJSONを
+// 返すことがある。API呼び出し自体は成功している＝gemini.ts側のwithRetryは
+// 発動しないケースなので、ここでパース失敗時だけ生成からやり直す。
+// 1回だけ再試行（増やしすぎるとmaxDuration内に収まらなくなるため）。
+const MAX_PARSE_RETRIES = 1;
+
 // 呼び出し元(API route)でエラー理由をそのままクライアントに返せるよう、
 // ここでは例外を握りつぶさずそのまま投げる(withRetry/cleanErrorMessageが
 // 既に利用者向けの分かりやすいメッセージに整形済み)。
@@ -91,14 +98,23 @@ export async function extractCompetitorInfo(
 ): Promise<ExtractionResult> {
   const model = getGeminiModel({ useGoogleSearch: true });
   const prompt = buildExtractionPrompt(salonName, area, knownWebsite);
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  const parsed = extractJson(text);
-  if (typeof parsed !== "object" || parsed === null) {
-    return { attraction: {}, recruitment: {} };
+
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= MAX_PARSE_RETRIES; attempt++) {
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    try {
+      const parsed = extractJson(text);
+      if (typeof parsed !== "object" || parsed === null) {
+        return { attraction: {}, recruitment: {} };
+      }
+      return {
+        attraction: (parsed as Record<string, unknown>).attraction as Partial<AttractionData> ?? {},
+        recruitment: (parsed as Record<string, unknown>).recruitment as Partial<RecruitmentData> ?? {},
+      };
+    } catch (err) {
+      lastErr = err;
+    }
   }
-  return {
-    attraction: (parsed as Record<string, unknown>).attraction as Partial<AttractionData> ?? {},
-    recruitment: (parsed as Record<string, unknown>).recruitment as Partial<RecruitmentData> ?? {},
-  };
+  throw lastErr instanceof Error ? lastErr : new Error("AIの回答を解析できませんでした");
 }

@@ -4,9 +4,9 @@ import { extractCompetitorInfo } from "@/lib/ai/extractCompetitorInfo";
 
 export const runtime = "nodejs";
 // GeminiがGoogle検索しながら調べる処理は30秒を超えることがあり、特に
-// withRetry（gemini.ts）でリトライが1回でも入ると30秒を超えてVercel側に
-// 504で打ち切られていた。Proプランなのでもっと伸ばせる余裕がある。
-export const maxDuration = 60;
+// withRetry（gemini.ts）やJSONパース失敗時の再試行（extractCompetitorInfo.ts）
+// が入ると60秒でも足りない場合があるため、Proプランの余裕を使って伸ばす。
+export const maxDuration = 90;
 
 // /dashboard配下と同じくSupabase Authでログインしたスタッフのみ呼び出せる。
 export async function POST(request: Request) {
