@@ -47,6 +47,14 @@ export async function exportResultToPDF(
 
   const canvas = await toCanvas(element, {
     pixelRatio,
+    // widthを明示しないと、画面外(left:-99999px等)に置いた要素でも実際のブラウザ
+    // ウィンドウ幅までしかキャプチャされないことがある（要素自体は1800px等でも、
+    // ウィンドウがそれより狭いと右側が切れる）。要素本来の幅を明示して防ぐ。
+    width: element.scrollWidth,
+    // html-to-imageは「truly massive images」向けに自動縮小する仕組みを持ち、
+    // 行数の多い幅広テーブル（pixelRatio:2と合わさると数千px四方になる）で
+    // 発動して縦横比が崩れ、右側の列が切れたように見える不具合があった。
+    skipAutoScale: true,
     cacheBust: true,
     backgroundColor: "#FAF8F3",
     // Google Fontsをクロスオリジンの<link>で読み込んでいるため、埋め込みを試みると

@@ -23,20 +23,30 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
   const modeLabel = mode === "attraction" ? "集客分析" : mode === "recruitment" ? "求人分析" : "集客・求人分析";
   const date = new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
 
+  const DOC_WIDTH = 1800;
+  const DOC_PADDING = 16;
+  const TABLE_WIDTH = DOC_WIDTH - DOC_PADDING * 2;
+
+  // パーセント指定だと、キャプチャ時の実行環境によって包含ブロック幅の解決が
+  // 不安定になり、右側の列が崩れることがあったため、各列の幅をpxで確定させる
+  // （colgroupで明示し、テーブル自体もwidth:100%ではなく固定px幅にする）。
   const colCount = headers.length;
-  const salonColWidthPct = Math.floor(70 / (colCount - 2));
+  const categoryColWidth = Math.round(TABLE_WIDTH * 0.08);
+  const fieldColWidth = Math.round(TABLE_WIDTH * 0.18);
+  const salonColWidth = Math.floor((TABLE_WIDTH - categoryColWidth - fieldColWidth) / (colCount - 2));
+  const colWidths = [categoryColWidth, fieldColWidth, ...Array(colCount - 2).fill(salonColWidth)];
 
   let prevCategory = "";
 
   return (
     <div
       style={{
-        width: 1800,
+        width: DOC_WIDTH,
         fontFamily: '"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif',
         fontSize: 9,
         color: "#111827",
         background: "#fff",
-        padding: 16,
+        padding: DOC_PADDING,
       }}
     >
       <h1 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>競合分析レポート — {region}</h1>
@@ -44,14 +54,18 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
         {modeLabel} ／ 出力日: {date} ／ 比較: {salons.filter((s) => !s.isOwn).length}社
       </p>
 
-      <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}>
+      <table style={{ borderCollapse: "collapse", width: TABLE_WIDTH, tableLayout: "fixed" }}>
+        <colgroup>
+          {colWidths.map((w, i) => (
+            <col key={i} style={{ width: w }} />
+          ))}
+        </colgroup>
         <thead>
           <tr data-print-section>
             {headers.map((h, i) => (
               <th
                 key={h + i}
                 style={{
-                  width: i === 0 ? "8%" : i === 1 ? "18%" : `${salonColWidthPct}%`,
                   background: ACCENT,
                   color: "#fff",
                   padding: "5px 6px",
