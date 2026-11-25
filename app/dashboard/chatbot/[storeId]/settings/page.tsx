@@ -199,8 +199,8 @@ export default function ChatbotSettingsPage() {
             <span className="block text-xs text-gray-500 mb-1.5">起動ボタンの形</span>
             <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
               {([
-                { value: "button" as const, label: "文言入りボタン" },
-                { value: "robot" as const, label: "ロボットアイコン" },
+                { value: "button" as const, label: "ボタンのみ" },
+                { value: "robot" as const, label: "マスコット付き" },
               ]).map((opt) => (
                 <button
                   key={opt.value}
