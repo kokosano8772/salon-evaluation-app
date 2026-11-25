@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Check, ChevronRight, Globe, Loader2, Star } from "lucide-react";
 import { SalonBasic } from "@/lib/competitor-research/types";
 
@@ -34,6 +35,16 @@ export default function CompetitorSearchResults({
   loadingMore,
   preparing,
 }: CompetitorSearchResultsProps) {
+  const [sortBy, setSortBy] = useState<"relevance" | "reviews" | "rating">("relevance");
+
+  const sortedSalons = useMemo(() => {
+    if (sortBy === "relevance") return salons;
+    const sorted = [...salons];
+    if (sortBy === "reviews") sorted.sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0));
+    if (sortBy === "rating") sorted.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    return sorted;
+  }, [salons, sortBy]);
+
   if (salons.length === 0) {
     return (
       <div className="card-luxury p-12 text-center text-gray-400 text-sm">
@@ -44,12 +55,26 @@ export default function CompetitorSearchResults({
 
   return (
     <div className="space-y-4 pb-24">
-      <p className="text-xs text-gray-400">
-        {SOURCE_LABEL[source]} ／ {total}件中 {salons.length}件表示
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-gray-400">
+          {SOURCE_LABEL[source]} ／ {total}件中 {salons.length}件表示
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">並び替え:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="px-2 py-1 rounded-lg border border-gray-200 text-xs"
+          >
+            <option value="relevance">関連度（デフォルト）</option>
+            <option value="reviews">口コミ数が多い順</option>
+            <option value="rating">評価が高い順</option>
+          </select>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {salons.map((salon) => {
+        {sortedSalons.map((salon) => {
           const selected = selectedIds.has(salon.id);
           return (
             <button
