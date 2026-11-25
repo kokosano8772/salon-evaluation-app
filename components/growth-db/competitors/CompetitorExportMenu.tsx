@@ -62,8 +62,12 @@ export default function CompetitorExportMenu({ salons, mode, cellData, region, a
   return (
     <div ref={ref} className="relative">
       {/* キャプチャ専用の非表示DOM。画面外に配置するだけでdisplay:noneにはしない
-          （html-to-imageが実際にレイアウトされた要素しかキャプチャできないため）。 */}
-      <div style={{ position: "absolute", top: 0, left: -99999, width: 1800, height: 0, overflow: "hidden" }} aria-hidden="true">
+          （html-to-imageが実際にレイアウトされた要素しかキャプチャできないため）。
+          height:0+overflow:hiddenの親だと、table-layout:fixedな表の横幅計算が
+          崩れて右側の列が切り詰められる不具合があったため、レイアウトには一切
+          影響しないtransformで画面外に追いやる方式にする（要素自体は通常通りの
+          高さ・幅を持ったまま存在する）。 */}
+      <div style={{ position: "fixed", top: 0, left: 0, width: 1800, transform: "translateX(-250%)", pointerEvents: "none" }} aria-hidden="true">
         <div ref={printRef}>
           <CompetitorPrintDocument salons={salons} mode={mode} cellData={cellData} region={region} aiResult={aiResult} />
         </div>

@@ -53,12 +53,6 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
       <p style={{ color: "#6b7280", fontSize: 9, marginBottom: 16 }}>
         {modeLabel} ／ 出力日: {date} ／ 比較: {salons.filter((s) => !s.isOwn).length}社
       </p>
-      {/* 一時的なデバッグ表示: 列が1つしか出ない不具合が、受け取ったデータ自体の
-          問題なのか表示側の問題なのかを切り分けるため。原因判明後に削除する。 */}
-      <p style={{ color: "red", fontSize: 11, marginBottom: 8, fontWeight: 700 }}>
-        [DEBUG] salons.length={salons.length} / names={salons.map((s) => s.name).join("、")} / headers.length=
-        {headers.length}
-      </p>
 
       <table style={{ borderCollapse: "collapse", width: TABLE_WIDTH, tableLayout: "fixed" }}>
         <colgroup>
