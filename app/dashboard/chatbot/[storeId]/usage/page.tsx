@@ -98,7 +98,7 @@ export default function ChatbotUsagePage() {
             <div className="card-luxury p-4">
               <p className="text-xs text-gray-400">概算費用(USD){costLimit !== null && ` / 上限${costLimit}`}</p>
               <p className={`text-xl font-bold ${costOverLimit ? "text-red-500" : "text-charcoal-900"}`}>
-                ${(totals?.estimatedCostUsd ?? 0).toFixed(2)}
+                ${(totals?.estimatedCostUsd ?? 0).toFixed(4)}
               </p>
             </div>
             <div className="card-luxury p-4">
@@ -135,7 +135,7 @@ export default function ChatbotUsagePage() {
                     <td className="p-3 text-right">{d.chatMessageCount}</td>
                     <td className="p-3 text-right">{d.aiResponseCount}</td>
                     <td className="p-3 text-right">{d.inputTokens + d.outputTokens}</td>
-                    <td className="p-3 text-right">${d.estimatedCostUsd.toFixed(2)}</td>
+                    <td className="p-3 text-right">${d.estimatedCostUsd.toFixed(4)}</td>
                     <td className="p-3 text-right">{d.applicationSuccessCount}</td>
                     <td className="p-3 text-right">{d.applicationFailureCount}</td>
                   </tr>
