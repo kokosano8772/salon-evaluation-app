@@ -111,7 +111,7 @@ export default function ChatbotUsagePage() {
               <p className="text-xl font-bold text-red-500">{totals?.applicationFailureCount ?? 0}</p>
             </div>
             <div className="card-luxury p-4">
-              <p className="text-xs text-gray-400">応募導線クリック数（LINE・電話・外部フォーム）</p>
+              <p className="text-xs text-gray-400">応募導線クリック数</p>
               <p className="text-xl font-bold text-charcoal-900">{totals?.applyLinkClickCount ?? 0}</p>
             </div>
             <div className="card-luxury p-4">
