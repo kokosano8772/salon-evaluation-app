@@ -15,6 +15,7 @@ import LinkedDiagnosisCard from "@/components/growth-db/store-detail/LinkedDiagn
 import LinkedAiCheckCard from "@/components/growth-db/store-detail/LinkedAiCheckCard";
 import PeerComparisonSection from "@/components/growth-db/store-detail/PeerComparisonSection";
 import CompetitorResearchCard from "@/components/growth-db/store-detail/CompetitorResearchCard";
+import WebRankingCard from "@/components/growth-db/store-detail/WebRankingCard";
 import AdReportCard from "@/components/growth-db/store-detail/AdReportCard";
 import GrowthRadarChart from "@/components/growth-db/charts/GrowthRadarChart";
 import CategoryScoreBars from "@/components/growth-db/charts/CategoryScoreBars";
@@ -88,6 +89,7 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
             </div>
 
             <CompetitorResearchCard storeId={store.id} />
+            <WebRankingCard storeId={store.id} />
             <AdReportCard storeId={store.id} />
           </div>
         </div>
@@ -182,6 +184,8 @@ export default function StoreDetailPage({ params }: { params: Promise<{ storeId:
           <PeerComparisonSection storeId={store.id} />
 
           <CompetitorResearchCard storeId={store.id} />
+
+          <WebRankingCard storeId={store.id} />
 
           <AdReportCard storeId={store.id} />
 

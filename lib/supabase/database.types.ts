@@ -207,6 +207,9 @@ export interface Database {
           address: string;
           store_count: number | null;
           notes: string;
+          // 成長データベースのstoresとの紐付け（自社サイトであることの目印）。
+          // nullは「このranking_salons行は手動登録された競合サロン」を意味する。
+          linked_store_id: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;

@@ -55,8 +55,8 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   const urls = withWebsite.map((s) => s.website!);
-  const { data: existingAssets } = await admin.from("ranking_web_assets").select("url").in("url", urls.length > 0 ? urls : [""]);
-  const existingUrlSet = new Set((existingAssets ?? []).map((a) => a.url));
+  const { data: existingAssets } = await admin.from("ranking_web_assets").select("id, url").in("url", urls.length > 0 ? urls : [""]);
+  const existingUrlToIdMap = new Map((existingAssets ?? []).map((a) => [a.url, a.id]));
 
   const candidates = withWebsite.map((s) => ({
     name: s.name,
@@ -65,7 +65,10 @@ export async function POST(request: Request) {
     website: s.website!,
     rating: s.rating,
     reviewCount: s.reviewCount,
-    alreadyRegistered: existingUrlSet.has(s.website!),
+    alreadyRegistered: existingUrlToIdMap.has(s.website!),
+    // 既に登録済みの場合はそのweb_asset.idを返し、呼び出し側が二重登録せず
+    // そのまま診断対象に使い回せるようにする（store-ranking機能で利用）。
+    webAssetId: existingUrlToIdMap.get(s.website!) ?? null,
   }));
 
   return NextResponse.json({
