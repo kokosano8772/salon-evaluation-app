@@ -17,6 +17,14 @@ const ACCENT_DARK = "#A85E74";
 // （特に背景色が消える／列幅が画面より狭くなる）。lib/pdf.tsのexportResultToPDF
 // （html-to-image + jsPDF、印刷ダイアログを一切経由しない）でこの非表示DOMを
 // そのままキャプチャすることで、画面表示と完全に同じ見た目でPDF化する。
+//
+// 比較表は<table>ではなくCSS Grid(div)で組む。html-to-imageはDOMをSVGの
+// foreignObject経由でラスタライズしており、table-layout:fixed+colgroupの
+// 組み合わせはforeignObject内でのレイアウト解決がブラウザによって不安定になる
+// ことが知られている(実際に一部環境で右側の列が丸ごと描画されず、残った列が
+// 間延びして見える不具合が発生した)。CSS Gridなら各セルの幅をgrid-template-
+// columnsで直接指定でき、table特有のレイアウトアルゴリズムを経由しないため
+// この種の不具合を避けられる。
 export default function CompetitorPrintDocument({ salons, mode, cellData, region, aiResult }: CompetitorPrintDocumentProps) {
   const { headers, rows } = buildExportData(salons, mode, cellData);
 
@@ -27,14 +35,12 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
   const DOC_PADDING = 16;
   const TABLE_WIDTH = DOC_WIDTH - DOC_PADDING * 2;
 
-  // パーセント指定だと、キャプチャ時の実行環境によって包含ブロック幅の解決が
-  // 不安定になり、右側の列が崩れることがあったため、各列の幅をpxで確定させる
-  // （colgroupで明示し、テーブル自体もwidth:100%ではなく固定px幅にする）。
   const colCount = headers.length;
   const categoryColWidth = Math.round(TABLE_WIDTH * 0.08);
   const fieldColWidth = Math.round(TABLE_WIDTH * 0.18);
   const salonColWidth = Math.floor((TABLE_WIDTH - categoryColWidth - fieldColWidth) / (colCount - 2));
   const colWidths = [categoryColWidth, fieldColWidth, ...Array(colCount - 2).fill(salonColWidth)];
+  const gridTemplateColumns = colWidths.map((w) => `${w}px`).join(" ");
 
   let prevCategory = "";
 
@@ -54,63 +60,72 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
         {modeLabel} ／ 出力日: {date} ／ 比較: {salons.filter((s) => !s.isOwn).length}社
       </p>
 
-      <table style={{ borderCollapse: "collapse", width: TABLE_WIDTH, tableLayout: "fixed" }}>
-        <colgroup>
-          {colWidths.map((w, i) => (
-            <col key={i} style={{ width: w }} />
+      <div role="table" style={{ display: "grid", gridTemplateColumns, width: TABLE_WIDTH }}>
+        <div role="row" data-print-section style={{ display: "contents" }}>
+          {headers.map((h, i) => (
+            <div
+              role="columnheader"
+              key={h + i}
+              style={{
+                background: ACCENT,
+                color: "#fff",
+                padding: "5px 6px",
+                fontSize: 9,
+                textAlign: "left",
+                border: `1px solid ${ACCENT_DARK}`,
+              }}
+            >
+              {h}
+            </div>
           ))}
-        </colgroup>
-        <thead>
-          <tr data-print-section>
-            {headers.map((h, i) => (
-              <th
-                key={h + i}
+        </div>
+
+        {rows.map((r, ri) => {
+          const catChanged = r.category !== prevCategory;
+          prevCategory = r.category;
+          const catBg = r.category === "集客分析" ? "#fdf2f5" : "#faf5ff";
+          const rowBg = ri % 2 === 1 ? "#f9fafb" : "#fff";
+          return (
+            <div role="row" data-print-section key={ri} style={{ display: "contents" }}>
+              <div
+                role="cell"
                 style={{
-                  background: ACCENT,
-                  color: "#fff",
-                  padding: "5px 6px",
-                  fontSize: 9,
-                  textAlign: "left",
-                  border: `1px solid ${ACCENT_DARK}`,
+                  background: catBg,
+                  color: "#6b7280",
+                  fontSize: 8,
+                  textAlign: "center",
+                  border: "1px solid #e5e7eb",
+                  padding: "3px 5px",
                 }}
               >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, ri) => {
-            const catChanged = r.category !== prevCategory;
-            prevCategory = r.category;
-            const catBg = r.category === "集客分析" ? "#fdf2f5" : "#faf5ff";
-            return (
-              <tr data-print-section key={ri} style={{ background: ri % 2 === 1 ? "#f9fafb" : undefined }}>
-                <td style={{ background: catBg, color: "#6b7280", fontSize: 8, textAlign: "center", border: "1px solid #e5e7eb", padding: "3px 5px", verticalAlign: "top" }}>
-                  {catChanged ? r.category : ""}
-                </td>
-                <td style={{ fontSize: 9, fontWeight: 600, border: "1px solid #e5e7eb", padding: "3px 5px", verticalAlign: "top" }}>{r.field}</td>
-                {r.values.map((v, i) => (
-                  <td
-                    key={i}
-                    style={{
-                      fontSize: 9,
-                      background: i === 0 ? "#fdf2f5" : undefined,
-                      border: "1px solid #e5e7eb",
-                      padding: "3px 5px",
-                      verticalAlign: "top",
-                      wordBreak: "break-word",
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {v}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                {catChanged ? r.category : ""}
+              </div>
+              <div
+                role="cell"
+                style={{ background: rowBg, fontSize: 9, fontWeight: 600, border: "1px solid #e5e7eb", padding: "3px 5px" }}
+              >
+                {r.field}
+              </div>
+              {r.values.map((v, i) => (
+                <div
+                  role="cell"
+                  key={i}
+                  style={{
+                    fontSize: 9,
+                    background: i === 0 ? "#fdf2f5" : rowBg,
+                    border: "1px solid #e5e7eb",
+                    padding: "3px 5px",
+                    wordBreak: "break-word",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {v}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
 
       {aiResult && (
         <div data-print-section style={{ marginTop: 24 }}>
