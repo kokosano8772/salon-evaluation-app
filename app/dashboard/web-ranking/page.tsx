@@ -20,6 +20,7 @@ interface RankingRow {
   salonName: string;
   prefecture: string;
   city: string;
+  isOwn: boolean;
   totalScore: number | null;
   totalMaxScore: number | null;
   reviewStatus: string | null;
@@ -128,7 +129,9 @@ function RankingView() {
             <Link
               key={row.webAssetId}
               href={`/dashboard/web-ranking/web-assets/${row.webAssetId}`}
-              className="flex items-center gap-3 px-5 py-4 border-b border-gray-50 last:border-b-0 hover:bg-gray-50"
+              className={`flex items-center gap-3 px-5 py-4 border-b border-gray-50 last:border-b-0 hover:bg-gray-50 ${
+                row.isOwn ? "bg-[#FDF2F5]" : ""
+              }`}
             >
               <span className="w-7 text-center text-sm font-bold text-gray-300 flex-shrink-0">
                 {row.totalScore !== null ? i + 1 : "ー"}
@@ -136,6 +139,11 @@ function RankingView() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-charcoal-900 truncate">{row.salonName}</span>
+                  {row.isOwn && (
+                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full text-white bg-[#C4788A] flex-shrink-0">
+                      自社
+                    </span>
+                  )}
                   <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">
                     {SITE_TYPE_LABEL[row.siteType] ?? row.siteType}
                   </span>

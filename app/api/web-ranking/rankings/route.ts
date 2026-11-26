@@ -69,6 +69,9 @@ export async function GET(request: Request) {
         salonName: salon.name,
         prefecture: salon.prefecture,
         city: salon.city,
+        // 成長DBの店舗に紐づく「自社」サロンかどうか（店舗ごとのWEBランキング機能で
+        // 登録されたもの）。一覧で見分けられるようにする。
+        isOwn: !!salon.linked_store_id,
         totalScore: run?.total_score ?? null,
         totalMaxScore: run?.total_max_score ?? null,
         reviewStatus: run?.review_status ?? null,
