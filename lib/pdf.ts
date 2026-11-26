@@ -65,7 +65,16 @@ export async function exportResultToPDF(
   if (options?.singlePageWidthMm) {
     const pageWidthMm = options.singlePageWidthMm;
     const pageHeightMm = (canvas.height / canvas.width) * pageWidthMm;
-    const pdf = new jsPDF({ unit: "mm", format: [pageWidthMm, pageHeightMm] });
+    // orientationを指定しないとjsPDFは既定(portrait)を強制し、widthがheightより
+    // 大きいformat配列を渡しても内部でwidth/heightを黙って入れ替えてしまう
+    // （出来上がるページが縦長になり、横長の画像を左上基準でそのまま貼ると
+    // 右側が丸ごとページ外にはみ出して消える）。pageWidthMmとpageHeightMmの
+    // 大小関係に応じてlandscape/portraitを明示し、入れ替えを防ぐ。
+    const pdf = new jsPDF({
+      unit: "mm",
+      format: [pageWidthMm, pageHeightMm],
+      orientation: pageWidthMm >= pageHeightMm ? "l" : "p",
+    });
     pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, pageWidthMm, pageHeightMm);
     pdf.save(filename);
     return;
