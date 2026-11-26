@@ -12,6 +12,11 @@ interface CompetitorPrintDocumentProps {
 const ACCENT = "#C4788A";
 const ACCENT_DARK = "#A85E74";
 
+// キャプチャ専用の非表示DOMの幅。CompetitorExportMenu側のラッパーdivや
+// singlePageWidthMmの計算でもこの値を使う（数値を別々に持つと、どちらか
+// 片方だけ変更した時に画面比率がズレるため、ここを単一の情報源にする）。
+export const PRINT_DOC_WIDTH = 1100;
+
 // ブラウザの印刷ダイアログ(window.print())経由だと、用紙サイズ・余白・
 // 背景グラフィックの設定次第で画面に見えてる内容と仕上がりが食い違っていた
 // （特に背景色が消える／列幅が画面より狭くなる）。lib/pdf.tsのexportResultToPDF
@@ -23,7 +28,7 @@ export default function CompetitorPrintDocument({ salons, mode, cellData, region
   const modeLabel = mode === "attraction" ? "集客分析" : mode === "recruitment" ? "求人分析" : "集客・求人分析";
   const date = new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
 
-  const DOC_WIDTH = 1800;
+  const DOC_WIDTH = PRINT_DOC_WIDTH;
   const DOC_PADDING = 16;
   const TABLE_WIDTH = DOC_WIDTH - DOC_PADDING * 2;
 

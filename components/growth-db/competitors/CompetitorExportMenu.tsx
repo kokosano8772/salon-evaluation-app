@@ -5,7 +5,7 @@ import { Download, FileSpreadsheet, FileText, Loader2, Printer } from "lucide-re
 import { exportToCsv } from "@/lib/competitor-research/export/csv";
 import { exportToExcel } from "@/lib/competitor-research/export/excel";
 import { exportResultToPDF } from "@/lib/pdf";
-import CompetitorPrintDocument from "./CompetitorPrintDocument";
+import CompetitorPrintDocument, { PRINT_DOC_WIDTH } from "./CompetitorPrintDocument";
 import { AnalysisMode, ComparisonData, SalonData } from "@/lib/competitor-research/types";
 
 interface CompetitorExportMenuProps {
@@ -45,10 +45,10 @@ export default function CompetitorExportMenu({ salons, mode, cellData, region, a
       if (type === "pdf") {
         if (!printRef.current) return;
         const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-        // CompetitorPrintDocumentの幅(1800px)を96dpi換算したmm値。A4の複数ページ
-        // 分割ではなく、画面と同じ比率の1枚だけのPDFにする。
+        // CompetitorPrintDocumentの幅を96dpi換算したmm値。A4の複数ページ分割
+        // ではなく、画面と同じ比率の1枚だけのPDFにする。
         await exportResultToPDF(printRef.current, `競合分析レポート_${region || "地域未設定"}_${date}.pdf`, {
-          singlePageWidthMm: (1800 * 25.4) / 96,
+          singlePageWidthMm: (PRINT_DOC_WIDTH * 25.4) / 96,
         });
       } else if (type === "csv") exportToCsv(salons, mode, cellData, region);
       else await exportToExcel(salons, mode, cellData, region);
@@ -67,7 +67,7 @@ export default function CompetitorExportMenu({ salons, mode, cellData, region, a
           崩れて右側の列が切り詰められる不具合があったため、レイアウトには一切
           影響しないtransformで画面外に追いやる方式にする（要素自体は通常通りの
           高さ・幅を持ったまま存在する）。 */}
-      <div style={{ position: "fixed", top: 0, left: 0, width: 1800, transform: "translateX(-250%)", pointerEvents: "none" }} aria-hidden="true">
+      <div style={{ position: "fixed", top: 0, left: 0, width: PRINT_DOC_WIDTH, transform: "translateX(-250%)", pointerEvents: "none" }} aria-hidden="true">
         <div ref={printRef}>
           <CompetitorPrintDocument salons={salons} mode={mode} cellData={cellData} region={region} aiResult={aiResult} />
         </div>
