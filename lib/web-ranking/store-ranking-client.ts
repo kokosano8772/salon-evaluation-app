@@ -2,6 +2,8 @@
 // 薄いfetchラッパー群。既存のWEBランキングAPI（salons/web-assets/audit-runs）は
 // 無変更のまま呼び出し、新設のstore-ranking/*だけがこの機能専用。
 
+import { splitPrefectureCity } from "./area-split";
+
 export interface DiscoverCandidate {
   name: string;
   area: string;
@@ -41,11 +43,16 @@ export async function ensureOwnAsset(storeId: string): Promise<{ webAssetId: str
 
 // 既存の discover 結果を登録する2段階呼び出し（app/dashboard/web-ranking/page.tsx の
 // handleRegisterSelected と同じ流れ）。
+// prefecture/cityを渡さないと、採点基準の「登録地域名がtitle/見出しに含まれるか」
+// （lib/web-ranking/rule-evaluators/hp.ts）が対象外(not_applicable)扱いになり、
+// 自社（own-asset側はstore.areaから分割して渡している）だけ満点が3点高くなって
+// しまう不具合があったため、同じ関数で分割して渡す。
 export async function registerCompetitorAsset(candidate: DiscoverCandidate): Promise<string> {
+  const { prefecture, city } = splitPrefectureCity(candidate.address || candidate.area);
   const salonRes = await fetch("/api/web-ranking/salons", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: candidate.name, address: candidate.address }),
+    body: JSON.stringify({ name: candidate.name, address: candidate.address, prefecture, city }),
   });
   const salonData = await salonRes.json();
   if (!salonRes.ok) throw new Error(salonData.error ?? "競合サロンの登録に失敗しました");

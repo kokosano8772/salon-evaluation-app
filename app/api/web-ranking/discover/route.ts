@@ -51,7 +51,31 @@ export async function POST(request: Request) {
   }
 
   const foundCount = result.salons.length;
-  const withWebsite = result.salons.filter((s) => !!s.website);
+  // Google Places側の「ウェブサイト」欄には、自社サイトが無いサロンの場合に
+  // ホットペッパービューティー等の第三者プラットフォームの掲載ページが入っている
+  // ことがある。これらは全サロン共通のテンプレートで作られており、SEO・技術面の
+  // 採点基準をそのまま適用しても各サロン自身のWEB運用の質を反映しない（誰が見ても
+  // 横並びで同じような結果になる）ため、自社サイトとして扱わず除外する。
+  const THIRD_PARTY_HOSTS = [
+    "hotpepper.jp",
+    "beauty.hotpepper.jp",
+    "instagram.com",
+    "facebook.com",
+    "fb.com",
+    "line.me",
+    "minimo.jp",
+    "twitter.com",
+    "x.com",
+  ];
+  const isOwnSite = (url: string) => {
+    try {
+      const host = new URL(url).hostname.replace(/^www\./, "");
+      return !THIRD_PARTY_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
+    } catch {
+      return false;
+    }
+  };
+  const withWebsite = result.salons.filter((s) => !!s.website && isOwnSite(s.website));
 
   const admin = createAdminClient();
   const urls = withWebsite.map((s) => s.website!);
