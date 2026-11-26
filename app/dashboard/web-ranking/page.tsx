@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Globe, ChevronRight, Trophy, Settings2, Search } from "lucide-react";
+import { Plus, Globe, ChevronRight, ChevronDown, Trophy, Settings2, Search } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 const ACCENT = "#C4788A";
@@ -88,28 +88,34 @@ function RankingView() {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <select
-          value={siteTypeFilter}
-          onChange={(e) => setSiteTypeFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white"
-        >
-          <option value="">サイト種別（全て）</option>
-          <option value="hp">HP</option>
-          <option value="acquisition_lp">集客LP</option>
-          <option value="recruitment_lp">採用LP</option>
-        </select>
-        <select
-          value={prefectureFilter}
-          onChange={(e) => setPrefectureFilter(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white"
-        >
-          <option value="">地域（全て）</option>
-          {prefectures.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={siteTypeFilter}
+            onChange={(e) => setSiteTypeFilter(e.target.value)}
+            className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-xs bg-white"
+          >
+            <option value="">サイト種別（全て）</option>
+            <option value="hp">HP</option>
+            <option value="acquisition_lp">集客LP</option>
+            <option value="recruitment_lp">採用LP</option>
+          </select>
+          <ChevronDown size={13} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+        <div className="relative">
+          <select
+            value={prefectureFilter}
+            onChange={(e) => setPrefectureFilter(e.target.value)}
+            className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-xs bg-white"
+          >
+            <option value="">地域（全て）</option>
+            {prefectures.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={13} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
