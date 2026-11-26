@@ -45,9 +45,10 @@ export default function CompetitorExportMenu({ salons, mode, cellData, region, a
       if (type === "pdf") {
         if (!printRef.current) return;
         const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const ownSalonName = salons.find((s) => s.isOwn)?.name || "サロン名未設定";
         // CompetitorPrintDocumentの幅を96dpi換算したmm値。A4の複数ページ分割
         // ではなく、画面と同じ比率の1枚だけのPDFにする。
-        await exportResultToPDF(printRef.current, `競合分析レポート_${region || "地域未設定"}_${date}.pdf`, {
+        await exportResultToPDF(printRef.current, `競合分析レポート_${ownSalonName}_${date}.pdf`, {
           singlePageWidthMm: (PRINT_DOC_WIDTH * 25.4) / 96,
         });
       } else if (type === "csv") exportToCsv(salons, mode, cellData, region);
