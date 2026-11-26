@@ -59,6 +59,7 @@ function RankingView() {
   const [error, setError] = useState("");
   const [siteTypeFilter, setSiteTypeFilter] = useState("");
   const [prefectureFilter, setPrefectureFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -81,8 +82,27 @@ function RankingView() {
     [rankings]
   );
 
+  // 選択中の都道府県（未選択なら全件）の中にある市区町村だけを候補にする
+  // （登録サロンが増えるほど同じ県内でも市区町村がバラバラに混ざって見づらく
+  // なるため、都道府県だけでなく市区町村でも絞り込めるようにする）。
+  const cities = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          rankings
+            .filter((r) => !prefectureFilter || r.prefecture === prefectureFilter)
+            .map((r) => r.city)
+            .filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b, "ja")),
+    [rankings, prefectureFilter]
+  );
+
   const filtered = rankings.filter(
-    (r) => (!siteTypeFilter || r.siteType === siteTypeFilter) && (!prefectureFilter || r.prefecture === prefectureFilter)
+    (r) =>
+      (!siteTypeFilter || r.siteType === siteTypeFilter) &&
+      (!prefectureFilter || r.prefecture === prefectureFilter) &&
+      (!cityFilter || r.city === cityFilter)
   );
 
   return (
@@ -104,13 +124,32 @@ function RankingView() {
         <div className="relative">
           <select
             value={prefectureFilter}
-            onChange={(e) => setPrefectureFilter(e.target.value)}
+            onChange={(e) => {
+              setPrefectureFilter(e.target.value);
+              setCityFilter(""); // 都道府県を変えたら市区町村の絞り込みはリセットする
+            }}
             className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-xs bg-white"
           >
             <option value="">地域（全て）</option>
             {prefectures.map((p) => (
               <option key={p} value={p}>
                 {p}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={13} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+        <div className="relative">
+          <select
+            value={cityFilter}
+            onChange={(e) => setCityFilter(e.target.value)}
+            disabled={cities.length === 0}
+            className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-200 text-xs bg-white disabled:opacity-50"
+          >
+            <option value="">市区町村（全て）</option>
+            {cities.map((c) => (
+              <option key={c} value={c}>
+                {c}
               </option>
             ))}
           </select>
